@@ -1,0 +1,478 @@
+## config for domain
+infile
+
+## config for IC/BC
+infile
+
+## config for TS and adaptivity
+infile
+
+#####################################################################################
+#####################################################################################
+# start										ICBC
+infile_icbc
+
+{
+# 1 -> axt, u_i = a_i xt
+load_number
+1
+
+# load case 1: 0 - Dim < 1 - a_i factors
+
+load_parameters
+1
+1.0
+
+}
+
+# end										ICBC
+#####################################################################################
+#####################################################################################
+
+
+
+#####################################################################################
+#####################################################################################
+# start										domain
+infile_domain
+
+{
+subdomain_config_names
+{
+infile
+}
+
+x_min
+0.0
+
+#subdomain_one_part_size
+#{
+#10
+#}
+
+bulk_elastic_map
+	{
+	1
+		{
+			rho	1.0
+			
+			nu_iso	0.0
+			
+
+			E_iso	1.0
+		}	
+	}
+
+interface_fracture_map
+	{
+	1
+#####################################################################################
+# start										fracture flag 1
+			{
+			beta_traction	1.0
+
+			beta_delU		1.0
+
+			# interfacial_damage_off	interfacial_damage_on		interfacial_damage_mixed
+			# damageOffOnMix		interfacial_damage_off
+			damageOffOnMix		interfacial_damage_mixed
+
+			# contact_off				contact_on					contact_mixed	
+			contactOffOnMix	contact_off
+
+			# decides to do regularization in positivie separation for contact problems and negative (interpenetration) for fracture problems
+			rel_dcont_or_dsep	0.01
+
+			# independent input of regularization limits (not recommended)	
+			#	rel_dcont	-0.01
+			#	rel_dsep	0.01
+
+			# reg_linear	reg_sqrt1	reg_sqrt2	
+			sep2cont_regType	reg_sqrt1
+			
+			# slip_off					slip_on						slip_mixed
+			slipOffOnMix	slip_off
+			
+			c0	0.8
+			gen_strength	1.0
+			tau	0.1
+			deltaC	0.01
+			has_in_situ	0
+			# in_situ_stress	0
+			# sn	2.5
+			# c		2.0
+		#####################################	k	0.3
+			
+			# effSs_Off	effSs_sqrt	effSs_mc	effSs_mct	effSs_mctc	effSs_HoekBrown	effSs_Rankin	effSs_Tresca	effSsCompressive	effSs_vm	effSs_vmm	effSs_DP	
+			effType		effSs_sqrt
+			Hpara0	10.0
+			hfunT	AllixHExp
+			pn	0
+			pc	0
+			factor_k	0.0
+			kn	0.0
+			kc	0.0
+			srcZeroFldGtmxV	1
+			mxV4SrcZero	1.0
+			zeroTol4DamageEq1	0.0001
+			fx_boundedBy1	1
+			
+			# RBH_VelDDot_none	RBH_VelDDot_vnp_only		RBH_VelDDot_vtabs_only		RBH_VelDDot_vnp_vtabs		RBH_VelDDot_vel_effective
+			# rbhvDTT	RBH_VelDDot_none
+			rbhvDTT	RBH_VelDDot_vnp_only
+			
+			dvnRatio	1.0
+			dvtRatio	10.0
+			
+			# friction_constant	friction_slip_weakeningLinear	friction_slip_weakeningPower	
+			frictionModel	friction_constant
+			
+			isIsoFrictionParameters		1
+			
+			damaged_slip_dt	0.05
+			
+			damaged_para0_epsSW	0.01
+			
+			damaged_para1_n	2.0
+			
+			damaged_kUpper_iso_2D_pos_y_dir_or_3D_angularMax	0.6
+			damaged_kLower_iso_2D_pos_y_dir_or_3D_angularMax	0.3
+			
+			damaged_kUpper_2D_neg_y_dir_or_3D_angularMin		0.5
+			damaged_kLower_2D_neg_y_dir_or_3D_angularMin		0.2
+			
+			theta4MaxValDeg		30.0
+			
+			# interfacial_damage_traction_zero	interfacial_damage_traction_TSR	interfacial_damage_traction_HF
+			damageTractionModel		interfacial_damage_traction_zero
+			
+			# tsr_Zero	tsr_Xu_Needleman	tsr_Ortiz		tsr_linear		tsr_bilinear		tsr_exponential		tsr_hyperbolic		tsr_concrete
+			tsrModel	tsr_Xu_Needleman
+			
+		}	
+# end										fracture flag 1
+#####################################################################################
+	}
+
+directionalBCTypeLeftSide
+Dirichlet
+
+directionalBCTypeRightSide
+Dirichlet
+
+
+}
+
+# end										domain
+#####################################################################################
+#####################################################################################
+
+#####################################################################################
+#####################################################################################
+# start										subdomain0
+infile_subdomain0
+
+{
+bisrt
+inhomogeneous
+
+numRepeatSequence
+1
+
+xm
+0
+
+xM
+10
+
+#num_bulk_one_seq
+#1
+
+inhomogeneousConfigName
+infile
+#none
+
+default_bulk_flag
+1
+
+default_interface_flag
+# no fracture
+#0
+1
+
+}
+
+# end										subdomain0
+#####################################################################################
+#####################################################################################
+
+#####################################################################################
+#####################################################################################
+# begin					inhomogeneous_elastic_fracture_subdomain_0
+
+infile_inhomogeneous_elastic_frac0
+{
+
+#### elastic 
+# undecided, Crho_const, rho_const, C_const, c_const, Z_const, nonconst
+#eit rho_const
+eit Crho_const
+
+baseName_WOExt_oihf_elastic1
+inline
+InhomogeneousFiles/Fake/v1_x0/file
+{
+num_Vals_and_x_Provided
+0
+
+valsAtVertices
+1
+
+uniformGrid
+1
+
+containsRepeatingEndPeriodicVal
+0
+
+randVariableType
+Triangle
+
+{
+	min	
+	0.6
+	max
+	1.4
+	mode
+	1.00
+}
+}
+endinline
+
+# baseName_WOExt_oihf_elastic2
+# InhomogeneousFiles/Fake/v1_x0/file
+
+
+#### fracture 
+# undecided, sigmadelta_const, delta_const, sigma_const, G_const, nonconst
+fit sigmadelta_const
+
+# baseName_WOExt_oihf_fracture1
+# inline
+# InhomogeneousFiles/Fake/v1_x0/file
+
+# baseName_WOExt_oihf_fracture2
+# inline
+# InhomogeneousFiles/Fake/v1_x0/file
+
+baseName_WOExt_oihf_fracture_iniDamage
+inline
+InhomogeneousFiles/Fake/v1_x0/file
+{
+num_Vals_and_x_Provided
+0
+
+valsAtVertices
+1
+
+uniformGrid
+1
+
+containsRepeatingEndPeriodicVal
+0
+
+randVariableType
+Triangle
+
+{
+	min	
+	0.0
+	max
+	0.4
+	mode
+	0.2
+}
+}
+endinline
+
+
+
+
+
+}
+
+# end					inhomogeneous_elastic_fracture_subdomain_0
+#####################################################################################
+#####################################################################################
+
+
+#####################################################################################
+#####################################################################################
+# start 								time step & adaptivity
+infile_ts_adaptivity
+
+{
+
+# ###################################################
+# Run termination conditions
+# ###################################################
+# final time
+terminate_run_target_time
+2.0
+#0.7
+
+# for mixed damage evolution, what is the damage limit in which the simulation stops (after the first point reaches there)
+# > 0, not active
+terminate_run_target_max_damage 
+2.9999999999
+
+# ###################################################
+# Convergence check for time step n -> when to stop iterations
+# ###################################################
+# 	does not allow indefinite iterations, after reaching the number below one of the two things happen - 
+within_step_iter_max_num_iter
+#5
+#10
+#4
+1
+
+# refine_after_max_num_iter:
+# true:
+#				in between_steps_adaptivity_s sets			(proposed delT = current_delT * refine_after_max_num_iter_del_t_factor)
+#						refine: if proposed delT is < uniform_del_t
+#						terminate (a_terminate_run_prematurely) otherwise
+#		false:	assumes convergence of iterations and goes to 
+refine_after_max_num_iter
+#1
+0
+
+# if refine_after_max_num_iter == true, how smaller the time step should get for nonconvergent solutions
+refine_after_max_num_iter_del_t_factor
+0.5
+
+within_step_iter_del_s_tol
+0.01
+
+# default: del_s is nondimensional (w.r.t. cohesive strength), if want to make it dimensional, uncomment the lines below (or to deactivate is use nonActive or use < 0 tol above)
+# notActive, Dimensional, nonDimensional
+#del_s_type_within_step
+#Dimensional
+
+
+within_step_iter_del_v_tol
+0.01
+
+# default: del_s is nondimensional (w.r.t. cohesive velocity), if want to make it dimensional, uncomment the lines below (or to deactivate is use nonActive or use < 0 tol above)
+# notActive, Dimensional, nonDimensional
+#del_v_type_within_step
+#Dimensional
+
+# ###################################################
+# Adaptivity step n -> n + 1
+# ###################################################
+# adaptivity is on or off
+between_steps_adaptivity
+0
+
+# time step for non-adaptive runs and starting time step for adaptive ones
+# < 0, relative to domain min_del_t
+uniform_del_t
+#-0.1
+-0.01
+
+# minimum allowable time step, smaller than this the run terminates. We can get to such small sizes if successive refinements are needed
+# < 0, relative to domain min_del_t
+min_del_t
+-0.001
+
+# in case of coarsening, time step is not allowed to be larger than this
+# < 0, relative to domain min_del_t
+max_del_t
+-1
+
+######### tolerances 	->  < 0  Inactive
+# allowable change in stress between steps n and n+1 (relative to strength)
+between_steps_del_s_tol
+-0.1
+
+# default: del_s is nondimensional (w.r.t. cohesive strength), if want to make it dimensional, uncomment the lines below (or to deactivate is use nonActive or use < 0 tol above)
+# notActive, Dimensional, nonDimensional
+#del_s_type
+#Dimensional
+
+# allowable change in velocity between steps n and n+1 (relative to strength)
+between_steps_del_v_tol
+-0.1
+
+# default: del_v is nondimensional (w.r.t. cohesive velocity), if want to make it dimensional, uncomment the lines below (or to deactivate is use nonActive or use < 0 tol above)
+# notActive, Dimensional, nonDimensional
+#del_s_type
+#Dimensional
+
+# allowable change in damage between steps n and n+1
+between_steps_del_damage_tol
+-0.05
+
+# allowable change in damage source * tauC between steps n and n+1 (times delT)
+between_steps_damage_source_tau_tol
+-0.01
+
+#change of c from separation to contact from earlier to current step (contact to separation is not included as that one can be rapid)
+between_steps_del_sep2cont_c
+0.2
+
+########## refine / coarsen ratios
+# if error_ratio > coarsening_error_ratio_lim, timeStep *= coarsening_delt_factor
+coarsening_error_ratio_lim
+1.2
+
+coarsening_delt_factor
+2.0
+
+# if error_ratio < refinement_error_ratio_lim, timeStep *= refinement_delt_factor
+refinement_error_ratio_lim
+0.8
+
+refinement_delt_factor
+0.5
+
+
+# ###################################################
+# print flags
+# ###################################################
+# print area fractions, etc.
+print_Scalars
+1
+
+print_Adaptivity
+0
+
+# log of iteration convergence
+print_outIterationConv
+0
+
+# ###################################################
+# extrapolating earlier solution(s) to current step (for v, s, u, D, ...)
+# ###################################################
+
+# parameters that can be used in general time marching and computing values of step (n + 1) from step n and possibly earlier
+# in general only one earlier step (i.e. n) is used to form values of step (n + 1)
+# at initial time, etc. only 1 is used
+max_num_earlier_steps
+1
+
+
+# consider when there is only one earlier value for the ODE
+# fDot = source_f. At time step n + 1, with only one earlier value, we'll update f_n+1 as:
+# -	iteration 0:	alpha = one_step_update_alpha_it0			f_n+1 = f_n + source_f(n) * alpha * del_t
+#		that is, alpha = 0, simply uses earlier value
+one_step_update_alpha_it0
+1.0
+
+# -	iteration > 0	alpha = one_step_update_alpha_it_gt0		f_n+1 = f_n + (source_f(n) * alpha + (1 - alpha) * source_f(n+1)) * del_t
+one_step_update_alpha_it_gt0
+0.5
+}
+
+# end 								time step & adaptivity
+#####################################################################################
+#####################################################################################

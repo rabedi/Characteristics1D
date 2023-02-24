@@ -1,0 +1,111 @@
+configNameOut	default
+specificProblemName	MM
+subdomainNo		1
+bulkFlag		2
+interfaceFlag	1
+#name added for this set of runs
+configSpecificName	allopts
+{
+# ##################### loading
+
+# load amplitude
+	{	stressScale
+#		100.0
+#		10.0
+#		2.0
+		1.0
+#		0.5
+#		0.1
+	}
+
+#ramp time
+	{	tdPara0
+#		5.0
+		10.0
+	}
+
+# final time
+	{	tF
+		40.0
+#		80.0
+	}
+
+# cfl number (ratio of maximum available time stap). Values 0 < 0 <= 1
+	{	cfl
+		0.03
+#		0.1
+#		1.0
+	}
+# ##################### slab
+
+# elastic modulus of phase 2
+	{	E2
+		2.2
+#		1.0
+#		0.2
+#		0.02
+	}
+
+#	{	rho2
+#		1.1
+#	}
+
+
+# number of elements per each segment (unique material segment) of the unit cell (use negative value; positive values is the actual max element size)
+	{	directSpaceSizeModifierInside
+		-2
+		-4
+		-8
+		-16
+		-32
+		-64
+	}
+
+# number of unit cells in the slab
+	{	numRepeatSequenceInside
+		1
+#		2
+#		4
+#		10
+	}
+
+# ##################### ambient properties
+
+# elastic modulus of ambient
+	{
+		EAmbient
+#		2.175
+		8.7
+	}
+
+# rho of ambient
+#	{
+#		rhoAmbient
+#		2.36
+#		1.18
+#	}
+
+# number of elements in ambient
+	{	num_bulk_one_seqAmbient
+#		2
+		5
+#		10
+	}
+
+# ##################### fracture properties	
+
+#	{	sigc	
+#		1000.0
+#	}
+
+	{	ldelc
+		-1
+#		-1.5
+#		-2
+	}
+
+}
+groupOutputOrder
+{
+stressScale	tdPara0		tF	cfl	E2	directSpaceSizeModifierInside		numRepeatSequenceInside		EAmbient	num_bulk_one_seqAmbient		sigc		ldelc
+}

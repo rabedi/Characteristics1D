@@ -1,0 +1,11 @@
+## config for domain
+config/Domain/lMM8_Left_N_Right_N_Square_pulse_domain.txt
+
+## config for IC/BC
+config/Domain/lMM8_Left_N_Right_N_Square_pulse_icbc.txt
+
+## config for TS and adaptivity
+config/Domain/lMM8_Left_N_Right_N_Square_pulse_ts_adaptivity.txt
+
+
+

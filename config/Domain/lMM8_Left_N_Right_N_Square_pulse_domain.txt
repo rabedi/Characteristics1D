@@ -1,0 +1,39 @@
+{
+subdomain_config_names
+{
+config/Domain/lMM8_Left_N_Right_N_Square_pulse_subdomain.txt
+}
+
+x_min
+0.0
+
+#subdomain_one_part_size
+#{
+#10
+#}
+
+bulk_elastic_map
+	{
+	1
+		{
+			rho	3.985
+			
+			nu_iso	0.27
+			
+
+			# uniaxial stiffness for plane strain (in z) and symmetric in y is 
+			# C_iso = E * (1.0 - nu) / (1.0 + nu) / (1 - 2.0 * nu);
+			# entry below is E which is turned to C_iso (called E_iso) in the code
+			E_iso_4_plainStrain_sym_y
+			300.0
+		}	
+	}
+
+directionalBCTypeLeftSide
+Neumann
+
+directionalBCTypeRightSide
+Neumann
+
+
+}

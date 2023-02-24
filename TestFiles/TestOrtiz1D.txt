@@ -1,0 +1,490 @@
+{
+delT	0.0001250000000000417443857
+sigmaC	0.7046075360267698428629
+deltaC	0.0001000000000000000047922
+Zs	1	1
+step_n_tsrStage	dam0_sigI_over_sigC
+step_n_max_delu	0
+ws	1.03177343749065841827	0.3774765624906576966247
+us	-0.2304760742187453859131	-0.2304760742187453859131
+vs	-0.3271484375000005551115	-0.3271484375000004996004
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0
+	ws	-1.9	-1.9
+	us	0.0	0.0
+	vs	0.0	0.0
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0
+	ws	1.9	1.9
+	us	0.0	0.0
+	vs	0.0	0.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0
+	ws	2.1	2.1
+	us	0.0	0.0
+	vs	0.0	0.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.975	1.975
+	us	-0.000125	0.000125
+	vs	-0.125	0.125
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	2.0	2.0
+	us	-0.000125	0.000125
+	vs	-0.125	0.125
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.9	1.9
+	us	-0.000125	0.000125
+	vs	-0.125	0.125
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.90446	1.90446
+	us	-0.000120536	0.000120536
+	vs	-0.00446429	0.00446429
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	2.0	2.0
+	us	-0.000120536	0.000120536
+	vs	-0.00446429	0.00446429
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.8	1.8
+	us	-0.000120536	0.000120536
+	vs	-0.00446429	0.00446429
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	0.0	0.0
+	us	-0.000120536	0.000120536
+	vs	-0.00446429	0.00446429
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	-1.0	-1.0
+	us	-0.000120536	0.000120536
+	vs	-0.00446429	0.00446429
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	-0.879464	-0.879464
+	us	-1.35525e-20	1.35525e-20
+	vs	2.0	2.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	-0.8	-0.8
+	us	-1.35525e-20	1.35525e-20
+	vs	2.0	2.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	-1.8	-1.8
+	us	-1.35525e-20	1.35525e-20
+	vs	2.0	2.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	0.0	-1.8
+	us	-1.35525e-20	1.35525e-20
+	vs	2.0	2.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	-0.01	-0.01
+	us	-1.35525e-20	1.35525e-20
+	vs	2.0	2.0
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	0.1	0.1
+	us	-1.35525e-20	1.35525e-20
+	vs	2.0	2.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.0	1.0
+	us	-5.95238e-06	5.95238e-06
+	vs	-0.00595238	0.00595238
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.9	1.9
+	us	-5.98781e-05	5.98781e-05
+	vs	-0.0539257	0.0539257
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.84322	1.84322
+	us	-0.000116659	0.000116659
+	vs	-0.0567813	0.0567813
+}
+	
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.9	1.9
+	us	-0.000116659	0.000116659
+	vs	-0.0567813	0.0567813
+}
+	
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	1.98	1.98
+	us	-0.000116659	0.000116659
+	vs	-0.0567813	0.0567813
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	2.00	2.00
+	us	-0.000116659	0.000116659
+	vs	-0.0567813	0.0567813
+}
+		
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	2.50	2.50
+	us	-0.000116659	0.000116659
+	vs	-0.0567813	0.0567813
+}
+		
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00025
+	ws	20.0	20.0
+	us	-0.000116659	0.000116659
+	vs	-0.0567813	0.0567813
+}
+		
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00154165
+	ws	1.84584	1.84584
+	us	-0.000770824	0.000770824
+	vs	-0.654165	0.654165
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00154165
+	ws	1.8 	1.8
+	us	-0.000770824	0.000770824
+	vs	-0.654165	0.654165
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00154165
+	ws	-2.8 	-2.8
+	us	-0.000770824	0.000770824
+	vs	-0.654165	0.654165
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00154165
+	ws	2.0 	2.0
+	us	-0.000770824	0.000770824
+	vs	-0.654165	0.654165
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00154165
+	ws	5.0 	5.0
+	us	-0.000770824	0.000770824
+	vs	-0.654165	0.654165
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.00942706
+	ws	5.0 	5.0
+	us	-0.00471353	0.00471353
+	vs	-3.94271	3.94271
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0192838
+	ws	0.0716175 	0.0716175
+	us	-0.00964191	0.00964191
+	vs	-4.92838	4.92838
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0192838
+	ws	0.09 	0.09
+	us	-0.00964191	0.00964191
+	vs	-4.92838	4.92838
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0193298
+	ws	0.09 	0.09
+	us	-0.00966489	0.00966489
+	vs	-0.0229775	0.0229775
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0193298
+	ws	1.00 	1.00
+	us	-0.00966489	0.00966489
+	vs	-0.0229775	0.0229775
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0213298
+	ws	3.00 	3.00
+	us	-0.0106649	0.0106649
+	vs	-1	1
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0213298
+	ws	-3.00 	-3.00
+	us	-0.0106649	0.0106649
+	vs	-1	1
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0213298
+	ws	-7.00 	-7.00
+	us	-0.0106649	0.0106649
+	vs	-1	1
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0213298
+	ws	-7.00 	-7.00
+	us	-0.0036649	0.0036649
+	vs	-7	7
+}
+

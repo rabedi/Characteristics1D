@@ -1,0 +1,26 @@
+{
+num_Vals_and_x_Provided
+0
+
+valsAtVertices
+1
+
+uniformGrid
+1
+
+containsRepeatingEndPeriodicVal
+0
+
+randVariableType
+Triangle
+
+{
+	min	
+	0.0
+	max
+	0.5
+	mode
+	0.25
+}
+
+}

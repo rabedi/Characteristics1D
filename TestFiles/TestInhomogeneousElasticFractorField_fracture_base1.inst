@@ -1,0 +1,24 @@
+{
+num_Vals_and_x_Provided
+0
+
+valsAtVertices
+1
+
+uniformGrid
+1
+
+containsRepeatingEndPeriodicVal
+0
+
+randVariableType
+LogNormal
+
+{
+	mu	
+	2.0
+	sigma
+	4.0
+}
+
+}

@@ -1,0 +1,23 @@
+{
+# 2 -> cyclic
+load_number
+2
+
+# a for load_number 1 (u = axt)
+a_xt_prob
+1.0
+
+# load case 2: 0 ([0] = period; [1] = relTensile;[2] = sigmaTensile;[3] = relRamp;[4] = sigmaCompressive; (enter as negative number for compressive) 
+# [5] -> 0 loads repeat, 1 -> loads stepwise increase
+# provide size first 
+
+load_parameters
+6
+0.25
+0.50
+0.3
+0.02
+-0.3
+1
+
+}

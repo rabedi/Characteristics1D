@@ -1,0 +1,12 @@
+-sp -mc "config/MainConfig/mainConfig_axt_coh.txt"  -st 0 -en 5
+
+
+-sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 2 -vst 11 -ven 13
+seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st {.} -en {.} -vst 0 -ven 49'
+
+
+% generate script iles
+-sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 1000 -vst 0 -ven 149 -np 10
+-sp -mc config/MainConfig/mainConfig_MM.txt -st	0 	-en 0	-vst	10	-ven	11
+
+-sp -c config/Domain/MM_fracture.txt -cp config/Domain/PPS3Config_MM.txt

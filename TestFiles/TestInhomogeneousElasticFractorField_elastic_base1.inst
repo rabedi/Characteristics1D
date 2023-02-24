@@ -1,0 +1,24 @@
+{
+num_Vals_and_x_Provided
+0
+
+valsAtVertices
+1
+
+uniformGrid
+1
+
+containsRepeatingEndPeriodicVal
+0
+
+randVariableType
+Uniform
+
+{
+	min	
+	10.0
+	max
+	20.0
+}
+
+}

@@ -1,0 +1,13 @@
+{
+# 3 -> pulse
+load_number
+3
+
+# load case 3: 0 ([0] = ramp time; [1] = square load
+
+load_parameters
+2
+25
+-0.1
+
+}

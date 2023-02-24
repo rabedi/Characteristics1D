@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\commonFunctions.cpp" />
+    <ClCompile Include="src\DomainPostProcessing.cpp" />
+    <ClCompile Include="src\DomainPostProcessingS2.cpp" />
+    <ClCompile Include="src\DomainPostProcessingS3.cpp" />
+    <ClCompile Include="src\Domain_AllInterfacesAllTimes.cpp" />
+    <ClCompile Include="src\FourierSimple1D.cpp" />
+    <ClCompile Include="src\globalFunctions.cpp" />
+    <ClCompile Include="src\globalMacros.cpp" />
+    <ClCompile Include="src\globalTypesClasses.cpp" />
+    <ClCompile Include="src\InhomogeneousElasticFracture.cpp" />
+    <ClCompile Include="src\InhomogeousField.cpp" />
+    <ClCompile Include="src\LAFuncs.cc" />
+    <ClCompile Include="src\LAfuncsFinalStep.cpp" />
+    <ClCompile Include="src\LAfuncsFixed.cpp" />
+    <ClCompile Include="src\RandomVariable.cpp" />
+    <ClCompile Include="src\SimpleConfigMaker.cpp" />
+    <ClCompile Include="src\SLBulk_Properties.cpp" />
+    <ClCompile Include="src\SLDescriptorData.cpp" />
+    <ClCompile Include="src\SLFracTypes.cpp" />
+    <ClCompile Include="src\SLInterfaceCalculator.cpp" />
+    <ClCompile Include="src\SLInterfaceFracturePF.cpp" />
+    <ClCompile Include="src\SL_Interface_PtData.cpp" />
+    <ClCompile Include="src\SL_OneInterfaceAllTimes.cpp" />
+    <ClCompile Include="src\Subdomain_ElasticFractureModifier.cpp" />
+    <ClCompile Include="src\TestSuites.cpp" />
+    <ClCompile Include="src\TSR1D.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\commonFunctions.h" />
+    <ClInclude Include="include\commonMacros.h" />
+    <ClInclude Include="include\Dims.h" />
+    <ClInclude Include="include\DomainPostProcessing.h" />
+    <ClInclude Include="include\DomainPostProcessingS2.h" />
+    <ClInclude Include="include\DomainPostProcessingS3.h" />
+    <ClInclude Include="include\Domain_AllInterfacesAllTimes.h" />
+    <ClInclude Include="include\FileIOMacros.h" />
+    <ClInclude Include="include\FourierSimple1D.h" />
+    <ClInclude Include="include\globalFunctions.h" />
+    <ClInclude Include="include\globalMacros.h" />
+    <ClInclude Include="include\globalTypesClasses.h" />
+    <ClInclude Include="include\InhomogeneousElasticFracture.h" />
+    <ClInclude Include="include\InhomogeousField.h" />
+    <ClInclude Include="include\LAFuncs.h" />
+    <ClInclude Include="include\LAfuncsFinalStep.h" />
+    <ClInclude Include="include\LAfuncsFixed.h" />
+    <ClInclude Include="include\RandomVariable.h" />
+    <ClInclude Include="include\SimpleConfigMaker.h" />
+    <ClInclude Include="include\SLBulk_Properties.h" />
+    <ClInclude Include="include\SLDescriptorData.h" />
+    <ClInclude Include="include\SLFracTypes.h" />
+    <ClInclude Include="include\SLInterfaceCalculator.h" />
+    <ClInclude Include="include\SLInterfaceFracturePF.h" />
+    <ClInclude Include="include\SL_Interface_PtData.h" />
+    <ClInclude Include="include\SL_OneInterfaceAllTimes.h" />
+    <ClInclude Include="include\Subdomain_ElasticFractureModifier.h" />
+    <ClInclude Include="include\TestSuites.h" />
+    <ClInclude Include="include\TSR1D.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{581A0788-A02B-4E17-92C6-F51D7F88D8C3}</ProjectGuid>
+    <RootNamespace>CFEM</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PreprocessorDefinitions>VCPP;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>VCPP;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,5 @@
+cntr	0	sI	-1.9	sStar	-1.9	uLStar	0	uRStar	0	vLStar	0	vRStar	0	maxDelu	0	stageShort	4	solutionStage	none
+cntr	1	sI	1.9	sStar	1.9	uLStar	0	uRStar	0	vLStar	0	vRStar	0	maxDelu	0	stageShort	0	solutionStage	none
+cntr	2	sI	2.1	sStar	1.98889	uLStar	-5.55556e-05	uRStar	5.55556e-05	vLStar	-0.111111	vRStar	0.111111	maxDelu	0.000111111	stageShort	1	solutionStage	damMid_loadingBranch
+cntr	3	sI	2.2	sStar	1.95309	uLStar	-0.000234568	uRStar	0.000234568	vLStar	-0.246914	vRStar	0.246914	maxDelu	0.000469136	stageShort	1	solutionStage	damMid_loadingBranch
+cntr	4	sI	1.9	sStar	1.75926	uLStar	-0.00120371	uRStar	0.00120371	vLStar	-0.140741	vRStar	0.140741	maxDelu	0.00240741	stageShort	1	solutionStage	damMid_loadingBranch

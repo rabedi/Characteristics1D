@@ -1,0 +1,42 @@
+{
+serialNumber
+2
+
+isPeriodic
+0
+
+xM
+10.0
+
+xm
+0.0
+
+isPeriodic
+0
+
+
+#### elastic 
+# undecided, Crho_const, rho_const, C_const, c_const, Z_const, nonconst
+eit c_const
+
+baseName_WOExt_oihf_elastic1
+TestFiles/TestInhomogeneousElasticFractorField_elastic_base1
+
+# baseName_WOExt_oihf_elastic2
+# TestFiles/TestInhomogeneousElasticFractorField_elastic_base2
+
+
+#### fracture 
+# undecided, sigmadelta_const, delta_const, sigma_const, G_const, nonconst
+fit G_const
+
+baseName_WOExt_oihf_fracture1
+TestFiles/TestInhomogeneousElasticFractorField_fracture_base1
+
+# baseName_WOExt_oihf_fracture2
+# TestFiles/TestInhomogeneousElasticFractorField_fracture_base2
+
+baseName_WOExt_oihf_fracture_iniDamage
+TestFiles/TestInhomogeneousElasticFractorField_fracture_iniDamage
+
+}

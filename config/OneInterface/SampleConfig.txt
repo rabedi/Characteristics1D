@@ -1,0 +1,15 @@
+# icbc_configName: source term, ic, bc, ...	
+ default
+#config/OneInterface/Sample_ICBC.txt
+
+
+# slfg_configName: SLFractureGlobal_Configuration, g_slf_conf
+# default: uses default global member
+# default
+config/OneInterface/Sample_FGlobalConfiguration.txt
+
+# pf_configName: SL_Interface_Fracture_PF
+config/OneInterface/Sample_PF.txt
+
+# el_configName: SL_Elastic_InterfaceProperties
+config/OneInterface/Sample_El.txt

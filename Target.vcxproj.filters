@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{9428c0d0-abf6-4469-98a6-fa7089505a78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{abc7bcae-8305-4e9f-b984-f38494f5d697}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\commonMacros.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Dims.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Domain_AllInterfacesAllTimes.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DomainPostProcessing.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DomainPostProcessingS2.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DomainPostProcessingS3.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\FileIOMacros.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\globalFunctions.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\globalMacros.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\globalTypesClasses.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\InhomogeneousElasticFracture.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\InhomogeousField.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\LAFuncs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\LAfuncsFinalStep.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\LAfuncsFixed.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\RandomVariable.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SimpleConfigMaker.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SL_Interface_PtData.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SL_OneInterfaceAllTimes.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SLBulk_Properties.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SLDescriptorData.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SLFracTypes.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SLInterfaceCalculator.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SLInterfaceFracturePF.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Subdomain_ElasticFractureModifier.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TestSuites.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TSR1D.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\FourierSimple1D.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commonFunctions.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Domain_AllInterfacesAllTimes.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DomainPostProcessing.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DomainPostProcessingS2.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DomainPostProcessingS3.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\globalFunctions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\globalMacros.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\globalTypesClasses.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\InhomogeneousElasticFracture.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\InhomogeousField.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LAFuncs.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LAfuncsFinalStep.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LAfuncsFixed.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RandomVariable.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SimpleConfigMaker.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SL_Interface_PtData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SL_OneInterfaceAllTimes.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SLBulk_Properties.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SLDescriptorData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SLFracTypes.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SLInterfaceCalculator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SLInterfaceFracturePF.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Subdomain_ElasticFractureModifier.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TestSuites.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TSR1D.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\FourierSimple1D.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\commonFunctions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

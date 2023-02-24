@@ -1,0 +1,87 @@
+# does not work with TSR_BEuler 0 (central difference does not work) - last entry
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0
+	ws	-1.9	-1.9
+	us	0.0	0.0
+	vs	0.0	0.0
+}
+
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0
+	ws	1.9	1.9
+	us	0.0	0.0
+	vs	0.0	0.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.0
+	ws	2.1	2.1
+	us	0.0	0.0
+	vs	0.0	0.0
+}
+
+{
+	delT	0.001
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 1.11111e-4
+	ws	2.2	2.2
+	us	-5.55556e-05	5.55556e-05
+	vs	-0.111111	0.111111
+}
+
+{
+	delT	0.005
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.000469136
+	ws	1.9	1.9
+	us	-0.000234568	0.000234568
+	vs	-0.246914	0.246914
+}
+
+
+{
+	delT	0.005
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.000469136
+	ws	1.8	1.8
+	us	-0.000234568	0.000234568
+	vs	-0.246914	0.246914
+}
+
+{
+	delT	0.005
+	sigmaC	2.0
+	deltaC	0.02
+	Zs	1.0	1.0
+	# step_n_tsrStage
+	step_n_max_delu 0.000469136
+	ws	1.8	1.8
+	us	-0.000234568	0.000234568
+	vs	-0.246914	0.246914
+}

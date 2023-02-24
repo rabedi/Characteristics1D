@@ -1,0 +1,139 @@
+{
+
+# if want to ensure redoing PPS2 calculation (e.g. if limit of D for fragmentation is changed) set the boolean below to true
+redoPPS2Calculations
+0
+
+#################################### Fragmentation analysis
+
+# 
+# values < 0 mean that such options are invalid
+factors2DecideFragmented
+{
+#Dbar D > Dbar -> segment is considered fragmented for "fct_Damage" criterion
+D
+-1
+# for damage models turn this one
+#0.98 
+
+#maxDeluPrime: MaxDelU > deltaC * maxDeluPrime -> segment is considered fragmented for "fct_maxEffDelU" criterion
+Max_DelU
+1.0
+
+#deluPrime: delU > deltaC * deluPrime -> segment is considered fragmented for "fct_DelU" criterion
+DelU
+1.0
+}
+
+###### STAGE calculation
+# if true: for all stages (lin, max, final) x (strain, ...., U) it also calculates fragmentation data
+doFragmentation_DSigmaFieldExtraction_4_Stages
+1
+
+###### Actual time step calculation (mostly to have data for matlab plots of fragment stat evolution in time, see the function plot_fragmentation_results)
+# if true, calculates fragmentation analysis and D and sigma field extraction for all available times
+doFragmentation_DSigmaFieldExtraction_4_AllTimes
+1
+
+# if the above is true and below is true, the segment lengths are written. If only above is true, only the brief stat (mean, number, ...) of fragmentation sizes will be written
+# is the files sd_0__tAll__FragCrn_1_Max_DelU_SizeFragmentation, sd_0__tAll__FragCrn_2_DelU_SizeFragmentation, sd_0__tAll__FragCrn_0_D_SizeFragmentation in PPS2output folder get large turn this off
+doFragmentation_DSigmaFieldExtraction_4_AllTimes_IncludedDetailedFragmentSizes
+1
+
+
+####################################################################################################################################################################################
+###################### CLASSIFICATION TYPES (6 available -> below) x STAGE (lin, max, final) for fracture simulations
+
+# TURN the whole thing on or off
+# if need to calculate lin, max, and final stages
+doCalculateStages
+1
+
+#################################### Classification analysis
+# classification: means what means are used to decide 
+#		(end of)  linear  		
+#		max
+#		final
+# stages of nonlinear fracture simulation
+# these are the criteria for such decision
+#
+#
+# strain - vs -stress responses (_bc homogenized by bc values, _bulk homogenized by bulk averages)
+#epssig_bulk
+#epssig_bc
+#				LIN: when eps-sig is no longer linear (lost-energy > 0)
+#				MAX: max stress
+#				FIN: when stress is sufficiently close to zero
+
+#Iterface dissipated energy
+#interfaceDissEne
+#				LIN: when interface energy dissipation starts to > 0 (lost dissipated interface energy > 0)
+#				MAX: when the interface energy dissipation power is maximum
+#				FIN: when the value of interface dissipation loss has stabilized (no longer increasing)
+
+# damage field
+#Damage
+#				LIN: when min interfacial damage in the domain becomes > 0 (the first interface is about to fail)
+#				MAX: when damage source (its max over all interfaces) is maximum
+#				FIN: when the first interface fails (first time one interface reaches D = 1
+
+# potential energy
+#U
+#				LIN: it's the same as epssig_bulk or epssig_bc (e.g. when homogenized strain / stress is no longer linear), preference is on using BULK if inactive BC is used
+#				MAX: when potential energy (in the bulk) reaches its max
+#				FIN: when potential energy (in the bulk) is close to zero 
+
+#time
+# LIN, MAX, and FIN are times given in 
+# 	actualTimesProvided_4TimeStage[0], [1], [2] UNLESS for each one the value is < 0.0
+#	in that case the following values are automatically used 
+#				LIN: when INPUT energy stabilizes (e.g. input energy no longer increases within a tolerance)
+#				MAX: Does not exist
+#				FIN: Final time of simulation
+
+########################
+# each classficiation type needs 4 values
+# Active:									classification is on (calculated)
+# tol4LinValChecks:							tolerance used to decide (LIN) stage (e.g. when response deviates from linear response)
+# 											< 0 (tolerance is given relative to a maximum value, e.g. in eps-sig ones -0.001 -> 0.001 sigmaMax tolerance is used to determine when response is no longer linear
+# tol4FinalValChecks:						tolerance used to decide (FIN) stage, e.g. 
+#												1. when something becomes zero (sigma in epssig_bulk & epssig_bc, and U in U)
+#												2. when something stabilizes (interface lost dissipated energy in interfaceDissEne)
+#												3. damage becomes 1 in (Damage), tol = 0.01 -> damage > 1 - 0.01 = FIN
+#											Again 	tol < 0 (relative tolerance is given -> often the case for 1 and 2 (relative to sigmaMax for epssig_bulk & epssig_bc, U max for U, maxLostDissipated energy for interfaceDissEne)
+#													tol > 0 absolute tol given (the case for 3, e.g. 0.01 -> Dmax = 0.99 means FIN stage)
+# forwardFinalValueSearches					example is given in terms of strain - stress response
+#												true:  search for FIN is FORWARD from MAX position:
+#														in eps-sig response the first point PAST peak stress for which sig < tolFinal (from entry above) -> considered FIN
+#												false search for FIN is BACKWARD from final time of simulation
+#														the earliest time beyond which stress is always small 
+#											backward is more stringent, as in forward sress may oscillate positive / negative beyond sigma_max and a false FIN point may be determined (the first point beyond MAX for which stress ~ 0)
+
+########## Summary
+########## values for each one is given in the format - classificationName is one of 
+# classificationName \in {epssig_bc	epssig_bulk	interfaceDissEne	Damage	U	time}
+# For active -> val = 0 or 1
+# For both tols val < 0 relative tol (relative to a maximum value from the response), > 0, absolute value
+# forwardFinalValueSearches: val = 0 or 1 based on the discussion above (0 is more stringent)
+#  usePositive4MaxValues: for maximum value if below is true -> value is used for computing maximum, if -value is used (i.e. minimum value is extracted)
+#
+# for "time" values > 0 can specifically given in actualTimesProvided_4TimeStage, otherwise for 0 -> energyInput stablized, 2 -> final time, 1 -> no time is chosen
+#
+# classification	classificationName	{  Active (val) 	tol4LinValChecks (val) 	tol4FinalValChecks  (val)  forwardFinalValueSearches	(val) }
+
+classification	epssig_bulk			{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.001 forwardFinalValueSearches	1 usePositive4MaxValues	1	}
+classification	epssig_bc			{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.001  forwardFinalValueSearches	1 usePositive4MaxValues	1	 }
+classification	interfaceDissEne	{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.01  forwardFinalValueSearches	1 }
+classification	Damage				{  Active 1 	tol4LinValChecks  0.00001 	tol4FinalValChecks   0.001 forwardFinalValueSearches	1 }
+classification	U					{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.001 forwardFinalValueSearches	1 }
+
+# time:
+# l, m, f -> linear, max, final stages [0], [1], and [2]
+actualTimesProvided_4TimeStage	{		l	-1.0	m	-1.0	f	-1.0				}	
+classification	time				{  Active 1 	tol4LinValChecks -0.0001 	tol4FinalValChecks  0 forwardFinalValueSearches	0 }
+# no tolerances are needed for Max and Fin stages
+# looser tolerance is used for tol4LinValChecks as it's really trying to determine the final (stabilized time) for input energy 
+# final values often need loower tolerances
+
+
+}

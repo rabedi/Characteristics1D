@@ -1,0 +1,127 @@
+{
+
+#sl, sr
+s 
+5
+6
+
+#vl, vr
+v
+2
+3
+
+#wlSide_rGoing_WO_in_situ
+#-3
+
+#wrSide_lGoing_WO_in_situ
+#33
+
+sigmaCFactor
+1.2
+
+deltaCFactor
+2.2
+
+ts_bulkProps
+	{
+		directionalBCType
+		Dirichlet
+		
+		bulk_leftPtr
+		{
+			rho	2
+			E_iso	8
+			nu_iso	0.3
+		}
+		
+		bulk_rightPtr
+		{
+			rho	3
+			E_iso	27
+			nu_iso	0.3
+		}
+	}
+	
+interfacePFs
+	{
+		beta_traction	1.0
+
+		beta_delU		1.0
+
+		# interfacial_damage_off	interfacial_damage_on		interfacial_damage_mixed
+		# damageOffOnMix		interfacial_damage_off
+		damageOffOnMix		interfacial_damage_off
+
+		# contact_off				contact_on					contact_mixed	
+		contactOffOnMix	contact_off
+
+		# decides to do regularization in positivie separation for contact problems and negative (interpenetration) for fracture problems
+		rel_dcont_or_dsep	0.01
+
+		# independent input of regularization limits (not recommended)	
+		#	rel_dcont	-0.01
+		#	rel_dsep	0.01
+
+		# reg_linear	reg_sqrt1	reg_sqrt2	
+		sep2cont_regType	reg_sqrt1
+		
+		# slip_off					slip_on						slip_mixed
+		slipOffOnMix	slip_off
+		
+		c0	0.8
+		gen_strength	2.5
+		tau	0.1
+		deltaC	0.01
+		has_in_situ	0
+		# in_situ_stress	0
+		# sn	2.5
+		# c		2.0
+######################################		k	0.3
+		
+		# effSs_Off	effSs_sqrt	effSs_mc	effSs_mct	effSs_mctc	effSs_HoekBrown	effSs_Rankin	effSs_Tresca	effSsCompressive	effSs_vm	effSs_vmm	effSs_DP	
+		effType		effSs_sqrt
+		Hpara0	10.0
+		hfunT	AllixHExp
+		pn	0
+		pc	0
+		factor_k	0.0
+		kn	0.0
+		kc	0.0
+		srcZeroFldGtmxV	1
+		mxV4SrcZero	1.0
+		zeroTol4DamageEq1	0.0001
+		fx_boundedBy1	1
+		
+		# RBH_VelDDot_none	RBH_VelDDot_vnp_only		RBH_VelDDot_vtabs_only		RBH_VelDDot_vnp_vtabs		RBH_VelDDot_vel_effective
+		rbhvDTT	RBH_VelDDot_none
+		
+		dvnRatio	10.0
+		dvtRatio	10.0
+		
+		# friction_constant	friction_slip_weakeningLinear	friction_slip_weakeningPower	
+		frictionModel	friction_constant
+		
+		isIsoFrictionParameters		1
+		
+		damaged_slip_dt	0.05
+		
+		damaged_para0_epsSW	0.01
+		
+		damaged_para1_n	2.0
+		
+		damaged_kUpper_iso_2D_pos_y_dir_or_3D_angularMax	0.6
+		damaged_kLower_iso_2D_pos_y_dir_or_3D_angularMax	0.3
+		
+		damaged_kUpper_2D_neg_y_dir_or_3D_angularMin		0.5
+		damaged_kLower_2D_neg_y_dir_or_3D_angularMin		0.2
+		
+		theta4MaxValDeg		30.0
+		
+		# interfacial_damage_traction_zero	interfacial_damage_traction_TSR	interfacial_damage_traction_HF
+		damageTractionModel		interfacial_damage_traction_zero
+		
+		# tsr_Zero	tsr_Xu_Needleman	tsr_Ortiz		tsr_linear		tsr_bilinear		tsr_exponential		tsr_hyperbolic		tsr_concrete
+		tsrModel	tsr_Xu_Needleman
+		
+	}
+}

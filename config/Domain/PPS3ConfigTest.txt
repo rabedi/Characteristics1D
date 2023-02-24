@@ -1,0 +1,1667 @@
+{
+##################################################################################################
+configPPS2
+#Option 1. With inline: include the actual content of the file following inline in this following
+#inline
+#Option 2. Provide the file name for configPPS2
+
+config/Domain/PPS2ConfigTest.txt
+
+##################################################################################################
+# base name of the files (for csv, header, error log)
+out_baseName
+pps3Out
+
+#generally it will be csv for csv files, but xlsx and txt are some other options
+out_ext
+txt
+#csv
+
+
+# for stage type data, we can get invalid data (for example if the run does not reach the terminal stage)
+# in this case we generally don't print the data for this file. The values for such data are invalidNum (1e40)
+# If the boolean below is true, the values are written as invalidNum
+addInvalidData
+#0
+1
+
+# for spatial fields over x, we may want to change the resolution. For example, if values given at 1001 points (resolution 1000), but we want the new resolution of 100 (101 points)
+# spatialFieldResolutionCorrector = 100 or spatialFieldResolutionCorrector = -10 (i.e. 10 fold reduction)
+# note that the solution can only decrease (from a fine mesh to a coarser representation)
+# spatialFieldResolutionCorrector == 0 -> does not change the field
+spatialFieldResolutionCorrector
+0
+#-8 - 1024 mesh to 128 mesh
+
+
+
+# For temporal fields (e.g. energyDissipated, sigma_homogenized, etc.) there are two options:
+# TemporalFieldTimeStepValOrNumSteps 	> 0 -> TimeStepVal = temporalFieldTimeStepValOrNumSteps
+#									  	< 0 -> NumTimeSteps = -temporalFieldTimeStepValOrNumSteps (e.g. final time = 10, this value = -400 -> timeStep = 10/400)
+temporalFieldTimeStepValOrNumSteps
+-400
+
+# for time outputs, we can generate outputs for all DSU stems in each case timeStep4_DSU_outputs == 1, ever other of such time value for == 2, every third for this value == 3, ...
+timeStep4_DSU_outputs
+1
+
+outputTypeActive
+# pps3_stageStat: stage/stat (one line per run)
+1
+# pps3_timeStep: timeSteps (output at uniform times)
+1
+
+
+######################################################################################################
+#### these are the stages that are used very often and it's better to provide them once here so they can be easily changed and turned off/on
+## isActive == -1 -> does not change the inActive in dataPointers below
+##				0 -> turns them off (e.g. if final stage [stress is equal to zero] is unlikely and FIN is defined based on that
+##				1 -> turns them on
+
+## entries are name (e.g. FIN below) follow by a list of timeStamp, isActive, and postNames that will be added to latex name and CSV file column name
+
+timeStampOverwriters
+{
+	# stage chosen for final (energy dissipation is stabilized) - generally for this one, the run must go for a long time 
+	#	OR in PPS2 config in line for classification	interfaceDissEne change tol4FinalValChecks to a large value such as -0.01
+	FIN
+	{
+		timeStamp
+		{
+			timeStampType	f
+			lct				interfaceDissEne
+		}
+		post_name_In_CSV_file	_F
+		post_name_Latex			_f
+		isActive	-1
+	}
+
+	# stage chosen for max stage (sigma_bc is maximum)
+	MAX
+	{
+		timeStamp
+		{
+			timeStampType	m
+			lct				epssig_bc
+		}
+		post_name_In_CSV_file	_M
+		post_name_Latex			_m
+		isActive	-1
+	}
+	
+	# stage chosen for ini/lin stage (damage first time becomes > 0) - for inhomogeneous initial damage, this is not a good one
+	INI
+	{
+		timeStamp
+		{
+			timeStampType	l
+			lct				Damage
+		}
+		post_name_In_CSV_file	_i
+		post_name_Latex			_i
+		isActive	-1
+	}
+}
+
+######################################################################################################
+# 4 = 2 (TYPE = pps3_stageStat, pps3_timeStep) x 2 (INP/OUT input / output ) blocks can be provided for the fields that go to csv files
+# some names:
+
+#		timeStamp:
+#					timeStampType				:	actualTime		l		m		f 						(l -> lin, m -> max, f -> final)
+#					lct							:	time	epssig_bc	epssig_bc		interfaceDissEne	Damage	U				-> criterion used to decide l, m, f
+#					actualTime_indexType		:	ti_AllTimeSteps		ti_DSU_Fragment		ti_BulkInterfacePoints		ti_RawFinalSln_Scalars (timeIndex given relative to which output)
+#					actualTime_index			: (actual time index given / meaning of the index under actualTime_indexType)
+#					actualTime_val				: (actual time given)
+
+#		stat_sv_type							
+#																statistics of 			A. fields (energies, etc) 	B. fragmentation size Over all time
+#												:	mean_arithmetic		sdiv	cov		min		max		index_min	index_max	var		mean_harmonic		mean_geometric
+#																extract values for the start and end of the simulation
+#												:	valStart	valEnd
+#																the number of a vector of values (used to extract number of fragments)
+#												:	number
+#																extract all values of a SPATIAL field OR fragment sizes (latter not very useful here)
+#												:	all_field_val
+#																extract all values of a TEMPORAL field 
+#												:	all_field_time_val
+#																
+												
+#		brittlenessRatioT						:	i,m				i,f				m,f	
+#		brittlenessFieldT						:	time			strain			energy
+
+#		to turn on getting fragmentation stats / sizes (note: default is none -> meaning not dealing with a fragment size statistics)
+#		fragmentationCriterion					:	D	Max_DelU	DelU	none
+
+#		normalizationMode						:	ene_KInitial	ene_UInitial	ene_PhiInitial		ene_KFinal		ene_UFinal		ene_PhiFinal		eneBCFinal		eneInputFinal
+
+#		fldName
+#												A.	spatial fields [function of (x)]
+#												:	D sigma  DelU	maxEffDelU   uL uR 
+#												A.	space / spacetime integrals [from summary files]
+
+##########################################################################################################################################################
+#### stage csv
+################################################
+# stage/stat + input
+dataPointers			pps3_stageStat				input
+{
+
+	{
+		isActive
+		1
+		
+		# initial field
+		fldName
+		field_finalResolution
+	
+		name_In_CSV_file	
+		iniSc
+
+		name_Latex
+		\sigma_c
+	}
+}
+
+
+
+################################################
+# stage/stat + output
+dataPointers			pps3_stageStat				output
+{
+
+# ###############	comparison of times from diff criteria
+
+	# time of final (based on FIN criterion)
+	{
+		isActive
+		1
+		
+		fldName
+		time
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		time
+
+		name_Latex
+		t
+	}
+
+	# time of max (based on MAX criterion)
+	{
+		isActive
+		1
+		
+		fldName
+		time
+
+		overwriterName		MAX
+	
+		name_In_CSV_file	
+		time
+
+		name_Latex
+		t
+	}
+
+	# time of sigma ~ 0
+	{
+		isActive
+		1
+		
+		fldName
+		time
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		time_sigma0
+
+		name_Latex
+		t_{\sigma,f}
+	}
+
+	# time when the first damage evolution starts (first D > 0 in the domain)
+	{
+		isActive
+		1
+		
+		fldName
+		time
+
+		timeStamp
+			{
+				timeStampType	l
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		time_damage_i
+
+		name_Latex
+		t_{D,i}
+	}
+
+	# time of highest damage evolution (D source max) 
+	{
+		isActive
+		1
+		
+		fldName
+		time
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		time_damage_m
+
+		name_Latex
+		t_{D,m}
+	}
+
+	# time of first D = 1 (damage final)
+	{
+		isActive
+		1
+		
+		fldName
+		time
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		time_damage_f
+
+		name_Latex
+		t_{D,f}
+	}
+
+# ###############	Energy Loss criteria - final stage (energy stabilized)
+	# phiD:   Dissipated energy / normalized by initial energy at failed statefor eps/sig bulk criterion)
+	{
+		isActive
+		1
+		
+		# lost, interfacial dissipation
+		fldName
+		phys_diss_interface_lost
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		phi_d_norm
+
+		name_Latex
+		{(\phi_d/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+	# K:   K / normalized by initial energy at failed state
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		phi_K_norm
+
+		name_Latex
+		{(K/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+
+	# U:   U / normalized by initial energy at failed state
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		phi_U_norm
+
+		name_Latex
+		{(U/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+
+	# phiD:   Dissipated energy / normalized by initial energy at END of simulation
+	{
+		isActive
+		1
+
+		stat_sv_type
+		valEnd
+		
+		# lost, interfacial dissipation
+		fldName
+		phys_diss_interface_lost
+	
+		name_In_CSV_file	
+		phi_d_norm_tFin
+
+		name_Latex
+		\phi_d^{t_F}/\phi_0
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+# ###############	strain-stress response
+# ### max stage
+
+	# sigma_max
+	{
+		isActive
+		1
+				
+		fldName
+		sigma_bc
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		bar_sigma_bc
+
+		name_Latex
+		\bar{\sigma}_{bc}
+	}
+
+# ### final stage
+	# energy_final
+	{
+		isActive
+		1
+				
+		fldName
+		energy_eps_total_bc
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		psi_f
+
+		name_Latex
+		{\psi}_{\mathrm{f}}
+	}
+
+	# strain_final
+	{
+		isActive
+		1
+				
+		fldName
+		eps_bc
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		eps_f
+
+		name_Latex
+		{\epsilon}_{\mathrm{f}}
+	}
+
+## Brittleness indicators
+
+	# m/f - energy
+	{
+		isActive
+		1
+		brittlenessRatioT						m,f	
+		brittlenessFieldT						energy
+				
+		timeStamp
+			{
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		Bmf_energy
+
+		name_Latex
+		B_{m/f}^{\psi}
+	}
+
+	# m/f - strain
+	{
+		isActive
+		1
+		brittlenessRatioT						m,f	
+		brittlenessFieldT						strain
+				
+		timeStamp
+			{
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		Bmf_strain
+
+		name_Latex
+		B_{m/f}^{\epsilon}
+	}
+
+	# i/m - strain
+	{
+		isActive
+		1
+		brittlenessRatioT						i,m	
+		brittlenessFieldT						strain
+				
+		timeStamp
+			{
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		Bim_strain
+
+		name_Latex
+		B_{i/m}^{\epsilon}
+	}
+
+
+
+# ###############	Damage values at various stages
+	# (max Damage) at max stage - strain stress response
+	{
+		isActive
+		1
+				
+		fldName
+		max_interface_damage
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		Dmax
+
+		name_Latex
+		D^{\mathrm{max}}
+	}
+
+	# (mean Damage) at max stage - strain stress response
+	{
+		isActive
+		1
+				
+		fldName
+		mean_interface_damage
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		Dbar
+
+		name_Latex
+		\bar{D}
+	}
+
+	# (mean Damage) at final stage - strain stress response
+	{
+		isActive
+		1
+				
+		fldName
+		mean_interface_damage
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		Dbar_eps_f
+
+		name_Latex
+		\bar{D}_{{\epsilon}_{\mathrm{f}}}
+	}	
+	
+	# (mean Damage) at final stage - Energy dissipation response
+	{
+		isActive
+		1
+				
+		fldName
+		mean_interface_damage
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		Dbar
+
+		name_Latex
+		\bar{D}
+	}	
+	
+	# (mean Damage) at final stage - Damaged based criterion (i.e. when the first point is damaged)
+	{
+		isActive
+		1
+				
+		fldName
+		mean_interface_damage
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		Dbar_D_f
+
+		name_Latex
+		\bar{D}_{D,f}
+	}	
+	
+
+# ###############	key fragmentation QoI at different stages
+
+	########## max stage: use sigma max stage
+	# number of fragment size (length / meanFragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	number
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		Nl
+
+		name_Latex
+		N(l)
+	}
+
+	# lbar (mean fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	mean_arithmetic		
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		lbar
+
+		name_Latex
+		\bar{l}
+	}
+
+	# lmin (min fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	min
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		lmin
+
+		name_Latex
+		\mathrm{min}(l)
+	}
+
+	# lmax (max fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	max
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		lmax
+
+		name_Latex
+		\mathrm{max}(l)
+	}
+
+	# varsigma_l (standard deviation fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	sdiv		
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		sdiv_l
+
+		name_Latex
+		\varsigma({l}
+	}
+
+	# cov_l (coefficient of variation = sdiv / mean)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	cov		
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		cov_l
+
+		name_Latex
+		\mathrm{cov}({l}
+	}
+
+
+	########## final stage: use EneDiss_final stabilized
+	# number of fragment size (length / meanFragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	number
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		Nl
+
+		name_Latex
+		N(l)
+	}
+
+	# lbar (mean fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	mean_arithmetic		
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		lbar
+
+		name_Latex
+		\bar{l}
+	}
+
+	# lmin (min fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	min
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		lmin
+
+		name_Latex
+		\mathrm{min}(l)
+	}
+
+	# lmax (max fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	max
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		lmax
+
+		name_Latex
+		\mathrm{max}(l)
+	}
+
+	#varsigma_l (standard deviation fragment size)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	sdiv		
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		sdiv_l
+
+		name_Latex
+		\varsigma(l)
+	}
+
+	# cov_l (coefficient of variation = sdiv / mean)
+	{
+		isActive
+		1
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	cov		
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		cov_l
+
+		name_Latex
+		\mathrm{cov}(l)
+	}
+
+	# Turned off as this field has variable length and not suitable for csv files
+	# fragment sizes
+	{
+		isActive
+		0
+		
+		fragmentationCriterion			D	
+
+		stat_sv_type	all_field_val		
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		ls
+
+		name_Latex
+		l
+	}
+
+
+# ##############################################################
+# # Phi, U, K, and P (Linear momentum) compared at different time stamps
+# ###############	comparison of phi = K + U from diff criteria
+
+	# phi of energy loss stabilized
+	{
+		isActive
+		1
+		
+		fldName
+		phi
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		phi
+
+		name_Latex
+		\phi
+	}
+
+	# phi of sigma max
+	{
+		isActive
+		1
+		
+		fldName
+		phi
+
+		overwriterName		MAX
+	
+		name_In_CSV_file	
+		phi
+
+		name_Latex
+		\phi
+	}
+
+	# phi of sigma ~ 0
+	{
+		isActive
+		1
+		
+		fldName
+		phi
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		phi_sigma0
+
+		name_Latex
+		\phi_{\sigma,f}
+	}
+
+	# phi when the first damage evolution starts (first D > 0 in the domain)
+	{
+		isActive
+		1
+		
+		fldName
+		phi
+
+		timeStamp
+			{
+				timeStampType	l
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		phi_damage_i
+
+		name_Latex
+		\phi_{D,i}
+	}
+
+	# phi of highest damage evolution (D source max) 
+	{
+		isActive
+		1
+		
+		fldName
+		phi
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		phi_damage_m
+
+		name_Latex
+		\phi_{D,m}
+	}
+
+	# phi of first D = 1 (damage final)
+	{
+		isActive
+		1
+		
+		fldName
+		phi
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		phi_damage_f
+
+		name_Latex
+		\phi_{D,f}
+	}
+
+# ###############	comparison of Internal energy (U) from diff criteria
+
+	# U of energy loss stabilized
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		U
+
+		name_Latex
+		U
+	}
+
+	# U of sigma max
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		overwriterName		MAX
+		
+		name_In_CSV_file	
+		U
+
+		name_Latex
+		U
+	}
+
+	# U of sigma ~ 0
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		U_sigma0
+
+		name_Latex
+		U_{\sigma,f}
+	}
+
+	# U when the first damage evolution starts (first D > 0 in the domain)
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		timeStamp
+			{
+				timeStampType	l
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		U_damage_i
+
+		name_Latex
+		U_{D,i}
+	}
+
+	# U of highest damage evolution (D source max) 
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		U_damage_m
+
+		name_Latex
+		U_{D,m}
+	}
+
+	# U of first D = 1 (damage final)
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		U_damage_f
+
+		name_Latex
+		U_{D,f}
+	}
+
+# ###############	comparison of Kinetic energy (K) from diff criteria
+
+	# K of energy loss stabilized
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		K
+
+		name_Latex
+		K
+	}
+
+	# K of sigma max
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		overwriterName		MAX
+	
+		name_In_CSV_file	
+		K
+
+		name_Latex
+		K
+	}
+
+	# K of sigma ~ 0
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		K_sigma0
+
+		name_Latex
+		K_{\sigma,f}
+	}
+
+	# K when the first damage evolution starts (first D > 0 in the domain)
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		timeStamp
+			{
+				timeStampType	l
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		K_damage_i
+
+		name_Latex
+		K_{D,i}
+	}
+
+	# K of highest damage evolution (D source max) 
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		K_damage_m
+
+		name_Latex
+		K_{D,m}
+	}
+
+	# K of first D = 1 (damage final)
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		K_damage_f
+
+		name_Latex
+		K_{D,f}
+	}
+
+# ###############	comparison of linear momentum (P) from diff criteria
+
+	# LinMomentum of energy loss stabilized
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		K
+
+		name_Latex
+		K
+	
+		name_In_CSV_file	
+		LinMomentum
+
+		name_Latex
+		P
+	}
+
+	# LinMomentum of sigma max
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+
+		overwriterName		MAX
+	
+		name_In_CSV_file	
+		LinMomentum
+
+		name_Latex
+		P
+	}
+
+	# LinMomentum of sigma ~ 0
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bc
+			}
+	
+		name_In_CSV_file	
+		LinMomentum_sigma0
+
+		name_Latex
+		P_{\sigma,f}
+	}
+
+	# LinMomentum when the first damage evolution starts (first D > 0 in the domain)
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+
+		timeStamp
+			{
+				timeStampType	l
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		LinMomentum_damage_i
+
+		name_Latex
+		P_{D,i}
+	}
+
+	# LinMomentum of highest damage evolution (D source max) 
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		LinMomentum_damage_m
+
+		name_Latex
+		P_{D,m}
+	}
+
+	# LinMomentum of first D = 1 (damage final)
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				Damage
+			}
+	
+		name_In_CSV_file	
+		LinMomentum_damage_f
+
+		name_Latex
+		P_{D,f}
+	}
+
+# ###############	normalized numerical energy disspation - max value over time (to check solution accuracy)
+	{
+		isActive
+		1
+
+		stat_sv_type
+		max
+		
+		# lost, interfacial dissipation
+		fldName
+		energy_numerical_diss_2_input
+	
+		name_In_CSV_file	
+		maxInTime_NumDiss2InputEne
+
+		name_Latex
+		\phi_N/\phi_\mathrm{inp}
+	}
+
+# ####################	temporal fields (space/ spacetime integrals over time)
+	########## max stage: use sigma max stage
+
+	# lost dissipated energy
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		phys_diss_lost
+
+		name_In_CSV_file	
+		phi_d
+
+		name_Latex
+		\phi_d
+	}
+
+	# homogenized stress by BC
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		sigma_bc
+
+		name_In_CSV_file	
+		bar_sigma_bc
+
+		name_Latex
+		\bar{\sigma}_{bc}
+	}
+
+# ####################	spatial solution fields
+	########## max stage: use sigma max stage
+
+	# Damage field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		D
+
+		overwriterName		MAX
+	
+		name_In_CSV_file	
+		D
+
+		name_Latex
+		D
+	}
+
+	# stress field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		sigma
+
+		overwriterName		MAX
+	
+		name_In_CSV_file	
+		stress
+
+		name_Latex
+		\sigma
+	}
+
+	########## final stage: use diss energy stabilized criterion
+
+	# Damage field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		D
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		D
+
+		name_Latex
+		D
+	}
+
+	# stress field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		sigma
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		stress
+
+		name_Latex
+		\sigma
+	}
+
+}
+
+
+
+
+
+
+
+##########################################################################################################################################################
+#### fixed time intervals
+################################################
+# fixdTime + input
+dataPointers			pps3_timeStep				input
+{
+
+	{
+		isActive
+		1
+		
+		# initial field
+		fldName
+		field_finalResolution
+	
+		name_In_CSV_file	
+		iniSc
+
+		name_Latex
+		\sigma_c
+	}
+}
+
+
+
+################################################
+# fixedTime + output
+dataPointers			pps3_timeStep				output
+{
+
+	# phiD:   Dissipated energy / normalized by initial energy
+	{
+		isActive
+		1
+		
+		# lost, interfacial dissipation
+		fldName
+		phys_diss_interface_lost
+
+		name_In_CSV_file	
+		phi_d_norm
+
+		name_Latex
+		{(\phi_d/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+	# K:   K / normalized by initial energy
+	{
+		isActive
+		1
+		
+		fldName
+		K
+	
+		name_In_CSV_file	
+		phi_K_norm
+
+		name_Latex
+		{(K/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+
+	# U:   U / normalized by initial energy at failed state
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		name_In_CSV_file	
+		phi_U_norm
+
+		name_Latex
+		{(U/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+	# stress
+	{
+		isActive
+		1
+				
+		fldName
+		sigma_bc
+
+		name_In_CSV_file	
+		bar_sigma_bc
+
+		name_Latex
+		\bar{\sigma}_{bc}
+	}
+
+	# mean damage - over space
+	{
+		isActive
+		1
+				
+		fldName
+		mean_interface_damage
+
+		name_In_CSV_file	
+		bar_D
+
+		name_Latex
+		\bar{D}
+	}
+
+	# max damage - over space
+	{
+		isActive
+		1
+				
+		fldName
+		max_interface_damage
+
+		name_In_CSV_file	
+		max_D
+
+		name_Latex
+		D^{\mathrm{max}}
+	}
+
+# ####################	spatial solution fields
+	# Damage field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		D
+		name_In_CSV_file	
+		D
+
+		name_Latex
+		D
+	}
+
+	# stress field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		sigma
+
+		name_In_CSV_file	
+		stress
+
+		name_Latex
+		\sigma
+	}
+
+
+
+}
+
+
+
+
+}
