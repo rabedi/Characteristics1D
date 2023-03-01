@@ -1,8 +1,7 @@
 #include "SL_Interface_PtData.h"
 #include "SLInterfaceFracturePF.h"
-
-
-
+#include "Domain_AllInterfacesAllTimes.h"
+#include "SLDescriptorData.h"
 
 SL_interface_Temp_PPtData::SL_interface_Temp_PPtData()
 {
@@ -158,13 +157,15 @@ void SL_interface_Temp_PPtData::Output_ScalarValues(ostream & out, IOF_type iot,
 	Output_ScalarValuesAux(out, iot, space_or_time, NULL, damageOffOnMix, contactOffOnMix, slipOffOnMix);
 }
 
-void SL_interface_Temp_PPtData::MakeReady_For_ContactFractureRuns(double beta_delU, double beta_traction, const VEC& sigmaI)
+void SL_interface_Temp_PPtData::MakeReady_For_ContactFractureRuns(double beta_delU, double beta_traction, const VEC& sigmaI, double delu0Change)
 {
 	if (interfacePropPtr == NULL)
 		interfacePropPtr = new SL_Interface_Temp_PtData_IntContFrac();
 	VEC delU;
 	for (int i = 0; i < DiM; ++i)
 		delU[i] = sl_side_temp_ptData[SDR].u_downstream_latestValue[i] - sl_side_temp_ptData[SDL].u_downstream_latestValue[i];
+	delU[0] += delu0Change;
+
 	interfacePropPtr->del_u_nt_parts.nt_processed = false;
 	interfacePropPtr->del_u_nt_parts.Compute_derivedValues_From_vec(delU, beta_delU);
 
@@ -300,7 +301,7 @@ void SL_interfacePPtData::Read(istream& in)
 	}
 }
 
-void SL_interfacePPtData::Output_FinalSolution(ostream& out, IOF_type iot, double space_or_time)
+void SL_interfacePPtData::Output_FinalSolution(ostream& out, IOF_type iot, double space_or_time, double x, double t, bool has_ring_opened1D_al)
 {
 	// time
 	if (iot == iof_ascii)
@@ -312,16 +313,34 @@ void SL_interfacePPtData::Output_FinalSolution(ostream& out, IOF_type iot, doubl
 			out << sl_side_ptData[SDL].sigma_downstream_final[i] << '\t';
 		for (int i = 0; i < DiM; ++i)
 			out << sl_side_ptData[SDR].sigma_downstream_final[i] << '\t';
-		// velocities
-		for (int i = 0; i < DiM; ++i)
-			out << sl_side_ptData[SDL].v_downstream_final[i] << '\t';
-		for (int i = 0; i < DiM; ++i)
-			out << sl_side_ptData[SDR].v_downstream_final[i] << '\t';
-		// displacements
-		for (int i = 0; i < DiM; ++i)
-			out << sl_side_ptData[SDL].u_downstream_final[i] << '\t';
-		for (int i = 0; i < DiM; ++i)
-			out << sl_side_ptData[SDR].u_downstream_final[i] << '\t';
+		if (!g_domain->b_ring_opened1D)
+		{
+			// velocities
+			for (int i = 0; i < DiM; ++i)
+				out << sl_side_ptData[SDL].v_downstream_final[i] << '\t';
+			for (int i = 0; i < DiM; ++i)
+				out << sl_side_ptData[SDR].v_downstream_final[i] << '\t';
+			// displacements
+			for (int i = 0; i < DiM; ++i)
+				out << sl_side_ptData[SDL].u_downstream_final[i] << '\t';
+			for (int i = 0; i < DiM; ++i)
+				out << sl_side_ptData[SDR].u_downstream_final[i] << '\t';
+		}
+		else
+		{
+			double ax = g_SL_desc_data.load_parameters[0] * x, axt = ax * t;
+			unsigned int i = 0;
+			out << (sl_side_ptData[SDL].v_downstream_final[i] - ax) << '\t';
+			if (!has_ring_opened1D_al)
+				out << (sl_side_ptData[SDR].v_downstream_final[i] - ax) << '\t';
+			else
+				out << (sl_side_ptData[SDR].v_downstream_final[i] + ax) << '\t';
+			out << (sl_side_ptData[SDL].u_downstream_final[i] - axt) << '\t';
+			if (!has_ring_opened1D_al)
+				out << (sl_side_ptData[SDR].u_downstream_final[i] - axt) << '\t';
+			else
+				out << (sl_side_ptData[SDR].u_downstream_final[i] + axt) << '\t';
+		}
 		out << interface_damage_final << '\t' << interface_damage_source_final << '\t';
 		out << maxEffDelU;
 #if TSR_STAGE_IO
@@ -339,16 +358,32 @@ void SL_interfacePPtData::Output_FinalSolution(ostream& out, IOF_type iot, doubl
 			out.write((char*)&sl_side_ptData[SDL].sigma_downstream_final[i], sizeof(double));
 		for (int i = 0; i < DiM; ++i)
 			out.write((char*)&sl_side_ptData[SDR].sigma_downstream_final[i], sizeof(double));
-		// velocities
-		for (int i = 0; i < DiM; ++i)
-			out.write((char*)&sl_side_ptData[SDL].v_downstream_final[i], sizeof(double));
-		for (int i = 0; i < DiM; ++i)
-			out.write((char*)&sl_side_ptData[SDR].v_downstream_final[i], sizeof(double));
-		// displacements
-		for (int i = 0; i < DiM; ++i)
-			out.write((char*)&sl_side_ptData[SDL].u_downstream_final[i], sizeof(double));
-		for (int i = 0; i < DiM; ++i)
-			out.write((char*)&sl_side_ptData[SDR].u_downstream_final[i], sizeof(double));
+		if (!g_domain->b_ring_opened1D)
+		{
+			// velocities
+			for (int i = 0; i < DiM; ++i)
+				out.write((char*)&sl_side_ptData[SDL].v_downstream_final[i], sizeof(double));
+			for (int i = 0; i < DiM; ++i)
+				out.write((char*)&sl_side_ptData[SDR].v_downstream_final[i], sizeof(double));
+			// displacements
+			for (int i = 0; i < DiM; ++i)
+				out.write((char*)&sl_side_ptData[SDL].u_downstream_final[i], sizeof(double));
+			for (int i = 0; i < DiM; ++i)
+				out.write((char*)&sl_side_ptData[SDR].u_downstream_final[i], sizeof(double));
+		}
+		else
+		{
+			double ax = g_SL_desc_data.load_parameters[0] * x, axt = ax * t;
+			unsigned int i = 0;
+			double tmp = sl_side_ptData[SDL].v_downstream_final[i] - ax;
+			out.write((char*)&tmp, sizeof(double));
+			tmp = sl_side_ptData[SDR].v_downstream_final[i] - ax;
+			out.write((char*)&tmp, sizeof(double));
+			tmp = sl_side_ptData[SDL].u_downstream_final[i] - axt;
+			out.write((char*)&tmp, sizeof(double));
+			tmp = sl_side_ptData[SDR].u_downstream_final[i] - axt;
+			out.write((char*)&tmp, sizeof(double));
+		}
 		out.write((char*)&interface_damage_final, sizeof(interface_damage_final));
 		out.write((char*)&interface_damage_source_final, sizeof(interface_damage_source_final));
 		out.write((char*)&maxEffDelU, sizeof(maxEffDelU));

@@ -103,6 +103,7 @@ public:
 	// Below are quantities that are integrated over spacetime up to time
 	// dsum are domain sum (not physically important but needed for calculating spacetime ones)
 	// dtsum are space time ones
+	double source_e_dtsum;
 #if HAVE_SOURCE
 #if RING_PROBLEM
 	double v_r_ave;
@@ -113,7 +114,7 @@ public:
 	double source_e_v_dsum, source_e_sigma_dsum, source_e_dsum;
 	// spacetime (real important one)
 	VEC source_linMomentum_dtsum;
-	double source_e_v_dtsum, source_e_sigma_dtsum, source_e_dtsum;
+	double source_e_v_dtsum, source_e_sigma_dtsum;
 
 	// damping contribution to linear momentum and energy
 #if HAVE_SOURCE_ORDER0_q
@@ -154,6 +155,7 @@ public:
 	SL_Bulk_Properties *bulkPtr;
 	SL_OneInterfaceAllTimes *interfaceLeftOfBulkPtr, *interfaceRightOfBulkPtr;
 
+	//	double bulkLength; refer to OneSubdomain_All_bulksConnectivityInfo::segmentLengths
 	// cntrs refer to Domain_All_Interfaces_All_Times::bulks (1st line) and ::interfaces (2nd line)
 	unsigned int bulk_cntr;
 	unsigned int interfaceLeftOfBulk_cntr, interfaceRightOfBulk_cntr;
@@ -162,7 +164,9 @@ public:
 class OneSubdomain_All_bulksConnectivityInfo
 {
 public:
+	OneSubdomain_All_bulksConnectivityInfo();
 	void PrintIndicesLengthsKeyRunParameters(ostream& out) const;
+	void Zero1D_Averages();
 	vector<OneBulktwoSideInterfaceInfo> subdomain_bulk_segments;
 	vector<SL_OneInterfaceAllTimes*> subdomain_interfaces;
 
@@ -179,6 +183,11 @@ public:
 	vector<double> segment_lengths;
 	double xM, length, inv_length;
 	void OneSubdomain_All_bulksConnectivityInfo_Initialize();
+
+// 1D stuff
+	double rhoAve, EAve, EHarmonicAve, cAve, ZAve, DvvAve;
+	double c_fromAverages;
+	double Z_fromAverages;
 };
 
 // ONE subdomain
@@ -218,7 +227,7 @@ public:
 	int numSpatialSubsegments_BulkInterfacePoints_Print;
 	///////////////////////////////////////////////////////////////////////////
 private:
-
+	bool hasLeft, hasRight;
 	// this is sized two in reverse order (0 is current time step, 1 prev one, ...)
 	vector< Subdomain_oneTime_spatial_points*> allSpatialPointsRevOrder;
 	int allSpatialPointsRevOrder_size;
@@ -266,7 +275,7 @@ private:
 	// interfacei == 0 -> left side
 	// interfacei == numSegments -> right side
 	// else interior interface with fracture
-	subdomainInterfaceType Compute_End_Segment_pt(SL_OneInterfaceAllTimes* subdomain_interface, int interfacei, SL_interfacePPtData& ptSln, SL_Bulk_Properties* segmentPtrLeft, SL_Bulk_Properties* segmentPtrRight);
+	subdomainInterfaceType Compute_End_Segment_pt(SL_OneInterfaceAllTimes* subdomain_interface, int interfacei, SL_interfacePPtData& ptSln, SL_Bulk_Properties* segmentPtrLeft, SL_Bulk_Properties* segmentPtrRight, double timeValue);
 
 	// NoInterfaceParts: means dissipation at interior interfaces and left and right side of the domain (contributing to BC linear momentum and energy) are not handled in this function
 	// timeIndex is already known

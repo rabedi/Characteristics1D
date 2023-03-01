@@ -673,10 +673,18 @@ void SLInterfaceCalculator::Output_SLInterfaceCalculator(bool accept_point, IOF_
 {
 	if (accept_point)
 	{
+		double x = 0.0, t = pPtSlns->interface_time;
+		bool has_ring_opened1D_al = false;
+		if (oneIntAlltimesPtr != NULL)
+		{
+			x = oneIntAlltimesPtr->interface_x;
+			has_ring_opened1D_al = oneIntAlltimesPtr->has_ring_opened1D_al;
+		}
+
 		if ((tPtSlns != NULL) && !b_directlyCalculateBondedInFinalSln && (outScalars != NULL))
 			tPtSlns->Output_ScalarValues(*outScalars, iof_scalarVals, space_or_time);
 		if (outFinalSln != NULL)
-			pPtSlns->Output_FinalSolution(*outFinalSln, iof_finalVals, space_or_time);
+			pPtSlns->Output_FinalSolution(*outFinalSln, iof_finalVals, space_or_time, x, t, has_ring_opened1D_al);
 	}
 	if ((outAdaptivity != NULL) && (g_slf_conf->between_steps_adaptivity))
 	{
@@ -690,7 +698,6 @@ void SLInterfaceCalculator::Output_SLInterfaceCalculator(bool accept_point, IOF_
 		*outIterationConv << '\n';
 	}
 }
-
 
 void SLInterfaceCalculator::InitializeOrUpdate_Most_Current_Values()
 {
@@ -711,9 +718,9 @@ void SLInterfaceCalculator::InitializeOrUpdate_Most_Current_Values()
 	double x = 0;
 	if (oneIntAlltimesPtr != NULL)
 		x = oneIntAlltimesPtr->interface_x;
-	double factor_vr_source_sigma_theta = 0.5 * (ts_bulkProps->bulk_leftPtr->E_iso + ts_bulkProps->bulk_rightPtr->E_iso) / g_domain.ring_R;
+	double factor_vr_source_sigma_theta = 0.5 * (ts_bulkProps->bulk_leftPtr->E_iso + ts_bulkProps->bulk_rightPtr->E_iso) / g_domain->ring_R;
 	double ringp_n = g_SL_desc_data.GetRing_p(x, step_n_PtSln->interface_time), ringp_np1 = g_SL_desc_data.GetRing_p(x, pPtSlns->interface_time);
-	double factor_sigmatheta_source_vr = -0.5 * (1.0 / ts_bulkProps->bulk_leftPtr->rho + 1.0 / ts_bulkProps->bulk_rightPtr->rho) / g_domain.ring_R;
+	double factor_sigmatheta_source_vr = -0.5 * (1.0 / ts_bulkProps->bulk_leftPtr->rho + 1.0 / ts_bulkProps->bulk_rightPtr->rho) / g_domain->ring_R;
 #endif
 
 	// taking care of values that are not obtained from ODEs
@@ -774,6 +781,11 @@ void SLInterfaceCalculator::InitializeOrUpdate_Most_Current_Values()
 
 			ortiz1DTSRptr->step_n.sides[SDL].v = step_n_PtSln->sl_side_ptData[SDL].v_downstream_final[0];
 			ortiz1DTSRptr->step_n.sides[SDR].v = step_n_PtSln->sl_side_ptData[SDR].v_downstream_final[0];
+			if ((oneIntAlltimesPtr != NULL) && (oneIntAlltimesPtr->has_ring_opened1D_al))
+			{
+				ortiz1DTSRptr->step_n.sides[SDR].v += g_domain->ring_opened1D_al;
+				ortiz1DTSRptr->step_n.sides[SDR].u += step_n_PtSln->interface_time * g_domain->ring_opened1D_al;
+			}
 			ortiz1DTSRptr->step_n_max_delu = step_n_PtSln->maxEffDelU;
 			ortiz1DTSRptr->step_n_tsrStage = step_n_PtSln->tsrStage;
 			ortiz1DTSRptr->delT = delT;
@@ -803,6 +815,8 @@ void SLInterfaceCalculator::InitializeOrUpdate_Most_Current_Values()
 			}
 			// if del_u 0 causes too much penetration, we want to fix this
 			double delu0 = (*(us_np1[SDR]))[0] - (*(us_np1[SDL]))[0];
+			if ((oneIntAlltimesPtr != NULL) && (oneIntAlltimesPtr->has_ring_opened1D_al))
+				delu0 += step_n_PtSln->interface_time * g_domain->ring_opened1D_al;
 			double diff = dcont - delu0;
 			if (diff > 0.0)
 			{
@@ -996,6 +1010,8 @@ void SLInterfaceCalculator::Copy_temp_to_final_vals_Check_adaptivityFlag(bool& a
 {
 	if (incidentSide != ilt_noSided)
 		UpdateStarValues_FromIncident();
+	else if ((oneIntAlltimesPtr != NULL) && (oneIntAlltimesPtr->has_ring_opened1D_al))
+		Update_Velocity_Left_Ring_Opened1D();
 
 	bool hasEarlierVals = (ptTimeSequenceSlns != NULL);
 	SL_interfacePPtData* lastSlnPt = NULL;
@@ -1075,7 +1091,7 @@ void SLInterfaceCalculator::Copy_temp_to_final_vals_Check_adaptivityFlag(bool& a
 			}
 		}
 #if RING_PROBLEM
-		THROW("Ring problems don't get here as there is no left or right boundary condition\n");
+		THROW("Ring problems don't get here as there is no left or right boundary condition as solution should not be computed directly (nonzero source). This may change in later versions when the implicit solution is obtained.\n");
 #endif
 	}
 
@@ -1308,6 +1324,23 @@ void SLInterfaceCalculator::UpdateStarValues_FromIncident()
 	}
 }
 
+void SLInterfaceCalculator::Update_Velocity_Left_Ring_Opened1D()
+{
+#if RING_PROBLEM
+	return;
+#endif
+	VEC *vel;
+	if (b_directlyCalculateBondedInFinalSln)
+		vel = &pPtSlns->sl_side_ptData[SDR].v_downstream_final;
+	else
+	{
+		vel = &tPtSlns->sl_side_temp_ptData[SDR].v_Star;
+		VEC* u = &tPtSlns->sl_side_temp_ptData[SDR].u_downstream_latestValue;
+		(*u)[0] -= g_domain->ring_opened1D_al * pPtSlns->interface_time;
+	}
+	(*vel)[0] -= g_domain->ring_opened1D_al;
+}
+
 void SLInterfaceCalculator::Compute_1ConvergedImplcit_vsStar_TSR_OrtizSimple_Calculation()
 {
 	ortiz1DTSRptr->ws[SDL] = wlSide_rGoing[0];
@@ -1329,6 +1362,7 @@ void SLInterfaceCalculator::Compute_1ConvergedImplcit_vsStar_TSR_OrtizSimple_Cal
 //	if (g_time > 7.0)	{		fstream out("TestFiles/TestOrtiz1D_debug.txt", ios::out);		ortiz1DTSRptr->Write_MainInputs(out);		out.close();	}
 #endif
 	sI = ortiz1DTSRptr->Compute_step_np1_Solution(sStar, uLStar, vLStar, uRStar, vRStar, maxDelu, solutionStage, stageShort);
+	
 	tPtSlns->sl_side_temp_ptData[SDL].sigma_mode_Star[rmode_stick][0] = sI;
 	tPtSlns->sl_side_temp_ptData[SDR].sigma_mode_Star[rmode_stick][0] = sI;
 
@@ -1478,7 +1512,11 @@ void SLInterfaceCalculator::Compute_Star_sv_from_RiemannItoIII_toStar()
 	}
 
 	// if pointer of scalar values is null, it's made, del_u, sigma_I nt values computed, and del_v nt processed is set to false
-	tPtSlns->MakeReady_For_ContactFractureRuns(interfacePFs->beta_delU, interfacePFs->beta_traction, *(sRs[s1i_absStick]));
+	double delu0Change = 0.0;
+	if ((oneIntAlltimesPtr != NULL) && (oneIntAlltimesPtr->has_ring_opened1D_al))
+		delu0Change = g_domain->ring_opened1D_al * pPtSlns->interface_time;
+
+	tPtSlns->MakeReady_For_ContactFractureRuns(interfacePFs->beta_delU, interfacePFs->beta_traction, *(sRs[s1i_absStick]), delu0Change);
 	SL_Interface_Temp_PtData_IntContFrac* interfacePropPtr = tPtSlns->interfacePropPtr;
 	interfacePropPtr->interface_scalar_Vals[s1i_fricCoef] = interfacePFs->Get_Const_friction_Coef();
 

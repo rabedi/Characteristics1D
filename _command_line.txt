@@ -10,3 +10,5 @@ seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh
 -sp -mc config/MainConfig/mainConfig_MM.txt -st	0 	-en 0	-vst	10	-ven	11
 
 -sp -c config/Domain/MM_fracture.txt -cp config/Domain/PPS3Config_MM.txt
+
+-sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt -cp config/Domain/PPS3Config_Coh.txt

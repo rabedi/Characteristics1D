@@ -52,6 +52,7 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_set_zero()
 	setValue(linMomentum_dsum, 0.0);
 	K_dsum = 0.0, U_dsum = 0.0, phi_dsum = 0.0;
 
+	source_e_dtsum = 0.0;
 #if HAVE_SOURCE
 #if RING_PROBLEM
 	v_r_ave = 0.0;
@@ -60,7 +61,7 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_set_zero()
 	source_e_v_dsum = 0.0, source_e_sigma_dsum = 0.0, source_e_dsum = 0.0;
 
 	setValue(source_linMomentum_dtsum, 0.0);
-	source_e_v_dsum = 0.0, source_e_sigma_dtsum = 0.0, source_e_dtsum = 0.0;
+	source_e_v_dsum = 0.0, source_e_sigma_dtsum = 0.0;
 
 #if HAVE_SOURCE_ORDER0_q
 	setValue(damping_linMomentum_dsum, 0.0);
@@ -100,8 +101,8 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Read_Data(istream& in)
 	in >> energy_R;
 
 	// input source = source_v + source_sigma
-#if HAVE_SOURCE
 	in >> source_e_dtsum;
+#if HAVE_SOURCE
 	in >> source_e_v_dtsum;
 	in >> source_e_sigma_dtsum;
 #endif
@@ -299,9 +300,9 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& ou
 
 	// phi0
 	double phi0 = input_energy - energy_BC;
-#if HAVE_SOURCE
+//#if HAVE_SOURCE
 	phi0 -= source_e_dtsum;
-#endif
+//#endif
 	out << '\t' << phi0;
 
 	// input BC = BC_L + BC_R
@@ -310,8 +311,8 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& ou
 	out << '\t' << energy_R;
 
 	// input source = source_v + source_sigma
-#if HAVE_SOURCE
 	out << '\t' << source_e_dtsum;
+#if HAVE_SOURCE
 	out << '\t' << source_e_v_dtsum;
 	out << '\t' << source_e_sigma_dtsum;
 #endif
@@ -563,12 +564,11 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Data_Get_Header_Labels
 	hLabels.push_back(hLabel);
 
 	// input source = source_v + source_sigma
-#if HAVE_SOURCE
 	hLabel.subgroup = "source";
 	hLabel.textLabel = "source_e";
 	hLabel.latexLabel = "\\mathcal{E}_{\\mathrm{src}}";
 	hLabels.push_back(hLabel);
-
+#if HAVE_SOURCE
 	hLabel.textLabel = "source_e_v";
 	hLabel.latexLabel = "\\mathcal{E}_{\\mathrm{src},v}";
 	hLabels.push_back(hLabel);
@@ -1075,6 +1075,23 @@ OneBulktwoSideInterfaceInfo::OneBulktwoSideInterfaceInfo()
 	interfaceLeftOfBulk_cntr = 0, interfaceRightOfBulk_cntr = 0;
 }
 
+OneSubdomain_All_bulksConnectivityInfo::OneSubdomain_All_bulksConnectivityInfo()
+{
+	Zero1D_Averages();
+}
+
+void OneSubdomain_All_bulksConnectivityInfo::Zero1D_Averages()
+{
+	rhoAve = 0.0;
+	EAve = 0.0;
+	cAve = 0.0;
+	ZAve = 0.0;
+	c_fromAverages = 0.0;
+	Z_fromAverages = 0.0;
+	DvvAve = 0.0;
+	EHarmonicAve = 0.0;
+}
+
 void OneSubdomain_All_bulksConnectivityInfo::PrintIndicesLengthsKeyRunParameters(ostream& out) const
 {
 	out << "lengths\t" << segment_lengths.size() << '\n';
@@ -1098,17 +1115,23 @@ void OneSubdomain_All_bulksConnectivityInfo::PrintIndicesLengthsKeyRunParameters
 	out << "\n";
 }
 
+
 void OneSubdomain_All_bulksConnectivityInfo::OneSubdomain_All_bulksConnectivityInfo_Initialize()
 {
 	xm = subdomain_interface_xs[0];
+	if (g_domain->isPeriodic)
+		xm = g_domain->x_min;
 	segment_lengths.resize(numSegments);
 	double xStart = xm;
+
 	length = 0.0;
 
 	double segLength;
 	for (int segi = 0; segi < numSegments; ++segi)
 	{
 		segLength = subdomain_interface_xs[segi + 1] - subdomain_interface_xs[segi];
+		if (segLength < 0.0)
+			segLength += g_domain->L;
 		segment_lengths[segi] = segLength;
 		xStart += segLength;
 	}
@@ -1149,6 +1172,9 @@ Subdomain_spacetime_pp_data::Subdomain_spacetime_pp_data()
 
 	for (int tir = 0; tir < NUM_AVE_SUM_TIMES; ++tir)
 		spatial_ave_sums[tir] = NULL;
+
+	hasLeft = false;
+	hasRight = false;
 }
 
 Subdomain_spacetime_pp_data::~Subdomain_spacetime_pp_data()
@@ -1270,11 +1296,14 @@ void Subdomain_spacetime_pp_data::AddComputeTimeStep(int timeIndexIn, double tim
 	// B: Interfaces
 
 	SL_OneInterfaceAllTimes* subdomain_interface;
-	for (unsigned int interfacei = 0; interfacei < szInterface; ++interfacei)
+	unsigned int interface_starti = 0;
+	if (g_domain->isPeriodic)
+		interface_starti = 1;
+	for (unsigned int interfacei = interface_starti; interfacei < szInterface; ++interfacei)
 	{
 		subdomain_interface = sdciPtr->subdomain_interfaces[interfacei];
 		SL_interfacePPtData *ptSlnPtr = subdomain_interface->timeSeqData.GetCurrentPosition();
-		Compute_End_Segment_pt(subdomain_interface, interfacei, *ptSlnPtr, subdomain_interface->ts_bulkProps->bulk_leftPtr, subdomain_interface->ts_bulkProps->bulk_rightPtr);
+		Compute_End_Segment_pt(subdomain_interface, interfacei, *ptSlnPtr, subdomain_interface->ts_bulkProps->bulk_leftPtr, subdomain_interface->ts_bulkProps->bulk_rightPtr, timeValue);
 	}
 
 	// printing fragment data
@@ -1327,8 +1356,9 @@ void Subdomain_spacetime_pp_data::Compute_Inside_Segment_pt(int segi, int pti, S
 	bool isIC = (timeIndex == 0);
 	if (!isIC)
 		point_fieldsPT_or_NTPIPtr = &allSpatialPointsRevOrder[1]->spatialPoints[segi][pti];
+	double x = xs[segi][pti];
 
-	segment.Compute_Bulk_Values(sdciPtr->subdomain_bulk_segments[segi].interfaceLeftOfBulkPtr, sdciPtr->subdomain_bulk_segments[segi].interfaceRightOfBulkPtr,
+	segment.Compute_Bulk_Values(x, sdciPtr->subdomain_bulk_segments[segi].interfaceLeftOfBulkPtr, sdciPtr->subdomain_bulk_segments[segi].interfaceRightOfBulkPtr,
 		*point_fieldsNTPtr, isIC, point_fieldsPT_or_NTPIPtr,
 			maxIter, relTol4Conv);
 
@@ -1340,13 +1370,14 @@ void Subdomain_spacetime_pp_data::Compute_Inside_Segment_pt(int segi, int pti, S
 	Update_Domain_space_spacetime_Integrals_fromPoint_NoInterfaceParts(segi, pti, segment);
 }
 
-subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_OneInterfaceAllTimes* subdomain_interface, int interfacei, SL_interfacePPtData& ptSln, SL_Bulk_Properties* segmentPtrLeft, SL_Bulk_Properties* segmentPtrRight)
+subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_OneInterfaceAllTimes* subdomain_interface, int interfacei, SL_interfacePPtData& ptSln, SL_Bulk_Properties* segmentPtrLeft, SL_Bulk_Properties* segmentPtrRight, double timeValue)
 {
 	subdomainInterfaceType sdit = sdit_interior;
 	vector<int> segis, ptis;
 //	bool hasLRsides[NUM_SIDES];
 	vector<int> sides;
 	vector<SL_Bulk_Properties*> segmentPtrs;
+	bool ring_open_up_bndry = false;
 	if (interfacei == 0)
 	{
 		sdit = sdit_left;
@@ -1367,8 +1398,20 @@ subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_On
 
 		if (interfacei == sdciPtr->numSegments)
 		{
-			sdit = sdit_right;
-//			hasLRsides[SDR] = false;
+			if (!g_domain->isPeriodic)
+			{
+				sdit = sdit_right;
+				//			hasLRsides[SDR] = false;
+			}
+			else
+			{
+				//			hasLRsides[SDR] = true;
+				ring_open_up_bndry = true;
+				sides.push_back(SDR);
+				segis.push_back(0);
+				ptis.push_back(0);
+				segmentPtrs.push_back(segmentPtrRight);
+			}
 		}
 		else
 		{
@@ -1383,6 +1426,8 @@ subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_On
 	double delu0 = 0.0;
 	if (side_sz == 2)
 		delu0 = ptSln.sl_side_ptData[sides[1]].u_downstream_final[0] - ptSln.sl_side_ptData[sides[0]].u_downstream_final[0];
+	if (ring_open_up_bndry)
+		delu0 += g_domain->ring_opened1D_al * timeValue;
 	for (unsigned int sdi = 0; sdi < side_sz; ++sdi)
 	{
 		SL_Bulk_Properties* segmentPtr = segmentPtrs[sdi];
@@ -1402,7 +1447,7 @@ subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_On
 		g_SL_desc_data.GetNonRingNonZeroTerm_SourceTerm(point_fieldsNTPtr->x, point_fieldsNTPtr->time, segmentPtr->flag, point_fieldsNTPtr->source_v, point_fieldsNTPtr->source_sigma);
 #if RING_PROBLEM
 		point_fieldsNTPtr->v_r = ptSln.v_r_final;
-		double sigma_theta_source_final = segmentPtr->E_iso * point_fieldsNTPtr->v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+		double sigma_theta_source_final = segmentPtr->E_iso * point_fieldsNTPtr->v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 		point_fieldsNTPtr->source_sigma[0] += sigma_theta_source_final;
 #endif
 #endif
@@ -1428,6 +1473,11 @@ subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_On
 		CopyVec(ptSln.sl_side_ptData[SDL].sigma_downstream_final, sigma);
 		SubtractVec(ptSln.sl_side_ptData[SDR].v_downstream_final, ptSln.sl_side_ptData[SDL].v_downstream_final, delv);
 		SubtractVec(ptSln.sl_side_ptData[SDR].u_downstream_final, ptSln.sl_side_ptData[SDL].u_downstream_final, delu);
+		if (ring_open_up_bndry)
+		{
+			delu[0] += g_domain->ring_opened1D_al * timeValue;
+			delv[0] += g_domain->ring_opened1D_al;
+		}
 		// computing powerIDissipation
 		for (int i = 0; i < DiM; ++i)
 			spatial_ave_sum->powerIDiss_vec[i] += delv[i] * sigma[i];
@@ -1443,6 +1493,7 @@ subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_On
 	}
 	else if (sdit == sdit_left)
 	{
+		hasLeft = true;
 		CopyVec(ptSln.sl_side_ptData[SDR].u_downstream_final, spatial_ave_sum->u_L);
 		spatial_ave_sum->power_L = 0.0;
 		for (int i = 0; i < DiM; ++i)
@@ -1453,6 +1504,7 @@ subdomainInterfaceType Subdomain_spacetime_pp_data::Compute_End_Segment_pt(SL_On
 	}
 	else
 	{
+		hasRight = true;
 		CopyVec(ptSln.sl_side_ptData[SDL].u_downstream_final, spatial_ave_sum->u_R);
 		CopyVec(ptSln.sl_side_ptData[SDL].sigma_downstream_final, spatial_ave_sum->sigman_R);
 		spatial_ave_sum->power_R = 0.0;
@@ -1469,11 +1521,6 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 	spatial_ave_sum->timeVal = times[timeIndex];
 
 	// averages
-	for (int i = 0; i < DiM; ++i)
-	{
-		spatial_ave_sum->sigma_ave_bc[i] = (spatial_ave_sum->sigman_R[i] * sdciPtr->xM - spatial_ave_sum->sigman_L[i] * sdciPtr->xm) * sdciPtr->inv_length;
-		spatial_ave_sum->eps_ave_bc[i] = (spatial_ave_sum->u_R[i] - spatial_ave_sum->u_L[i]) * sdciPtr->inv_length;
-	}
 	FactorVec(spatial_ave_sum->u_ave, sdciPtr->inv_length);
 	FactorVec(spatial_ave_sum->v_ave, sdciPtr->inv_length);
 	FactorVec(spatial_ave_sum->eps_ave_bulk_blk , sdciPtr->inv_length);
@@ -1481,9 +1528,24 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 	AddVec(spatial_ave_sum->eps_ave_bulk_blk, spatial_ave_sum->eps_ave_bulk_intfc, spatial_ave_sum->eps_ave_bulk);
 
 	FactorVec(spatial_ave_sum->sigma_ave_bulk, sdciPtr->inv_length);
-	SubtractVec(spatial_ave_sum->sigma_ave_bc, spatial_ave_sum->sigma_ave_bulk, spatial_ave_sum->sigma_ave_bc_minus_bulk);
-	SubtractVec(spatial_ave_sum->eps_ave_bc, spatial_ave_sum->eps_ave_bulk, spatial_ave_sum->eps_ave_bc_minus_bulk);
 
+	if (!g_domain->isPeriodic)
+	{
+		for (int i = 0; i < DiM; ++i)
+		{
+			spatial_ave_sum->sigma_ave_bc[i] = (spatial_ave_sum->sigman_R[i] * sdciPtr->xM - spatial_ave_sum->sigman_L[i] * sdciPtr->xm) * sdciPtr->inv_length;
+			spatial_ave_sum->eps_ave_bc[i] = (spatial_ave_sum->u_R[i] - spatial_ave_sum->u_L[i]) * sdciPtr->inv_length;
+		}
+		SubtractVec(spatial_ave_sum->sigma_ave_bc, spatial_ave_sum->sigma_ave_bulk, spatial_ave_sum->sigma_ave_bc_minus_bulk);
+		SubtractVec(spatial_ave_sum->eps_ave_bc, spatial_ave_sum->eps_ave_bulk, spatial_ave_sum->eps_ave_bc_minus_bulk);
+	}
+	else
+	{
+		CopyVec(spatial_ave_sum->eps_ave_bulk, spatial_ave_sum->eps_ave_bc);
+		CopyVec(spatial_ave_sum->sigma_ave_bulk, spatial_ave_sum->sigma_ave_bc);
+		setValue(spatial_ave_sum->eps_ave_bc_minus_bulk, 0.0);
+		setValue(spatial_ave_sum->sigma_ave_bc_minus_bulk, 0.0);
+	}
 	spatial_ave_sum->energy_eps_recoverable_bc = 0.0;
 	spatial_ave_sum->energy_eps_recoverable_bulk = 0.0;
 	for (int i = 0; i < DiM; ++i)
@@ -1508,9 +1570,16 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 
 	// time integrations:
 	bool isIC = (timeIndex == 0);
+	Subdomain_spatial_ave_sum* spatial_ave_sumPrev = NULL;
 	if (!isIC)
 	{
-		Subdomain_spatial_ave_sum* spatial_ave_sumPrev = spatial_ave_sums[1];
+		spatial_ave_sumPrev = spatial_ave_sums[1];
+#if HAVE_SOURCE
+		spatial_ave_sum->source_e_v_dtsum = spatial_ave_sumPrev->source_e_v_dtsum;
+#if HAVE_SOURCE_ORDER0_q
+		spatial_ave_sum->damping_e_v_dtsum = spatial_ave_sumPrev->damping_e_v_dtsum;
+#endif
+#endif
 		spatial_ave_sum->energy_eps_total_bc = spatial_ave_sumPrev->energy_eps_total_bc;
 		spatial_ave_sum->energy_eps_total_bulk = spatial_ave_sumPrev->energy_eps_total_bulk;
 		spatial_ave_sum->powerIDiss = 0.0;
@@ -1522,14 +1591,21 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 			spatial_ave_sum->energy_eps_total_bulk += 0.5 * (spatial_ave_sum->eps_ave_bulk[i] - spatial_ave_sumPrev->eps_ave_bulk[i]) *
 				(spatial_ave_sum->sigma_ave_bulk[i] + spatial_ave_sumPrev->sigma_ave_bulk[i]);
 
-			spatial_ave_sum->impulse_L[i] = spatial_ave_sumPrev->impulse_L[i];
-			for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
-				spatial_ave_sum->impulse_L[i] -= timeIntWeights_rti[rti] * spatial_ave_sums[rti]->sigman_L[i];
+			if (!g_domain->isPeriodic)
+			{
+				spatial_ave_sum->impulse_L[i] = spatial_ave_sumPrev->impulse_L[i];
+				for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+					spatial_ave_sum->impulse_L[i] -= timeIntWeights_rti[rti] * spatial_ave_sums[rti]->sigman_L[i];
 
-			spatial_ave_sum->impulse_R[i] = spatial_ave_sumPrev->impulse_R[i];
-			for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
-				spatial_ave_sum->impulse_R[i] += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->sigman_R[i];
-
+				spatial_ave_sum->impulse_R[i] = spatial_ave_sumPrev->impulse_R[i];
+				for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+					spatial_ave_sum->impulse_R[i] += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->sigman_R[i];
+			}
+			else
+			{
+				setValue(spatial_ave_sum->impulse_L, 0.0);
+				setValue(spatial_ave_sum->impulse_R, 0.0);
+			}
 			spatial_ave_sum->eneIDiss_vec[i] = spatial_ave_sumPrev->eneIDiss_vec[i];
 			if (timeIndex >= 1) // (timeIndex > 1)
 			{
@@ -1542,12 +1618,52 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 					VEC *delu_new = &spatial_ave_sum->interface_sigma_delu_vec[interfacei].second;
 					spatial_ave_sum->eneIDiss_vec[i] += 0.5 * ((*sig_prev)[i] + (*sig_new)[i]) * ((*delu_new)[i] - (*delu_prev)[i]);
 				}
+#if HAVE_SOURCE
+				for (int segi = 0; segi < sdciPtr->numSegments; ++segi)
+				{
+					SL_Bulk_Properties *segmentPtr = sdciPtr->subdomain_bulk_segments[segi].bulkPtr;
+					double rho = segmentPtr->rho;
+					for (int pti = 0; pti < numSpatialPointsPerSegment; ++pti)
+					{
+						double spatialWeight = x_weights[segi][pti], factor = 0.5 * rho * spatialWeight;
+						OnePoint_inBulk_Fields *point_fieldsNTPtr = &allSpatialPointsRevOrder[0]->spatialPoints[segi][pti];
+						OnePoint_inBulk_Fields *point_fieldsPT_or_NTPIPtr = &allSpatialPointsRevOrder[1]->spatialPoints[segi][pti];
+
+						double delu, tmp_e_lin_m = 0.0, tmp_e_damping_v = 0.0, damping_source_v;
+						for (int i = 0; i < DiM; ++i)
+						{
+							delu = point_fieldsNTPtr->u[i] - point_fieldsPT_or_NTPIPtr->u[i];
+							tmp_e_lin_m += (point_fieldsNTPtr->source_v[i] + point_fieldsPT_or_NTPIPtr->source_v[i]) * delu;
+
+#if HAVE_SOURCE_ORDER0_q
+							damping_source_v =
+								(segmentPtr->D_vv * point_fieldsNTPtr->v[i] + segmentPtr->D_vsigma * point_fieldsNTPtr->sigma[i]) +
+								(segmentPtr->D_vv * point_fieldsPT_or_NTPIPtr->v[i] + segmentPtr->D_vsigma * point_fieldsPT_or_NTPIPtr->sigma[i]);
+
+							tmp_e_damping_v += damping_source_v * delu;
+#endif
+						}
+						spatial_ave_sum->source_e_v_dtsum += factor * tmp_e_lin_m;
+#if HAVE_SOURCE_ORDER0_q
+						spatial_ave_sum->damping_e_v_dtsum += factor * tmp_e_damping_v;
+#endif
+					}
+				}
+#endif
 			}
 			else
 			{
 				THROW("This is just a check. We shouldn't be getting here\n");
 				for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
 					spatial_ave_sum->eneIDiss_vec[i] += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->powerIDiss_vec[i];
+#if HAVE_SOURCE
+				for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+					spatial_ave_sum->source_e_v_dtsum += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->source_e_v_dsum;
+#if HAVE_SOURCE_ORDER0_q
+				for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+					spatial_ave_sum->damping_e_v_dtsum += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->damping_e_v_dsum;
+#endif
+#endif
 			}
 			spatial_ave_sum->powerIDiss += spatial_ave_sum->powerIDiss_vec[i];
 			spatial_ave_sum->eneIDiss += spatial_ave_sum->eneIDiss_vec[i];
@@ -1564,49 +1680,56 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 #endif
 #endif
 		}
-		AddVec(spatial_ave_sum->impulse_L, spatial_ave_sum->impulse_R, spatial_ave_sum->impulse_BC);
-
-		spatial_ave_sum->energy_L = spatial_ave_sumPrev->energy_L;
-		spatial_ave_sum->energy_R = spatial_ave_sumPrev->energy_R;
-#if 1
-		for (unsigned int i = 0; i < DiM; ++i)
+		if (!g_domain->isPeriodic)
 		{
-			spatial_ave_sum->energy_L -= 0.5 * (spatial_ave_sumPrev->sigman_L[i] + spatial_ave_sum->sigman_L[i]) *
-				(spatial_ave_sum->u_L[i] - spatial_ave_sumPrev->u_L[i]);
-			spatial_ave_sum->energy_R += 0.5 * (spatial_ave_sumPrev->sigman_R[i] + spatial_ave_sum->sigman_R[i]) *
-				(spatial_ave_sum->u_R[i] - spatial_ave_sumPrev->u_R[i]);
-		}
+			AddVec(spatial_ave_sum->impulse_L, spatial_ave_sum->impulse_R, spatial_ave_sum->impulse_BC);
+			spatial_ave_sum->energy_L = spatial_ave_sumPrev->energy_L;
+			spatial_ave_sum->energy_R = spatial_ave_sumPrev->energy_R;
+#if 1
+			for (unsigned int i = 0; i < DiM; ++i)
+			{
+				spatial_ave_sum->energy_L -= 0.5 * (spatial_ave_sumPrev->sigman_L[i] + spatial_ave_sum->sigman_L[i]) *
+					(spatial_ave_sum->u_L[i] - spatial_ave_sumPrev->u_L[i]);
+				spatial_ave_sum->energy_R += 0.5 * (spatial_ave_sumPrev->sigman_R[i] + spatial_ave_sum->sigman_R[i]) *
+					(spatial_ave_sum->u_R[i] - spatial_ave_sumPrev->u_R[i]);
+			}
 #else
-		for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
-			spatial_ave_sum->energy_L += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->power_L;
-		for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
-			spatial_ave_sum->energy_R += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->power_R;
+			for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+				spatial_ave_sum->energy_L += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->power_L;
+			for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+				spatial_ave_sum->energy_R += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->power_R;
 #endif
-		spatial_ave_sum->energy_BC = spatial_ave_sum->energy_L + spatial_ave_sum->energy_R;
-
+			spatial_ave_sum->energy_BC = spatial_ave_sum->energy_L + spatial_ave_sum->energy_R;
+		}
+		else
+		{
+			setValue(spatial_ave_sum->impulse_BC, 0.0);
+			spatial_ave_sum->energy_L = 0.0;
+			spatial_ave_sum->energy_R = 0.0;
+			spatial_ave_sum->energy_BC = 0.0;
+		}
 #if HAVE_SOURCE
-		spatial_ave_sum->source_e_v_dtsum = spatial_ave_sumPrev->source_e_v_dtsum;
-		for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
-			spatial_ave_sum->source_e_v_dtsum += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->source_e_v_dsum;
 		spatial_ave_sum->source_e_sigma_dtsum = spatial_ave_sumPrev->source_e_sigma_dtsum;
 		for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
 			spatial_ave_sum->source_e_sigma_dtsum += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->source_e_sigma_dsum;
-
 		spatial_ave_sum->source_e_dtsum = spatial_ave_sum->source_e_v_dtsum + spatial_ave_sum->source_e_sigma_dtsum;
-
 #if HAVE_SOURCE_ORDER0_q
-		spatial_ave_sum->damping_e_v_dtsum = spatial_ave_sumPrev->damping_e_v_dtsum;
-		for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
-			spatial_ave_sum->damping_e_v_dtsum += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->damping_e_v_dsum;
 		spatial_ave_sum->damping_e_sigma_dtsum = spatial_ave_sumPrev->damping_e_sigma_dtsum;
 		for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
 			spatial_ave_sum->damping_e_sigma_dtsum += timeIntWeights_rti[rti] * spatial_ave_sums[rti]->damping_e_sigma_dsum;
-
 		spatial_ave_sum->damping_e_dtsum = spatial_ave_sum->damping_e_v_dtsum + spatial_ave_sum->damping_e_sigma_dtsum;
 #endif
 #endif
 		spatial_ave_sum->energy_eps_diss_bc = spatial_ave_sum->energy_eps_total_bc - spatial_ave_sum->energy_eps_recoverable_bc;
 		spatial_ave_sum->energy_eps_diss_bulk = spatial_ave_sum->energy_eps_total_bulk - spatial_ave_sum->energy_eps_recoverable_bulk;
+
+		if (g_domain->b_ring_opened1D_kinetic_energy_on_full_vTheta)
+		{
+			spatial_ave_sum->source_e_dtsum = spatial_ave_sumPrev->source_e_dtsum;
+			double aL = g_domain->ring_opened1D_al;
+			for (unsigned int rti = 0; rti < timeIntWeights_rti_size; ++rti)
+				spatial_ave_sum->source_e_dtsum += aL * timeIntWeights_rti[rti] * spatial_ave_sums[rti]->sigma_ave_bulk[0];
+		}
 	}
 	else
 	{
@@ -1620,13 +1743,13 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 		phi0 = spatial_ave_sum->phi_dsum;
 	spatial_ave_sum->input_energy = phi0 + spatial_ave_sum->energy_BC;
 	spatial_ave_sum->phys_diss_tot = spatial_ave_sum->eneIDiss;
-#if HAVE_SOURCE
 	spatial_ave_sum->input_energy += spatial_ave_sum->source_e_dtsum;
+#if HAVE_SOURCE
+//	spatial_ave_sum->input_energy += spatial_ave_sum->source_e_dtsum;
 #if HAVE_SOURCE_ORDER0_q
-	spatial_ave_sum->phys_diss_tot = spatial_ave_sum->damping_e_dtsum;
+	spatial_ave_sum->phys_diss_tot += spatial_ave_sum->damping_e_dtsum;
 #endif
 #endif
-
 	spatial_ave_sum->numerial_energy_diss = spatial_ave_sum->input_energy - spatial_ave_sum->phi_dsum - spatial_ave_sum->phys_diss_tot;
 
 	if (timeIndex == 0)
@@ -1663,8 +1786,6 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 		Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Data_Write_Header(*out_sd_summary);
 	spatial_ave_sum->Subdomain_spatial_ave_sum_Write_Data(*out_sd_summary);
 
-
-
 	bool b_print = false;
 	if (print_space_points)
 		b_print = (b_print || (timeIndex % numTimeStep_BulkInterfacePoints_Print == 0) || (timeIndex == numTimes));
@@ -1682,8 +1803,6 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 		allSpatialPointsRevOrder[0]->Subdomain_oneTime_spatial_points_Print_Header_Data(out);
 	}
 }
-//damping_e_v_dsum
-//source_e_v_dsum
 
 void Subdomain_spacetime_pp_data::Print_Interface_DSU_Fragment_OneTimeStep()
 {
@@ -1707,20 +1826,42 @@ void Subdomain_spacetime_pp_data::Print_Interface_DSU_Fragment_OneTimeStep()
 	for (unsigned int di = 0; di < DiM; ++di)
 		outfrag << "\tsigma" << di;
 	outfrag << '\n';
-	for (unsigned int interfacei = 0; interfacei < szInterface; ++interfacei)
+	unsigned int lastInterfaceNo = szInterface - 1;
+	unsigned int interface_starti = 0;
+	if (g_domain->isPeriodic)
+		interface_starti = 1;
+	for (unsigned int interfacei = interface_starti; interfacei < szInterface; ++interfacei)
 	{
+		double x = sdciPtr->subdomain_interface_xs[interfacei];
 		subdomain_interface = sdciPtr->subdomain_interfaces[interfacei];
 		SL_interfacePPtData *ptSlnPtr = subdomain_interface->timeSeqData.GetCurrentPosition();
 		outfrag << ptSlnPtr->interface_damage_final << '\t';
 		outfrag << ptSlnPtr->maxEffDelU << '\t';
-		for (unsigned int di = 0; di < DiM; ++di)
+		if (!g_domain->b_ring_opened1D)
 		{
-//			double delu = ptSlnPtr->sl_side_ptData[SDR].u_downstream_final[di] - ptSlnPtr->sl_side_ptData[SDL].u_downstream_final[di];
-//			outfrag << delu << '\t';
-			outfrag << ptSlnPtr->sl_side_ptData[SDL].u_downstream_final[di] << '\t';
+			for (unsigned int di = 0; di < DiM; ++di)
+			{
+				//			double delu = ptSlnPtr->sl_side_ptData[SDR].u_downstream_final[di] - ptSlnPtr->sl_side_ptData[SDL].u_downstream_final[di];
+				//			outfrag << delu << '\t';
+				outfrag << ptSlnPtr->sl_side_ptData[SDL].u_downstream_final[di] << '\t';
+			}
+			for (unsigned int di = 0; di < DiM; ++di)
+				outfrag << ptSlnPtr->sl_side_ptData[SDR].u_downstream_final[di] << '\t';
 		}
-		for (unsigned int di = 0; di < DiM; ++di)
-			outfrag << ptSlnPtr->sl_side_ptData[SDR].u_downstream_final[di] << '\t';
+		else
+		{
+			bool lastInterface = (interfacei == lastInterfaceNo);
+			unsigned int di = 0;
+			double uL = ptSlnPtr->sl_side_ptData[SDL].u_downstream_final[di];
+			double uR = ptSlnPtr->sl_side_ptData[SDR].u_downstream_final[di];
+			double ax = g_SL_desc_data.load_parameters[0] * x, axt = ax * times[timeIndex];
+			uL -= axt;
+			if (!lastInterface)
+				uR -= axt;
+			else
+				uR += axt;
+			outfrag << uL << '\t' << uR << '\t';
+		}
 		if (interfacei > 0)
 		{
 			for (unsigned int di = 0; di < DiM; ++di)
@@ -1743,15 +1884,26 @@ void Subdomain_spacetime_pp_data::Update_Domain_space_spacetime_Integrals_fromPo
 	double spatialWeight = x_weights[segi][pti];
 	double K = 0.0, U = 0.0;// , phi;
 	VEC linMomentum;
-
+	VEC vel, u;
+	double ax = 0.0;
+	CopyVec(point_fieldsNTPtr->v, vel);
+	CopyVec(point_fieldsNTPtr->u, u);
+	if (g_domain->b_ring_opened1D_kinetic_energy_on_full_vTheta)
+	{
+		ax = g_SL_desc_data.load_parameters[0] * point_fieldsNTPtr->x;
+		vel[0] -= ax;
+		double time = times[timeIndex];
+		u[0] -= ax * time;
+	}
 	// linear momentum and energy:
 	for (int i = 0; i < DiM; ++i)
 	{
-		linMomentum[i] = segment.rho * point_fieldsNTPtr->v[i];
-		K += point_fieldsNTPtr->v[i] * point_fieldsNTPtr->v[i];
+		linMomentum[i] = segment.rho * vel[i];
+		K += vel[i] * vel[i];
 		U += point_fieldsNTPtr->sigma[i] * point_fieldsNTPtr->eps[i];
 	}
 	K *= (0.5 * segment.rho);
+	K += g_domain->ring_opened1D_kinetic_energy_vr;
 	U *= 0.5;
 //	phi = K + U;
 
@@ -1763,14 +1915,14 @@ void Subdomain_spacetime_pp_data::Update_Domain_space_spacetime_Integrals_fromPo
 	// later simply added
 //	spatial_ave_sum->phi_dsum += phi * spatialWeight;
 
-	VEC *uPtr = &point_fieldsNTPtr->u, *vPtr = &point_fieldsNTPtr->v, *sigmaPtr = &point_fieldsNTPtr->sigma, *epsPtr = &point_fieldsNTPtr->eps;
+	VEC *sigmaPtr = &point_fieldsNTPtr->sigma, *epsPtr = &point_fieldsNTPtr->eps;
 	for (int i = 0; i < DiM; ++i)
 	{
 		spatial_ave_sum->linMomentum_dsum[i] += linMomentum[i] * spatialWeight;
 		spatial_ave_sum->eps_ave_bulk_blk[i] += (*epsPtr)[i] * spatialWeight;
 		spatial_ave_sum->sigma_ave_bulk[i] += (*sigmaPtr)[i] * spatialWeight;
-		spatial_ave_sum->u_ave[i] += (*uPtr)[i] * spatialWeight;
-		spatial_ave_sum->v_ave[i] += (*vPtr)[i] * spatialWeight;
+		spatial_ave_sum->u_ave[i] += u[i] * spatialWeight;
+		spatial_ave_sum->v_ave[i] += vel[i] * spatialWeight;
 	}
 
 	// spacetime quantities are added in space and delt part is incorporated later
@@ -1785,7 +1937,7 @@ void Subdomain_spacetime_pp_data::Update_Domain_space_spacetime_Integrals_fromPo
 	for (int i = 0; i < DiM; ++i)
 	{
 		source_linMomentum[i] = segment.rho * point_fieldsNTPtr->source_v[i];
-		source_e_v += point_fieldsNTPtr->v[i] * source_linMomentum[i];
+		source_e_v += vel[i] * source_linMomentum[i];
 		source_e_sigma += point_fieldsNTPtr->eps[i] * point_fieldsNTPtr->source_sigma[i];
 	}
 
@@ -1805,8 +1957,11 @@ void Subdomain_spacetime_pp_data::Update_Domain_space_spacetime_Integrals_fromPo
 	setValue(damping_sigma, 0.0);
 	for (int i = 0; i < DiM; ++i)
 	{
-		damping_v[i] += (segment.D_vv * point_fieldsNTPtr->v[i] + segment.D_vsigma * point_fieldsNTPtr->sigma[i]);
-		damping_sigma[i] += (segment.D_sigmav * point_fieldsNTPtr->v[i] + segment.D_sigmasigma * point_fieldsNTPtr->sigma[i]);
+		double v = point_fieldsNTPtr->v[i];
+		if (g_domain->b_ring_opened1D_damping_on_full_vTheta)
+			v = vel[i];
+		damping_v[i] += (segment.D_vv * v + segment.D_vsigma * point_fieldsNTPtr->sigma[i]);
+		damping_sigma[i] += (segment.D_sigmav * v + segment.D_sigmasigma * point_fieldsNTPtr->sigma[i]);
 	}
 
 	double damping_e_v = 0.0;
@@ -1815,8 +1970,11 @@ void Subdomain_spacetime_pp_data::Update_Domain_space_spacetime_Integrals_fromPo
 
 	for (int i = 0; i < DiM; ++i)
 	{
+		double v = point_fieldsNTPtr->v[i];
+		if (g_domain->b_ring_opened1D_damping_on_full_vTheta)
+			v = vel[i];
 		damping_linMomentum[i] = segment.rho * damping_v[i];
-		damping_e_v += point_fieldsNTPtr->v[i] * damping_linMomentum[i];
+		damping_e_v += v * damping_linMomentum[i];
 		damping_e_sigma += point_fieldsNTPtr->eps[i] * damping_sigma[i];
 	}
 

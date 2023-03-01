@@ -33,7 +33,17 @@ void OnePoint_inBulk_Fields::OnePoint_inBulk_Fields_Print_Data(ostream & out, bo
 	if (print_x)
 		out << x << '\t';
 #if DiM1
-	out << u[0] << '\t' << v[0] << '\t' << eps[0] << '\t' << sigma[0];
+	if (!g_domain->b_ring_opened1D)
+		out << u[0] << '\t' << v[0] << '\t' << eps[0] << '\t' << sigma[0];
+	else
+	{
+		double ax = g_SL_desc_data.load_parameters[0] * x, axt = ax * time;
+		double tmp = u[0] - axt;
+		out << tmp << '\t';
+		tmp = v[0] - ax;
+		out << tmp << '\t';
+		out << eps[0] << '\t' << sigma[0];
+	}
 #if HAVE_SOURCE
 	out << '\t' << source_v[0] << '\t' << source_sigma[0];
 #endif
@@ -782,11 +792,22 @@ void SL_Bulk_Properties::Compute_stress_from_v_and_characteristics(const VEC& w,
 #endif
 }
 
-void SL_Bulk_Properties::Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(AllPoints_Data_Upstream_w_lOr_r& upstream_pts, OnePoint_Data_Downstream_w_lOr_r& downstream_pt, bool is_wr, bool useDSCharsAsUSChars)
+void SL_Bulk_Properties::Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(AllPoints_Data_Upstream_w_lOr_r& upstream_pts, OnePoint_Data_Downstream_w_lOr_r& downstream_pt, bool is_wr, double x, bool useDSCharsAsUSChars, double* ring_opened1D_alPtr)
 {
+	bool hasVelJump = (ring_opened1D_alPtr != NULL);
 	//! Compute upstream characteristics from q (v, sigma) or all upstream points
-	for (int i = 0; i < DiM; ++i)
-		upstream_pts.wUpstream[i] = q_to_w(upstream_pts.up_Pts[i].v, upstream_pts.up_Pts[i].sigma, i, is_wr);
+	if (!hasVelJump)
+	{
+		for (int i = 0; i < DiM; ++i)
+			upstream_pts.wUpstream[i] = q_to_w(upstream_pts.up_Pts[i].v, upstream_pts.up_Pts[i].sigma, i, is_wr);
+	}
+	else
+	{
+		VEC vel;
+		CopyVec(upstream_pts.up_Pts[0].v, vel);
+		vel[0] += *ring_opened1D_alPtr;
+		upstream_pts.wUpstream[0] = q_to_w(vel, upstream_pts.up_Pts[0].sigma, 0, is_wr);
+	}
 	//! If the problem does not have any source term, this is directly translated to downstream w:
 #if !HAVE_SOURCE
 	CopyVec(upstream_pts.wUpstream, downstream_pt.wDownstream);
@@ -816,7 +837,7 @@ void SL_Bulk_Properties::Compute_Downstream_characteristic_From_Upstream_qs_and_
 	#else
 	// more difficult case, as there are diagonal d terms from 0th order q
 	// see if an exact solution can be devised, depending on whether off-diagonal components of D_omega matrix are zero or not
-	if (allDiagonal_Ds_are_zero) // better case, with analytical solution
+	if (allDiagonal_Ds_are_zero && 	(!g_domain->b_ring_opened1D)) // better case, with analytical solution
 	{
 		VEC ds; // diagoinal q's for characteristics
 		if (is_wr)
@@ -848,6 +869,16 @@ void SL_Bulk_Properties::Compute_Downstream_characteristic_From_Upstream_qs_and_
 			{
 				ave_v[j] = 0.5 * (downstream_pt.last_estimate_v[j] + upstream_pts.up_Pts[i].v[j]);
 				ave_sigma[j] = 0.5 * (downstream_pt.last_estimate_sigma[j] + upstream_pts.up_Pts[i].sigma[j]);
+			}
+			if (g_domain->b_ring_opened1D)
+			{
+				if (g_domain->b_ring_opened1D_damping_on_full_vTheta) // computing true v_theta
+					ave_v[0] -= g_SL_desc_data.load_parameters[0] * x;
+				else // damping computing from v vTheta + ax which does not really make sense
+				{
+					if (hasVelJump) // left boundary, velocity is incremented by aL
+						ave_v[0] += *ring_opened1D_alPtr;
+				}
 			}
 			// computing the corresponding source (-Dq)
 			VEC ave_src_v, ave_src_sigma;
@@ -954,12 +985,13 @@ void SL_Bulk_Properties::Compute_Bulk_vseps_IC(OnePoint_inBulk_Fields& point_fie
 	Compute_Stress_from_Strain(point_fieldsNT.eps, point_fieldsNT.sigma);
 }
 
-void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr)
+void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(double x, SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr)
 {
 	VEC wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ;
 	setValue(wlSide_rGoing_WO_in_situ, 0.0);
 	setValue(wrSide_lGoing_WO_in_situ, 0.0);
 	VEC *wDownstream;
+	double *ring_opened1D_alPtr = NULL;
 
 #if RING_PROBLEM
 	double v_r;
@@ -978,8 +1010,8 @@ void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *inter
 			epside = SDR;
 			interfaceSide = interfaceLeftOfBulk;
 			delx = point_fieldsNT.x - interfaceSide->interface_x;
-			if (g_domain.isPeriodic && (delx < 0.0))
-				delx += g_domain.L;
+			if (g_domain->isPeriodic && (delx < 0.0))
+				delx += g_domain->L;
 			is_wr = true;
 		}
 		else
@@ -988,8 +1020,8 @@ void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *inter
 			epside = SDL;
 			interfaceSide = interfaceRightOfBulk;
 			delx = interfaceSide->interface_x - point_fieldsNT.x;
-			if (g_domain.isPeriodic && (delx < 0.0))
-				delx += g_domain.L;
+			if (g_domain->isPeriodic && (delx < 0.0))
+				delx += g_domain->L;
 			is_wr = false;
 		}
 		AllPoints_Data_Upstream_w_lOr_r upstream_pts;
@@ -1046,7 +1078,7 @@ void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *inter
 			}
 #if HAVE_SOURCE
 #if RING_PROBLEM
-			double sigma_theta_source_final = E_iso * v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+			double sigma_theta_source_final = E_iso * v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 			upstream_pts.up_Pts[i].source_sigma[0] += sigma_theta_source_final;
 #endif
 #endif
@@ -1076,14 +1108,14 @@ void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *inter
 		}
 		g_SL_desc_data.GetNonRingNonZeroTerm_SourceTerm(point_fieldsNT.x, point_fieldsNT.time, flag, downstream_pt.source_v, downstream_pt.source_sigma);
 #if RING_PROBLEM
-		double sigma_theta_source_final = E_iso * v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+		double sigma_theta_source_final = E_iso * v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 		downstream_pt.source_sigma[0] += sigma_theta_source_final;
 #endif
 #else
 		setValue(downstream_pt.last_estimate_v, 0.0);
 		setValue(downstream_pt.last_estimate_sigma, 0.0);
 #endif
-		Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(upstream_pts, downstream_pt, is_wr);
+		Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(upstream_pts, downstream_pt, is_wr, x, false, ring_opened1D_alPtr);
 		CopyVec(downstream_pt.wDownstream, *wDownstream);
 	}
 	// C: now having upstream and downstream values calculate the star value for the bulk
@@ -1092,7 +1124,7 @@ void SL_Bulk_Properties::Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *inter
 	Compute_Strain_from_Stress(point_fieldsNT.sigma, point_fieldsNT.eps);
 }
 
-void SL_Bulk_Properties::Compute_Bulk_Values(SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, bool isIC, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr, unsigned int maxIter, double relTol4Conv)
+void SL_Bulk_Properties::Compute_Bulk_Values(double x, SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, bool isIC, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr, unsigned int maxIter, double relTol4Conv)
 {
 	if (!isIC)
 	{
@@ -1101,7 +1133,7 @@ void SL_Bulk_Properties::Compute_Bulk_Values(SL_OneInterfaceAllTimes *interfaceL
 		treatWOSourceUpdate = (point_fieldsPT_or_NTPIPtr == NULL);
 #endif
 		if (treatWOSourceUpdate)
-			Compute_Bulk_vseps_NonIC(interfaceLeftOfBulk, interfaceRightOfBulk, point_fieldsNT, NULL);
+			Compute_Bulk_vseps_NonIC(x, interfaceLeftOfBulk, interfaceRightOfBulk, point_fieldsNT, NULL);
 		else
 		{
 			double Zscalar = c_rhos[0];
@@ -1111,7 +1143,7 @@ void SL_Bulk_Properties::Compute_Bulk_Values(SL_OneInterfaceAllTimes *interfaceL
 			double normValP = MAX(Norm2(prevItVal.sigma), Zscalar * Norm2(prevItVal.v));
 			while (iter++ < maxIter)
 			{
-				Compute_Bulk_vseps_NonIC(interfaceLeftOfBulk, interfaceRightOfBulk, point_fieldsNT, &prevItVal);
+				Compute_Bulk_vseps_NonIC(x, interfaceLeftOfBulk, interfaceRightOfBulk, point_fieldsNT, &prevItVal);
 				VEC delv, delsigma;
 				SubtractVec(point_fieldsNT.v, prevItVal.v, delv);
 				SubtractVec(point_fieldsNT.sigma, prevItVal.sigma, delsigma);
@@ -1135,7 +1167,7 @@ void SL_Bulk_Properties::Compute_Bulk_Values(SL_OneInterfaceAllTimes *interfaceL
 			double ring_p = 0.5 * (g_SL_desc_data.GetRing_p(point_fieldsNT.x, point_fieldsNT.time) +
 				g_SL_desc_data.GetRing_p(point_fieldsPT_or_NTPIPtr->x, point_fieldsPT_or_NTPIPtr->time));
 			double sigma_theta = 0.5 * (point_fieldsNT.sigma[0] + point_fieldsPT_or_NTPIPtr->sigma[0]);
-			point_fieldsNT.v_r = point_fieldsPT_or_NTPIPtr->v_r + delt * (ring_p - sigma_theta / rho / g_domain.ring_R);
+			point_fieldsNT.v_r = point_fieldsPT_or_NTPIPtr->v_r + delt * (ring_p - sigma_theta / rho / g_domain->ring_R);
 #endif
 		}
 		else
@@ -1154,7 +1186,7 @@ void SL_Bulk_Properties::Compute_Bulk_Values(SL_OneInterfaceAllTimes *interfaceL
 #if HAVE_SOURCE
 	g_SL_desc_data.GetNonRingNonZeroTerm_SourceTerm(point_fieldsNT.x, point_fieldsNT.time, flag, point_fieldsNT.source_v, point_fieldsNT.source_sigma);
 #if RING_PROBLEM
-	double sigma_theta_source_final = E_iso * point_fieldsNT.v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+	double sigma_theta_source_final = E_iso * point_fieldsNT.v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 	point_fieldsNT.source_sigma[0] += sigma_theta_source_final;
 #endif
 #endif

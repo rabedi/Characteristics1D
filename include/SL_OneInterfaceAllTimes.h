@@ -76,6 +76,11 @@ public:
 	void Print(ostream& out) const;
 
 	// inputs
+	// for periodic domain, e.g. Ring with constant vr (see section 2.3.1. in Zhou_2006_Molinari_Ramesh_Analysis of the brittle fragmentation of an expanding ring.pdf)
+	// a constant velocity of magnitude of La (a loading rate, L domain size) is added to the velocity of the left side before Riemann solution, then the velocity is subtracted from all star values
+	void Set_ring_opened1D_left_side_jump_handling_true();
+	bool has_ring_opened1D_al;
+
 	int interface_pos;
 	double interface_x;
 	GID interface_flag;

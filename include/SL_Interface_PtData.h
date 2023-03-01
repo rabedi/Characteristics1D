@@ -52,7 +52,7 @@ class SL_interfacePPtData
 public:
 	SL_interfacePPtData();
 	void Read(istream& in);
-	void Output_FinalSolution(ostream& out, IOF_type iot, double space_or_time);
+	void Output_FinalSolution(ostream& out, IOF_type iot, double space_or_time, double x, double t, bool has_ring_opened1D_al);
 	void SetZero();
 
 	SL_Interface_PtData_OneSide sl_side_ptData[NUM_SIDES];
@@ -155,7 +155,7 @@ class SL_interface_Temp_PPtData
 public:
 	SL_interface_Temp_PPtData();
 	~SL_interface_Temp_PPtData();
-	void MakeReady_For_ContactFractureRuns(double beta_delU, double beta_traction, const VEC& sigmaI);
+	void MakeReady_For_ContactFractureRuns(double beta_delU, double beta_traction, const VEC& sigmaI, double delu0Change = 0.0);
 	void SetZero();
 	void Read(istream& in);
 	void Output_ScalarValues(ostream& out, IOF_type iot, double space_or_time);

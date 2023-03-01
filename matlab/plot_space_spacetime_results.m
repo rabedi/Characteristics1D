@@ -12,7 +12,7 @@ if nargin < 3
 end
 if nargin < 4
     subdomainNo = 0;
-    subdomainNo = 1;
+%    subdomainNo = 1;
 %    subdomainNo = 2;
 end
 sd = ['sd_', num2str(subdomainNo), '_'];

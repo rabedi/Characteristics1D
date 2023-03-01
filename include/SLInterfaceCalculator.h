@@ -208,13 +208,14 @@ private:
 	bool ptTimeSequenceSlns_Deletable;
 
 	bool terminateConditionMet;
-
 	SLInterfaceCalculator(const SLInterfaceCalculator& other);
 	SLInterfaceCalculator& operator=(const SLInterfaceCalculator& other);
 
 	// Incident functions:
 	void UpdateCharacteristics_FromIncident();
 	void UpdateStarValues_FromIncident();
+	// periodic problem, ring type
+	void Update_Velocity_Left_Ring_Opened1D();
 };
 
 // intentionally the function is moved out of SLInterfaceCalculator so it can more easily be called from outside

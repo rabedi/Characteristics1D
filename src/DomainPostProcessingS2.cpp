@@ -2592,17 +2592,27 @@ void OneSubdomainPPS2Data::Compute_FragmentationSizeData_Step1_DetermineBreaking
 	unsigned int defaultDir = configPPS2->defaultDir;
 	// this is not fully correct if we have symmetry BC, but ignired now
 	unsigned int first_interior_interface = segmentInfo.interface_offset, end_interior_interface = segmentInfo.numInterfaces- 1 - segmentInfo.interface_offset;
+	vector<bool> hasFracture(end_interior_interface + 1);
+	fill(hasFracture.begin(), hasFracture.end(), true);
+	unsigned int offset4Props = 0;
+	if (segmentInfo.isPeriodic)
+		offset4Props = 1;
+	for (unsigned int ii = first_interior_interface; ii <= end_interior_interface; ++ii)
+		hasFracture[ii] = (segmentInfo.deltaCs[ii + offset4Props] > 0);
 	if (fragCriterion == fct_Damage)
 	{
 		for (unsigned int ii = first_interior_interface; ii <= end_interior_interface; ++ii)
-			if (fragDat.D[ii] >= factor2DecideFragmented)
+			if (hasFracture[ii] && (fragDat.D[ii] >= factor2DecideFragmented))
 				fragmentationDatPtr->fragmented_interface_indices.push_back(ii);
 	}
 	else if (fragCriterion == fct_maxEffDelU)
 	{
 		for (unsigned int ii = first_interior_interface; ii <= end_interior_interface; ++ii)
-			if (fragDat.maxEffDelU[ii] >= factor2DecideFragmented * segmentInfo.deltaCs[ii])
+		{
+			double delucLim = factor2DecideFragmented * segmentInfo.deltaCs[ii + offset4Props];
+			if (hasFracture[ii] && (fragDat.maxEffDelU[ii] >= delucLim))
 				fragmentationDatPtr->fragmented_interface_indices.push_back(ii);
+		}
 	}
 	else if (fragCriterion == fct_DelU)
 	{
@@ -2611,11 +2621,14 @@ void OneSubdomainPPS2Data::Compute_FragmentationSizeData_Step1_DetermineBreaking
 
 		for (unsigned int ii = first_interior_interface; ii <= end_interior_interface; ++ii)
 		{
+			if (!hasFracture[ii])
+				continue;
 			delu = fragDat.uR[defaultDir][ii] - fragDat.uL[defaultDir][ii];
 			if (defaultDir > 0)
 				delu = fabs(delu);
-			if ((fragDat.maxEffDelU[ii] >= factor2DecideFragmentedMaxDelU * segmentInfo.deltaCs[ii]) &&
-				(delu >= factor2DecideFragmented * segmentInfo.deltaCs[ii]))
+			double delucLim = factor2DecideFragmentedMaxDelU * segmentInfo.deltaCs[ii + offset4Props];
+			if ((fragDat.maxEffDelU[ii] >= delucLim) &&
+				(delu >= delucLim))
 				fragmentationDatPtr->fragmented_interface_indices.push_back(ii);
 		}
 	}
@@ -2666,7 +2679,7 @@ void OneSubdomainPPS2Data::Compute_FragmentationSizeData_Step2_DetermineFragment
 		else
 		{
 			unsigned int lastInterfaceIndex = segmentInfo.numInterfaces - 1;
-			bool periodInterfaceBroken = Find(fragmented_interface_indices, lastInterfaceIndex);
+			bool periodInterfaceBroken = (Find(fragmented_interface_indices, lastInterfaceIndex) >= 0);
 			if (!periodInterfaceBroken)
 				fragmented_interface_indices.push_back(lastInterfaceIndex);
 

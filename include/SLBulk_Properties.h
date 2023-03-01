@@ -120,7 +120,10 @@ public:
 	//				3b. downstream.source_v, source_sigma computed
 	// 		useDSCharsAsUSChars: For problems with source term sometimes current v and sigma are not available we can acceptable some level of error and use upstream characterisitcs as downstream ones
 	//		Output: downstreamPt.w computed
-	void Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(AllPoints_Data_Upstream_w_lOr_r& upstream_pts, OnePoint_Data_Downstream_w_lOr_r& downstream_pt, bool is_wr, bool useDSCharsAsUSChars = false);
+	// for periodic domain, e.g. Ring with constant vr (see section 2.3.1. in Zhou_2006_Molinari_Ramesh_Analysis of the brittle fragmentation of an expanding ring.pdf)	a constant velocity of magnitude of La (a loading rate, L domain size) is added to the velocity of the left side before Riemann solution, then the velocity is subtracted from all star values
+	// this jump if present is sent as ring_opened1D_alPtr
+	// x is only needed for opened up ring problem
+	void Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(AllPoints_Data_Upstream_w_lOr_r& upstream_pts, OnePoint_Data_Downstream_w_lOr_r& downstream_pt, bool is_wr, double x, bool useDSCharsAsUSChars = false, double* ring_opened1D_alPtr = NULL);
 	// in-situ stresses:
 	//	Step 1: they are added to downstream chacateristics from the two sides
 	// after the function above, we need to update characteristics with in-situ stresses (is present)
@@ -134,7 +137,7 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// functions related to computing values at a given spaceime location
 	// see Compute_Bulk_vseps_NonIC ...
-	void Compute_Bulk_Values(SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, bool isIC, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr = NULL,
+	void Compute_Bulk_Values(double x, SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, bool isIC, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr = NULL,
 		unsigned int maxIter = 10, double relTol4Conv = 1e-4);
 
 	// input
@@ -212,7 +215,7 @@ private:
 
 	// ELSE
 	// IF source term == 0, this is point_fieldsPT_or_NTPIPtr used at all
-	void Compute_Bulk_vseps_NonIC(SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr = NULL);
+	void Compute_Bulk_vseps_NonIC(double x, SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr = NULL);
 };
 
 // the following class is the interface between two bulks and is capable of computing Riemann I (bonded) and 

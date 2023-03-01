@@ -32,6 +32,7 @@ SL_OneInterfaceAllTimes::SL_OneInterfaceAllTimes()
 	iofScalarVals = iof_ascii;
 	incidentSide = ilt_noSided;
 	only1DOrtizModel = false;
+	has_ring_opened1D_al = false;
 }
 
 SL_OneInterfaceAllTimes::~SL_OneInterfaceAllTimes()
@@ -263,6 +264,9 @@ void SL_OneInterfaceAllTimes::Open_fixed_x_files_SL_OneInterfaceAllTimes(IOF_typ
 //	do_mkdir(nameBase.c_str());
 //	nameBase += "/";
 	bool b_directlyCalculateBondedInFinalSln = ((ts_bulkProps->interfaceLoc != ilt_twoSided) || (!interfacePFs->HasAnyContactFriction()));
+#if HAS_SOURCE
+	b_directlyCalculateBondedInFinalSln = false;
+#endif
 	string ext, outName;
 	bool genFile = getExt(iofFinalSolution, ext);
 	if (genFile)
@@ -336,6 +340,7 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 			continue;
 		}
 		int epside;
+		double* ring_opened1D_alPtr = NULL;
 		if (eside == SDL)
 		{
 			bulk_Ptr = ts_bulkProps->bulk_leftPtr;
@@ -349,6 +354,8 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 			wDownstream = &wrSide_lGoing_WO_in_situ;
 			epside = SDL;
 			is_wr = false;
+			if (has_ring_opened1D_al)
+				ring_opened1D_alPtr = &g_domain->ring_opened1D_al;
 		}
 
 #if HAVE_SOURCE
@@ -392,8 +399,8 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 				if (eside == SDL)
 				{
 					x = interface_x - del_x;
-					if (g_domain.isPeriodic && (x < g_domain.x_min))
-						x += g_domain.L;
+					if (g_domain->isPeriodic && (x < g_domain->x_min))
+						x += g_domain->L;
 
 //					double ratioFar = del_x / sides_delx[SDL];
 //					double omratioFar = 1.0 - ratioFar;
@@ -401,8 +408,8 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 				else
 				{
 					x = interface_x + del_x;
-					if (g_domain.isPeriodic && (x > g_domain.x_max))
-						x -= g_domain.L;
+					if (g_domain->isPeriodic && (x > g_domain->x_max))
+						x -= g_domain->L;
 
 //					double ratioFar = del_x / sides_delx[SDR];
 //					double omratioFar = 1.0 - ratioFar;
@@ -424,7 +431,7 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 			}
 #if HAVE_SOURCE
 #if RING_PROBLEM
-			double sigma_theta_source_final = bulk_Ptr->E_iso * v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+			double sigma_theta_source_final = bulk_Ptr->E_iso * v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 			upstream_pts.up_Pts[i].source_sigma[0] += sigma_theta_source_final;
 #endif
 #endif
@@ -453,11 +460,11 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 #if HAVE_SOURCE
 		g_SL_desc_data.GetNonRingNonZeroTerm_SourceTerm(interface_x, currentTime, bulk_Ptr->flag, downstream_pt.source_v, downstream_pt.source_sigma);
 #if RING_PROBLEM
-		double sigma_theta_source_final = bulk_Ptr->E_iso * v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+		double sigma_theta_source_final = bulk_Ptr->E_iso * v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 		downstream_pt.source_sigma[0] += sigma_theta_source_final;
 #endif
 #endif
-		bulk_Ptr->Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(upstream_pts, downstream_pt, is_wr, false);
+		bulk_Ptr->Compute_Downstream_characteristic_From_Upstream_qs_and_Forces(upstream_pts, downstream_pt, is_wr, interface_x, false, ring_opened1D_alPtr);
 		CopyVec(downstream_pt.wDownstream, *wDownstream);
 	}
 
@@ -528,6 +535,11 @@ double SL_OneInterfaceAllTimes::getEffectiveDamage_4_InterfacialDamage_TSRs(cons
 	if ((interfacePFs != NULL) && (interfacePFs->damageOffOnMix == sl_interfacial_damage_on) && (interfacePFs->damageTractionModel == sl_interfacial_damage_traction_TSR))
 		return pt.maxEffDelU / getDeltaC();
 	return pt.interface_damage_final;
+}
+
+void SL_OneInterfaceAllTimes::Set_ring_opened1D_left_side_jump_handling_true()
+{
+	has_ring_opened1D_al = true;
 }
 
 void SL_OneInterfaceAllTimes::Set1DOrtizType()
@@ -640,6 +652,8 @@ void SL_OneInterfaceAllTimes::InitialStep_Use_IC(SLInterfaceCalculator& slic)
 	SL_interfacePPtData* ppt = timeSeqData.AddNewPoint(0.0, pos);
 	ppt->maxEffDelU = maxEffDelU;
 	ppt->tsrStage = TSR_loadingStages_none;
+	if ((only1DOrtizModel) || ((interfacePFs != NULL) && (interfacePFs->damageOffOnMix == sl_interfacial_damage_on)))
+		iniDamage = 1.0;
 	ppt->interface_damage_final = iniDamage;
 	ppt->interface_damage_source_final = damage_source_0;
 	ppt->interface_time = 0.0;
@@ -656,7 +670,8 @@ void SL_OneInterfaceAllTimes::InitialStep_Use_IC(SLInterfaceCalculator& slic)
 		CopyVec(v_0, ppt->sl_side_ptData[SDR].v_downstream_final);
 		CopyVec(sig_0, ppt->sl_side_ptData[SDR].sigma_downstream_final);
 	}
-
+	if (has_ring_opened1D_al)
+		ppt->sl_side_ptData[SDR].v_downstream_final[0] -= g_domain->ring_opened1D_al;
 #if RING_PROBLEM
 	double invrho, sigma_theta, E;
 	sigma_theta = sig_0[0];
@@ -664,8 +679,8 @@ void SL_OneInterfaceAllTimes::InitialStep_Use_IC(SLInterfaceCalculator& slic)
 	E = 0.5 * (ts_bulkProps->bulk_leftPtr->E_iso + ts_bulkProps->bulk_rightPtr->E_iso);
 	ppt->v_r_final = v_r;
 	double ring_p = g_SL_desc_data.GetRing_p(interface_x, 0.0);
-	ppt->v_r_source_final = ring_p - sigma_theta * invrho / g_domain.ring_R; // p - sigma_theta/rho/R
-	ppt->sigma_theta_source_final = E * v_r / g_domain.ring_R; // E v_r / R (same on both sides)
+	ppt->v_r_source_final = ring_p - sigma_theta * invrho / g_domain->ring_R; // p - sigma_theta/rho/R
+	ppt->sigma_theta_source_final = E * v_r / g_domain->ring_R; // E v_r / R (same on both sides)
 #endif
 	// handling incident interface
 	if (incidentSide != ilt_noSided) 
@@ -696,7 +711,7 @@ void SL_OneInterfaceAllTimes::InitialStep_Use_IC(SLInterfaceCalculator& slic)
 	}
 	slic.Set_pPtSlns(ppt, false);
 	if (outFinalSln != NULL)
-		ppt->Output_FinalSolution(*outFinalSln, iofFinalSolution, 0.0);
+		ppt->Output_FinalSolution(*outFinalSln, iofFinalSolution, 0.0, interface_x, 0.0, has_ring_opened1D_al);
 }
 
 AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_point, double& maxTime, SLInterfaceCalculator& slic)
@@ -715,6 +730,7 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 	slic.Initialize_setFromOutside_Current_Step_EmptyPermanentPt_Storage(ppt); // , interface_x);
 	// adding the sequence of earlier solutions
 	slic.Initialize_setFromOutside_Earlier_Steps_NonEmptyPermanentPts_Storage(timeSeqData);
+
 	// computing downstream characteristics and passing on to calculator.
 	// note: for nonzero source problems characteristics are updated in SLInterfaceCalculator::Main_Compute_OnePoint
 	VEC wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ;

@@ -852,7 +852,7 @@ void Subdomain_ElasticFractureModifier::Initialize_Subdomain_ElasticFractureModi
 			Bulk_Elastic_Modifier* pemPtr = &bulkMs[i - 1];
 			pemPtr->bulk_flag = default_bulk_flag;
 			pemPtr->length = interface_xs[i] - interface_xs[i - 1];
-			pemPtr->b_modifies = true;
+			pemPtr->Initialize_Bulk_Elastic_Modifier();
 			pemPtr->CFactor = efibulk.CFactor;
 			pemPtr->rhoFactor = efibulk.rhoFactor;
 			pemPtr->dampingFactor = efibulk.dampingFactor;

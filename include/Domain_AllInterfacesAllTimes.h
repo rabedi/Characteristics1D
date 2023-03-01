@@ -4,7 +4,6 @@
 // this is the domain for characteristics method
 
 // Main output: vector of SL_OneInterfaceAllTimes, one for each spatial position
-
 // Main input: Subdomain_ElasticFractureModifier for each subdomain, the sequence of these instructions form the whole domain
 
 #include "Subdomain_ElasticFractureModifier.h"
@@ -133,12 +132,32 @@ public:
 	// this is a vector of size num_bulks + 1 and pos i, i + 1 contains the start and end bulks numbers for subdomain i
 	vector<int> subdomain_bulk_start_nos;
 	// includes bulks and interfaces related to individual subdomains
-	vector< OneSubdomain_All_bulksConnectivityInfo> bulk_interfaces_subdomains;
+	vector<OneSubdomain_All_bulksConnectivityInfo> bulk_interfaces_subdomains;
 	// postprocessing data for each subdomain
 	vector<Subdomain_spacetime_pp_data> postProcessing_subdomains;
 	vector<int> subdomainNo4AllBulks;
 
-	// private functions and data
+	///////////////////////////////////////////////////////////////////////////////////////////
+	// opened up ring problem
+	// In Zhou_2006_Molinari_Ramesh_Analysis of the brittle fragmentation of an expanding ring.pdf, section 2.3.1. 
+	// the ring problem is opened up and treated as a 1D problem with specific BC (eqs 11 & 12)
+	// v = vTheta + ax, a = vr/R 
+	// b_ring_opened1D = true for such treatment
+	bool b_ring_opened1D;
+	//	this one when on, turns on fracture on the end point of the periodic domain to avoid complications pertained to modeling fracture on this boundary
+	bool b_ring_open_turn_fracture_on_periodic_end;
+	// below: true	-> damping term / rho = Dvv * vTheta 
+	//			(physically correct, but for elastic response, vTheta = 0, and for fracture this is mostly zero, so damping for ring problem is a 2nd order effect with this set-up)
+	//		  false: not recommended (non-physical) -> damping / rho = Dvv * v
+	bool b_ring_opened1D_damping_on_full_vTheta;
+	//	below true:			Kinetic energy is computed on vTheta = v - ax, and vr
+	//						kinetic energy of vr =  ring_opened1D_kinetic_energy_vr = rhoAverage * a^2 * L^2/8/PI^2 is added to any times kinetic energy
+	//						and kinetic energy of vTheta = v - ax is considered
+	bool b_ring_opened1D_kinetic_energy_on_full_vTheta;
+	double ring_opened1D_kinetic_energy_vr;
+	// = aL
+	double ring_opened1D_al;
+
 private:
 	//////////////////////////////////////////
 	// Initialize
@@ -171,9 +190,12 @@ private:
 	string configName;
 
 	unsigned int GetInterfaceBulkSide_Subdomains_RelIndices(SL_OneInterfaceAllTimes* interfacePtr, vector<unsigned int>& subDomainNos, vector<unsigned int>& relPos_wrt_subDomainStartPoints);
+
+	// to compute 1D averages of E, rho, ...
+	void Compute1D_Averages();
 };
 
-extern Domain_All_Interfaces_All_Times g_domain;
+extern Domain_All_Interfaces_All_Times* g_domain;
 
 // if serialNumberIn >= 0, it will be used in reading input material files
 

@@ -13,15 +13,15 @@
 //#define SIZE_PT_TIME_SEQUENCE	50000
 
 // Ring problem is 1D ring fragmentation problem. It has a source terms from v_r
-#define RING_PROBLEM	1
+#define RING_PROBLEM	0
 
 #define USE_ISO_ASSUMPTION_PRE	0	// if iso assumption is used, normal and shear modes (2D, 3D) are decoupled and C, Z, Y, ..., in matrix form are not used
 #define USE_PLANE_STRAIN	1	// for 2D isotropic model uses plane strain
 // turn the flag below one, if the problem has source term that is 0th order in q = [v, sigma]
 // For example, when damping is nonzero (D_vv = damping / rho) the flag below is 1
 // see D matrix components in SL_Bulk_Properties
-#define HAVE_SOURCE_ORDER0_q	1 //1
-#define HAVE_SOURCE_TERM_OTHER	1	// source term other than 0th order q and ring problem source (e.g. constant body force ...)
+#define HAVE_SOURCE_ORDER0_q	0 //1
+#define HAVE_SOURCE_TERM_OTHER	0	// source term other than 0th order q and ring problem source (e.g. constant body force ...)
 
 
 #if HAVE_SOURCE_ORDER0_q

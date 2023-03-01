@@ -3,7 +3,7 @@ if nargin < 1
     runName = 'run_0';
 end
 if nargin < 2
-    fragmentationType = 2; % 0-> 'D'; 1 -> Max_DelU ; 2 -> DelU 
+    fragmentationType = 1; % 0-> 'D'; 1 -> Max_DelU ; 2 -> DelU 
 end
 if nargin < 3
     subdomainNum = 0;

@@ -4,7 +4,7 @@
 //#define PRINT_DOMAIN_CONFIG VCPP
 #define PRINT_DOMAIN_CONFIG 0
 
-Domain_All_Interfaces_All_Times g_domain;
+Domain_All_Interfaces_All_Times* g_domain;
 
 Domain_All_Interfaces_All_Times::Domain_All_Interfaces_All_Times()
 {
@@ -46,6 +46,13 @@ Domain_All_Interfaces_All_Times::Domain_All_Interfaces_All_Times()
 	io_type_InterfaceRawScalars_AllTime_Print_4PP = iof_none;
 	numSpaceStep_InterfaceRawFinalSlnScalars_AllTime_Print_4PP = -100;
 	mainSubdomainNo = 0;
+
+	b_ring_opened1D = false;
+	b_ring_open_turn_fracture_on_periodic_end = false;
+	b_ring_opened1D_damping_on_full_vTheta = true;
+	b_ring_opened1D_kinetic_energy_on_full_vTheta = true;
+	ring_opened1D_kinetic_energy_vr = 0.0;
+	ring_opened1D_al = 0.0;
 }
 
 Domain_All_Interfaces_All_Times::~Domain_All_Interfaces_All_Times()
@@ -350,16 +357,48 @@ void Domain_All_Interfaces_All_Times::Read_BaseData(istream & in, int serialNumb
 		else if (buf == "isPeriodic")
 		{
 			READ_NBOOL(in, buf, isPeriodic);
+			if (isPeriodic)
+			{
+				for (int i = 0; i < DiM; ++i)
+				{
+					directionalBCTypeLeftSide[i] = bct_PeriodicOrBloch;
+					directionalBCTypeRightSide[i] = bct_PeriodicOrBloch;
+				}
+			}
+		}
+		else if (buf == "ring_open_turn_fracture_on_periodic_end")
+		{
+			READ_NBOOL(in, buf, b_ring_open_turn_fracture_on_periodic_end);
+		}
+		else if (buf == "ring_opened1D_damping_on_full_vTheta")
+		{
+			READ_NBOOL(in, buf, b_ring_opened1D_damping_on_full_vTheta);
+		}
+		else if (buf == "ring_opened1D_kinetic_energy_on_full_vTheta")
+		{
+			READ_NBOOL(in, buf, b_ring_opened1D_kinetic_energy_on_full_vTheta);
 		}
 		else if (buf == "directionalBCTypeLeftSide")
 		{
 			for (int i = 0; i < DiM; ++i)
 				in >> directionalBCTypeLeftSide[i];
+			if (directionalBCTypeLeftSide[0] == bct_PeriodicOrBloch)
+			{
+				for (int i = 0; i < DiM; ++i)
+					directionalBCTypeRightSide[i] = bct_PeriodicOrBloch;
+				isPeriodic = true;
+			}
 		}
 		else if (buf == "directionalBCTypeRightSide")
 		{
 			for (int i = 0; i < DiM; ++i)
 				in >> directionalBCTypeRightSide[i];
+			if (directionalBCTypeRightSide[0] == bct_PeriodicOrBloch)
+			{
+				for (int i = 0; i < DiM; ++i)
+					directionalBCTypeLeftSide[i] = bct_PeriodicOrBloch;
+				isPeriodic = true;
+			}
 		}
 		else if (buf == "do_space_spacetime_PP")
 		{
@@ -1082,14 +1121,38 @@ void Domain_All_Interfaces_All_Times::Connect_Interfaces_Set_BC_Types__Form_PP()
 		bulk_index_right = bulk_index_left + 1;
 		interface_index_left = ii - 1;
 		interface_index_right = ii + 1;
+
+		// for periodic domain, e.g. Ring with constant vr (see section 2.3.1. in Zhou_2006_Molinari_Ramesh_Analysis of the brittle fragmentation of an expanding ring.pdf)
+		// a constant velocity of magnitude of La (a loading rate, L domain size) is added to the velocity of the left side before Riemann solution, then the velocity is subtracted from all star values
 		if (isPeriodic)
 		{
 			if (ii == 0)
+			{
 				interface_index_left = num_interfaces - 1;
+			}
 			else if (ii == end_interior_interface)
 			{
 				interface_index_right = 0;
 				bulk_index_right = 0;
+#if !RING_PROBLEM
+				if (g_SL_desc_data.load_number == AXT_LN)
+				{
+					b_ring_opened1D = true;
+					ring_opened1D_al = g_SL_desc_data.a_xt_prob[0] * L;
+					interfaces[ii]->Set_ring_opened1D_left_side_jump_handling_true();
+					if (!b_ring_open_turn_fracture_on_periodic_end)
+					{
+						map<GID, SL_Interface_Fracture_PF*>::iterator itf = interface_fracture_map.find(0);
+						if (itf == interface_fracture_map.end())
+							THROW("Cannot find zero (no fracture) flag\n");
+						interfaces[ii]->interface_flag = 0;
+						interfaces[ii]->Set_EF_Properties(itf->second);
+					}
+#if !DiM1
+					THROW("This option only implemented for Dim == 1, search the code and anywhere that ring_opened1D_al is used, ensure it works for dim > 1\n");
+#endif
+				}
+#endif
 			}
 		}
 		bulkLeft = bulks[bulk_index_left];
@@ -1207,6 +1270,85 @@ void Domain_All_Interfaces_All_Times::Connect_Interfaces_Set_BC_Types__Form_PP()
 	}
 	if (isPeriodic)  // to avoid this being equal to 
 		bulk_interfaces_subdomains[0].subdomain_interface_xs[0] = x_min;
+
+	/////////////////////// finalizing ring_open 1D stuff
+	if (!b_ring_opened1D)
+	{
+		b_ring_opened1D_kinetic_energy_on_full_vTheta = false;
+		b_ring_opened1D_damping_on_full_vTheta = false;
+		ring_opened1D_al = 0.0;
+	}
+}
+
+void Domain_All_Interfaces_All_Times::Compute1D_Averages()
+{
+
+	unsigned int st, en, sz, pos;
+	for (unsigned int si = 0; si < num_subdomains; ++si)
+	{
+		string fileName;
+		string specificName = "_AveProperties";
+		GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName);
+		fstream out(fileName.c_str(), ios::out);
+
+		st = subdomain_bulk_start_nos[si];
+		en = subdomain_bulk_start_nos[si + 1];
+		sz = en - st;
+		OneSubdomain_All_bulksConnectivityInfo* osabci = &bulk_interfaces_subdomains[si];
+		out << "st\t" << st << "\ten\t" << en << "\tsz\t" << sz << '\n';
+		out << "pos\tlen\taveE\taveHarmonicE\taveRho\tavec\taveZ\taveDvv\tcFromAves\tZFromAves\n";
+		out << setprecision(22);
+		osabci->Zero1D_Averages();
+		double totLength = 0.0, inv_totLength, cur_AveE, cur_AveHarmonicE, cur_Averho, cur_Avec, cur_AveZ, curr_AveDD = 0.0, cFromAves, ZFromAves;
+		for (unsigned int j = 0; j < sz; ++j)
+		{
+			pos = j + st;
+			SL_Bulk_Properties *bulkPtr = osabci->subdomain_bulk_segments[j].bulkPtr;
+			double len = osabci->segment_lengths[j];
+			totLength += len;
+			inv_totLength = 1.0 / totLength;
+			double Z = bulkPtr->c_rhos[0];
+			double rho = bulkPtr->rho;
+			double c = Z / rho;
+			double E = c * Z;
+			osabci->EAve += E * len;
+			osabci->EHarmonicAve += 1.0 * len;
+			osabci->rhoAve += rho * len;
+			osabci->cAve += c * len;
+			osabci->ZAve += Z * len;
+
+			cur_AveE = osabci->EAve * inv_totLength;
+			cur_Averho = osabci->rhoAve * inv_totLength;
+			cur_Avec = osabci->cAve * inv_totLength;
+			cur_AveZ = osabci->ZAve * inv_totLength;
+			cFromAves = sqrt(cur_AveE / cur_Averho);
+			ZFromAves = cur_Averho * cFromAves;
+			cur_AveHarmonicE = totLength / osabci->EHarmonicAve;
+#if HAVE_SOURCE_ORDER0_q
+			osabci->DvvAve += bulkPtr->D_vv * len;
+			curr_AveDD = osabci->DvvAve * inv_totLength;
+#endif
+			out << pos << "\t" << totLength << "\t" << cur_AveE << "\t" << cur_AveHarmonicE << "\t" << cur_Averho << "\t" << cur_Avec << "\t" << cur_AveZ << "\t" << curr_AveDD << "\t" << cFromAves << "\t" << ZFromAves << "\n";
+		}
+		osabci->EAve *= osabci->inv_length;
+		osabci->EHarmonicAve = osabci->length / osabci->EHarmonicAve;
+		osabci->rhoAve *= osabci->inv_length;
+		osabci->cAve *= osabci->inv_length;
+		osabci->ZAve *= osabci->inv_length;
+#if HAVE_SOURCE_ORDER0_q
+		osabci->DvvAve *= osabci->inv_length;
+#endif
+		osabci->c_fromAverages = sqrt(osabci->EAve / osabci->rhoAve);
+		osabci->Z_fromAverages = osabci->c_fromAverages * osabci->rhoAve;
+
+		if ((si == 0) && (b_ring_opened1D))
+		{
+			ring_opened1D_kinetic_energy_vr = 0.0;
+			// ring_opened1D_kinetic_energy_vr = rhoAverage * a ^ 2 * L ^ 2 / 8 / PI ^ 2
+			if (b_ring_opened1D_kinetic_energy_on_full_vTheta)
+				ring_opened1D_kinetic_energy_vr = 0.125 * osabci->rhoAve * ring_opened1D_al * ring_opened1D_al * L / (PI * PI);
+		}
+	}
 }
 
 void Domain_All_Interfaces_All_Times::Generate_subdomain_nos_for_all_bulks(vector<int>& subdomainNo4AllBulks)
@@ -1390,6 +1532,9 @@ int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 		out << "sigmaCScale \t" << sigmaCScale << "\tsigmaCScale\t" << deltaCScale << "\tenergyCScale\t" << energyCScale << '\n';
 		bulk_interfaces_subdomains[si].PrintIndicesLengthsKeyRunParameters(out);
 	}
+	//////////////////////////////////////////////////////////////////////////////////
+	// computing 1D averages
+	Compute1D_Averages();
 
 	///// Initializing post-process class
 	if (do_space_spacetime_PP)
@@ -1480,6 +1625,7 @@ int MAIN_Domain(string config1, int serialNumberIn, string configBC, string conf
 	if (configDomain == "infile")
 		configDomain = config1;
 	Domain_All_Interfaces_All_Times domain;
+	g_domain = &domain;
 	domain.Read_Initialize(configDomain, serialNumberIn);
 
 	// 2. Upate time steps of time step and adaptive config based on min time step of domain
