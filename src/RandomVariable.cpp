@@ -1,5 +1,6 @@
 #include "RandomVariable.h"
 #include "SimpleConfigMaker.h"
+#include "globalFunctions.h"
 
 string getName(prob_distrib_type dat)
 {
@@ -445,17 +446,21 @@ void statParamHolder::Read(istream & in)
 		}
 	}
 	READ_NSTRING(in, buf, buf);
+	minRead = false, maxRead = false, meanRead = false;
+	one_value = false;
 	while (buf != "}")
 	{
 		if (buf == "min")
 		{
 			READ_NDOUBLE(in, buf, minV);
 			minMax_read = true;
+			minRead = true;
 		}
 		else if (buf == "max")
 		{
 			READ_NDOUBLE(in, buf, maxV);
 			minMax_read = true;
+			maxRead = true;
 		}
 		else if (buf == "mode")
 		{
@@ -466,6 +471,7 @@ void statParamHolder::Read(istream & in)
 		{
 			READ_NDOUBLE(in, buf, mean);
 			mean_sdiv_read = true;
+			meanRead = true;
 		}
 		else if (buf == "sdiv")
 		{
@@ -509,6 +515,34 @@ void statParamHolder::Read(istream & in)
 		}
 		minMax_read = true;
 	}
+	if (minRead)
+	{
+		if (maxRead)
+			one_value = DoublesAreEqual(minV, maxV);
+		else if (meanRead)
+			one_value = DoublesAreEqual(minV, mean);
+		else if (mode_read)
+			one_value = DoublesAreEqual(minV, mode);
+		if (one_value)
+		{
+			maxV = minV;
+			mean = minV;
+			mode = minV;
+		}
+	}
+	else if (maxRead)
+	{
+		if (meanRead)
+			one_value = DoublesAreEqual(maxV, mean);
+		else if (mode_read)
+			one_value = DoublesAreEqual(maxV, mode);
+		if (one_value)
+		{
+			maxV = maxV;
+			mean = maxV;
+			mode = maxV;
+		}
+	}
 }
 
 void statParamHolder::WriteData(ostream& out)
@@ -544,9 +578,16 @@ void gRandVar::ReadParameters(istream& in)
 
 double gRandVar::TurnStandardNormalValue2ThisRandom(double standardNormalValue) const
 {
-	// first calculate standard normal CDF
+	if (paras.one_value)
+		return paras.mean;
+		// first calculate standard normal CDF
 	double sn_cdf = 0.5 * (1.0 + erf(standardNormalValue / sqrt(2.0)));
-	return getInverseCDF(sn_cdf);
+	double val = getInverseCDF(sn_cdf);
+	if ((paras.minRead) && (val < paras.minV))
+		return paras.minV;
+	if ((paras.maxRead) && (val > paras.maxV))
+		return paras.maxV;
+	return val;
 }
 
 double gRandVar::getRandomValue() const
@@ -882,4 +923,26 @@ inline int slrand()
 	}
 #endif
 	return rand();
+}
+
+void GenerateWhiteRandomFile(int numVertices, int numRealizations, string fileName)
+{
+	string numVertices_str;
+	toString(numVertices, numVertices_str);
+	string folderName = fileName + "_np" + numVertices_str;
+	MakeDir(folderName);
+	Normal_RandVar randVar;
+	for (int i = 0; i < numRealizations; ++i)
+	{
+		string str_i;
+		toString(i, str_i);
+		string fileName = folderName + "/initial_values_" + str_i + ".txt";
+		fstream out(fileName.c_str(), ios::out);
+		out << numVertices << '\n';
+		for (int j = 0; j < numVertices; ++j)
+		{
+			double val = randVar.getRandomValue();
+			out << val << '\n';
+		}
+	}
 }

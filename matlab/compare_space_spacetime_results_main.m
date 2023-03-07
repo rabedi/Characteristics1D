@@ -2,14 +2,16 @@ function compare_space_spacetime_results_main(serialNums, versionNums, subdomain
 if nargin < 1
     serialNums = [0, 1];
     serialNums = [0];
+%    serialNums = [0, 1, 2];
 end
 if nargin < 2
-    versionNums = [11, 12, 13];
-    versionNums = 0:5;
+%    versionNums = [11, 12, 13];
+    versionNums = 0:3;
+%    versionNums = 0;
 end
 if nargin < 3
     subdomainNo = 0;
-    subdomainNo = 1;
+%    subdomainNo = 1;
 end
 if nargin < 4
     compareTimeVals = 1;
@@ -48,7 +50,8 @@ for sii = 1:sz_serialNums
         fid = fopen(fn, 'r');
         if (fid < 0)
             fprintf(1, 'cannot open file\t%s\n', fn);
-            exit(0);
+            pause
+%            exit(0);
         end
         buf = '';
         if (cntr == 1)

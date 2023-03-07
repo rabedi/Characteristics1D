@@ -36,7 +36,7 @@ load_parameters
 
 
 #####################################################################################
-#########################################################r############################
+######################################################################################
 # start										domain
 infile_domain
 
@@ -76,8 +76,8 @@ bulk_elastic_map
 
 # this one when on, turns on fracture on the end point of the periodic domain to avoid complications pertained to modeling fracture on this boundary
 ring_open_turn_fracture_on_periodic_end
-1
-#0
+#1
+0
 
 # true	-> damping term / rho = Dvv * vTheta 
 #			(physically correct, but for elastic response, vTheta = 0, and for fracture this is mostly zero, so damping for ring problem is a 2nd order effect with this set-up)
@@ -124,12 +124,14 @@ pointSolution_relTol4Conv_4PP
 numTimeStep_BulkInterfacePoints_Print_4PP
 #1
 -10
+#-50
 #-100
 
 #### printing [Damage, delU] only between segments (not within bulks). This is used to compute fragment size
 numTimeStep_Interface_DSU_Fragment_Print_4PP
 #-200
--20
+#-20
+-100
 
 # for spatial segments (interval between interfaces) how many segment(s) is/are used.
 #			1 -> only the two end points at the side interfaces that already exist are used.
@@ -174,14 +176,34 @@ none
 # this is similar to above, but this time data is printed for a fixed time value
 numSpaceStep_InterfaceRawFinalSlnScalars_AllTime_Print_4PP
 #1
-#-2
+-2
 #-50
-8
-
+#-8
 
 # end	space / spacetime post-process
 ######################################
 
+##################
+# start visualization data output (uniform grid for each subdomain that can be used for contour plots)
+
+# direction of visualization, if < 0, these files will not be printed
+# < 0 turns off this option
+visualization_dir
+#0
+-1
+
+# < 0, -number of interfaces - 1 (e.g. # segments) used in each subdomain for its outputs
+# > 0, the step size for that given subdomain
+visualization_numSpaceStep
+#-512
+-1
+
+# again < 0, absolute number of steps, > 0 step size
+visualization_numTimeStep
+-400
+ 
+# end visualization data
+##################
 
 
 interface_fracture_map
@@ -220,7 +242,8 @@ interface_fracture_map
 			gen_strength	1.0
 			tau	0.1
 #			deltaC	1.0
-			deltaC	0.1
+#			deltaC	0.1
+			deltaC	0.01
 			has_in_situ	0
 			# in_situ_stress	0
 			# sn	2.5
@@ -349,11 +372,14 @@ infile_inhomogeneous_elastic_frac0
 #					>  1  -> number of segments is DECREASED by this factor (e.g. if resolutionFactor ==  10 and numSegments = 1000 -> numSegments becoms 100)
 #					<  -1 -> number of segments is INCREASED by this factor (e.g. if resolutionFactor == -10 and numSegments = 1000 -> numSegments becoms 10000)
 resolutionFactor
-0
+#0
 #10
+16
 #32
 #64
 #128
+#256
+#512
 #2
 
 
@@ -391,7 +417,8 @@ eit Crho_const
 baseName_WOExt_oihf_elastic1
 inline
 #InhomogeneousFiles/Fake/v1_x0/file
-InhomogeneousFiles/cl-2.5_np1025/initial_values
+#InhomogeneousFiles/cl-2.5_np1025/initial_values
+InhomogeneousFiles/clz_np16385/initial_values
 {
 num_Vals_and_x_Provided
 1
@@ -412,9 +439,9 @@ Triangle
 
 {
 	min	
-	0.6
+	0.5
 	max
-	1.4
+	1.5
 	mode
 	1.00
 }
@@ -429,7 +456,9 @@ endinline
 baseName_WOExt_oihf_fracture1
 inline
 #InhomogeneousFiles/Fake/v1_x0/file
-InhomogeneousFiles/cl-2.5_np1025/initial_values
+#InhomogeneousFiles/cl-2.5_np1025/initial_values
+#InhomogeneousFiles/clz_np1025/initial_values
+InhomogeneousFiles/clz_np16385/initial_values
 {
 num_Vals_and_x_Provided
 1
@@ -450,9 +479,9 @@ Triangle
 
 {
 	min	
-	0.7
+	0.5
 	max
-	1.3
+	1.5
 	mode
 	1.0
 }
@@ -589,12 +618,12 @@ between_steps_adaptivity
 # time step for non-adaptive runs and starting time step for adaptive ones
 # < 0, relative to domain min_del_t
 uniform_del_t
-#-1
+-1
 #-0.1
 #-0.01
 #-1.0
 #-0.128
--0.0128
+#-0.0128
 ################-0.0128
 #0.00000128
 #-0.001

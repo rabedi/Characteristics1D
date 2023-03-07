@@ -5,6 +5,20 @@
 
 using namespace std;
 
+/// val -> (a(val)^b + c)^d
+class OneIHField_adjuster
+{
+public:
+	OneIHField_adjuster();
+	// returns true if abcd is read, false otherwise
+	bool Read_OneIHField_adjuster(istream& in);
+	// returns true if the value is changed
+	bool Adjust_Value(double location_x, double& value);
+	double a, b, c, d, e;
+	double axm, axM;
+	bool baxm, baxM;
+};
+
 // one inhomogeneous field for 1D domain
 class OneIHField
 {
@@ -21,6 +35,7 @@ public:
 	//					>  1  -> number of segments is DECREASED by this factor (e.g. if resolutionFactor ==  10 and numSegments = 1000 -> numSegments becoms 100)
 	//					<  -1 -> number of segments is INCREASED by this factor (e.g. if resolutionFactor == -10 and numSegments = 1000 -> numSegments becoms 10000)
 	void Modify_Resolution(int resolutionFactor, setStatOp_type sso);
+	void Final_Adjustment_On_Values();
 
 	// this gives vals[index]
 	double getValueByIndex(unsigned int index) const;
@@ -46,7 +61,8 @@ private:
 	// domain minimum and maximum x
 	double xm, xM;
 	gRandVar* randVariableType;
-
+	vector<OneIHField_adjuster> adjusters;
+	unsigned int sz_adjusters;
 	/////////////////////////////////////////////////////////////////////////////////
 	// read from a file
 	// values are given at vertices or are constant in elements connecting vertices based on valsAtVertices

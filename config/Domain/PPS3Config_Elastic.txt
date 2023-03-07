@@ -5,7 +5,7 @@ configPPS2
 #inline
 #Option 2. Provide the file name for configPPS2
 
-config/Domain/PPS2Config_Coh.txt
+config/Domain/PPS2Config_Elastic.txt
 
 output_modes
 {
@@ -117,7 +117,8 @@ timeStampOverwriters
 		timeStamp
 		{
 			timeStampType	f
-			lct				interfaceDissEne
+			lct				time
+#			lct				interfaceDissEne
 		}
 		post_name_In_CSV_file	_F
 		post_name_Latex			_f
@@ -211,7 +212,7 @@ dataPointers			pps3_stageStat				input
 		iniSc
 
 		name_Latex
-		\sigma_c
+		f_i
 	}
 }
 
@@ -227,7 +228,7 @@ dataPointers			pps3_stageStat				output
 	# time of final (based on FIN criterion)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -282,7 +283,7 @@ dataPointers			pps3_stageStat				output
 	# time when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -303,7 +304,7 @@ dataPointers			pps3_stageStat				output
 	# time of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -324,7 +325,7 @@ dataPointers			pps3_stageStat				output
 	# time of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -347,7 +348,7 @@ dataPointers			pps3_stageStat				output
 	# time of final (based on FIN criterion)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -367,7 +368,7 @@ dataPointers			pps3_stageStat				output
 	# time of max (based on MAX criterion)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -387,7 +388,7 @@ dataPointers			pps3_stageStat				output
 	# time of sigma ~ 0
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -411,7 +412,7 @@ dataPointers			pps3_stageStat				output
 	# time when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -435,7 +436,7 @@ dataPointers			pps3_stageStat				output
 	# time of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -459,7 +460,7 @@ dataPointers			pps3_stageStat				output
 	# time of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -486,7 +487,7 @@ dataPointers			pps3_stageStat				output
 	# time of final (based on FIN criterion)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -506,7 +507,7 @@ dataPointers			pps3_stageStat				output
 	# time of max (based on MAX criterion)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -526,7 +527,7 @@ dataPointers			pps3_stageStat				output
 	# time of sigma ~ 0
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -550,7 +551,7 @@ dataPointers			pps3_stageStat				output
 	# time when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -574,7 +575,7 @@ dataPointers			pps3_stageStat				output
 	# time of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -598,7 +599,7 @@ dataPointers			pps3_stageStat				output
 	# time of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -681,7 +682,7 @@ dataPointers			pps3_stageStat				output
 	# phiD:   Dissipated energy / normalized by initial energy at failed statefor eps/sig bulk criterion)
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -703,7 +704,7 @@ dataPointers			pps3_stageStat				output
 	# phiD:   Dissipated energy / normalized by initial energy at END of simulation
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valEnd
@@ -726,7 +727,7 @@ dataPointers			pps3_stageStat				output
 	# phiD:   Dissipated energy / normalized by input energy
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -746,7 +747,7 @@ dataPointers			pps3_stageStat				output
 	# phiD:   Dissipated energy / normalized by input energy
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valEnd
@@ -768,7 +769,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical - FIN
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -805,7 +806,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / normalized by initial energy at failed statefor eps/sig bulk criterion)
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -827,7 +828,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / normalized by initial energy at END of simulation
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valEnd
@@ -850,7 +851,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / normalized by input energy
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -870,7 +871,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / normalized by input energy
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valEnd
@@ -890,7 +891,7 @@ dataPointers			pps3_stageStat				output
 # 	normalized numerical energy disspation - max value over time (to check solution accuracy)
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		max
@@ -947,7 +948,7 @@ dataPointers			pps3_stageStat				output
 	}
 
 ##########
-	# K:   K / normalized by initial energy at failed state
+	# K:   K / normalized by initial energy at FIN state
 	{
 		isActive
 		1
@@ -969,7 +970,7 @@ dataPointers			pps3_stageStat				output
 	}
 
 
-	# U:   U / normalized by initial energy at failed state
+	# U:   U / normalized by initial energy at FIN state
 	{
 		isActive
 		1
@@ -1040,7 +1041,7 @@ dataPointers			pps3_stageStat				output
 	# energy_final
 	{
 		isActive
-		1
+		0
 				
 		fldName
 		energy_eps_total_bulk
@@ -1065,7 +1066,7 @@ dataPointers			pps3_stageStat				output
 # final stage divided by phid at the same stress final stage
 	{
 		isActive
-		1
+		0
 				
 		fldName
 		energy_eps_dissL2phid_bulk
@@ -1086,7 +1087,7 @@ dataPointers			pps3_stageStat				output
 	# energy_final
 	{
 		isActive
-		1
+		0
 				
 		fldName
 		energy_eps_total_bulk
@@ -1109,7 +1110,7 @@ dataPointers			pps3_stageStat				output
 # max stage
 	{
 		isActive
-		1
+		0
 				
 		fldName
 		energy_eps_dissL2phid_bulk
@@ -1151,7 +1152,7 @@ dataPointers			pps3_stageStat				output
 	# strain_final
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		eps_bc
@@ -1174,26 +1175,6 @@ dataPointers			pps3_stageStat				output
 
 
 ## Brittleness indicators
-# psi based energy ratio
-	{
-		isActive
-		1
-				
-		fldName
-		energy_eps_diss2total_bulk
-
-		timeStamp
-			{
-				timeStampType	m
-				lct				epssig_bulk
-			}
-	
-		name_In_CSV_file	
-		psid2psi_m
-
-		name_Latex
-		({L\psi_d/\psi})_m
-	}
 
 	# m/f - energy
 	{
@@ -1252,11 +1233,13 @@ dataPointers			pps3_stageStat				output
 		B_{i/m}^{\epsilon}
 	}
 
+
+
 # ###############	Damage values at various stages
 	# (max Damage) at max stage - strain stress response
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		max_interface_damage
@@ -1273,7 +1256,7 @@ dataPointers			pps3_stageStat				output
 	# (mean Damage) at max stage - strain stress response
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		mean_interface_damage
@@ -1290,7 +1273,7 @@ dataPointers			pps3_stageStat				output
 	# (mean Damage) at final stage - strain stress response
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		mean_interface_damage
@@ -1311,7 +1294,7 @@ dataPointers			pps3_stageStat				output
 	# (mean Damage) at final stage - Energy dissipation response
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		mean_interface_damage
@@ -1328,7 +1311,7 @@ dataPointers			pps3_stageStat				output
 	# (mean Damage) at final stage - Damaged based criterion (i.e. when the first point is damaged)
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		mean_interface_damage
@@ -1353,7 +1336,7 @@ dataPointers			pps3_stageStat				output
 	# number of fragment size (length / meanFragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1371,7 +1354,7 @@ dataPointers			pps3_stageStat				output
 	# lbar (mean fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1389,7 +1372,7 @@ dataPointers			pps3_stageStat				output
 	# lmin (min fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1407,7 +1390,7 @@ dataPointers			pps3_stageStat				output
 	# lmax (max fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1425,7 +1408,7 @@ dataPointers			pps3_stageStat				output
 	# varsigma_l (standard deviation fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1443,7 +1426,7 @@ dataPointers			pps3_stageStat				output
 	# cov_l (coefficient of variation = sdiv / mean)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1463,7 +1446,7 @@ dataPointers			pps3_stageStat				output
 	# number of fragment size (length / meanFragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1481,7 +1464,7 @@ dataPointers			pps3_stageStat				output
 	# lbar (mean fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1499,7 +1482,7 @@ dataPointers			pps3_stageStat				output
 	# lmin (min fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1517,7 +1500,7 @@ dataPointers			pps3_stageStat				output
 	# lmax (max fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1535,7 +1518,7 @@ dataPointers			pps3_stageStat				output
 	#varsigma_l (standard deviation fragment size)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1553,7 +1536,7 @@ dataPointers			pps3_stageStat				output
 	# cov_l (coefficient of variation = sdiv / mean)
 	{
 		isActive
-		1
+		000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1650,7 +1633,7 @@ dataPointers			pps3_stageStat				output
 	# phi when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		phi
@@ -1671,7 +1654,7 @@ dataPointers			pps3_stageStat				output
 	# phi of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		phi
@@ -1692,7 +1675,7 @@ dataPointers			pps3_stageStat				output
 	# phi of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		phi
@@ -1715,7 +1698,7 @@ dataPointers			pps3_stageStat				output
 	# U of energy loss stabilized
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		U
@@ -1770,7 +1753,7 @@ dataPointers			pps3_stageStat				output
 	# U when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		U
@@ -1791,7 +1774,7 @@ dataPointers			pps3_stageStat				output
 	# U of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		U
@@ -1812,7 +1795,7 @@ dataPointers			pps3_stageStat				output
 	# U of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		U
@@ -1835,7 +1818,7 @@ dataPointers			pps3_stageStat				output
 	# K of energy loss stabilized
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		K
@@ -1890,7 +1873,7 @@ dataPointers			pps3_stageStat				output
 	# K when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		K
@@ -1911,7 +1894,7 @@ dataPointers			pps3_stageStat				output
 	# K of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		K
@@ -1932,7 +1915,7 @@ dataPointers			pps3_stageStat				output
 	# K of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		K
@@ -2016,7 +1999,7 @@ dataPointers			pps3_stageStat				output
 	# LinMomentum when the first damage evolution starts (first D > 0 in the domain)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		linMomentum
@@ -2037,7 +2020,7 @@ dataPointers			pps3_stageStat				output
 	# LinMomentum of highest damage evolution (D source max) 
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		linMomentum
@@ -2058,7 +2041,7 @@ dataPointers			pps3_stageStat				output
 	# LinMomentum of first D = 1 (damage final)
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		linMomentum
@@ -2079,7 +2062,7 @@ dataPointers			pps3_stageStat				output
 # ####################	temporal fields (space/ spacetime integrals over time)
 	########## max stage: use sigma max stage
 
-	# lost dissipated energy
+	# U
 	{
 		isActive
 		1
@@ -2089,13 +2072,32 @@ dataPointers			pps3_stageStat				output
 		all_field_time_val
 		
 		fldName
-		phys_diss_lost
+		U
 
 		name_In_CSV_file	
-		phi_d
+		U
 
 		name_Latex
-		\phi_d
+		U
+	}
+
+	# K
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		K
+
+		name_In_CSV_file	
+		K
+
+		name_Latex
+		K
 	}
 
 	# homogenized stress by BC
@@ -2123,7 +2125,7 @@ dataPointers			pps3_stageStat				output
 	# Damage field
 	{
 		isActive
-		1
+		000
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2167,7 +2169,7 @@ dataPointers			pps3_stageStat				output
 	# Damage field
 	{
 		isActive
-		1
+		000
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2188,7 +2190,7 @@ dataPointers			pps3_stageStat				output
 	# stress field
 	{
 		isActive
-		1
+		000
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2233,7 +2235,7 @@ dataPointers			pps3_timeStep				input
 		iniSc
 
 		name_Latex
-		\sigma_c
+		f_i
 	}
 }
 
@@ -2247,7 +2249,7 @@ dataPointers			pps3_timeStep				output
 	# phiD:   Dissipated energy / normalized by initial energy
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -2267,7 +2269,7 @@ dataPointers			pps3_timeStep				output
 	# K:   K / normalized by initial energy
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		K
@@ -2287,7 +2289,7 @@ dataPointers			pps3_timeStep				output
 	# U:   U / normalized by initial energy at failed state
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		U
@@ -2321,7 +2323,7 @@ dataPointers			pps3_timeStep				output
 	# mean damage - over space
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		mean_interface_damage
@@ -2336,7 +2338,7 @@ dataPointers			pps3_timeStep				output
 	# max damage - over space
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		max_interface_damage
@@ -2352,7 +2354,7 @@ dataPointers			pps3_timeStep				output
 	# Damage field
 	{
 		isActive
-		1
+		000
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2384,6 +2386,25 @@ dataPointers			pps3_timeStep				output
 
 		name_Latex
 		\sigma
+	}
+
+	# u field
+	{
+		isActive
+		000
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		uL
+
+		name_In_CSV_file	
+		u
+
+		name_Latex
+		u
 	}
 
 

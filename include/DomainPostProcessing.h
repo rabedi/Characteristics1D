@@ -45,7 +45,7 @@ public:
 
 //	data print and header
 	void Subdomain_spatial_ave_sum_Read_Data(istream& in);
-	void Subdomain_spatial_ave_sum_Write_Data(ostream& out);
+	void Subdomain_spatial_ave_sum_Write_Data(ostream& out, double invLength);
 	static void Subdomain_spatial_ave_sum_Data_Write_Header(ostream& out);
 
 	int timeIndex;
@@ -185,7 +185,7 @@ public:
 	void OneSubdomain_All_bulksConnectivityInfo_Initialize();
 
 // 1D stuff
-	double rhoAve, EAve, EHarmonicAve, cAve, ZAve, DvvAve;
+	double rhoAve, EAve, EHarmonicAve, cAve, cHarmonicAve, ZAve, DvvAve;
 	double c_fromAverages;
 	double Z_fromAverages;
 };

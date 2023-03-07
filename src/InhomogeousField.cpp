@@ -10,6 +10,7 @@ OneIHField::OneIHField()
 	xm = 0.0;
 	xM = 1.0;
 	randVariableType = NULL;
+	sz_adjusters = 0;
 }
 
 OneIHField::~OneIHField()
@@ -22,7 +23,7 @@ void OneIHField::Read_InstructionsOnly(istream* inConfigPtr, bool* isPeriodicPtr
 {
 	num_Vals_and_x_Provided = false;
 	containsRepeatingEndPeriodicVal = false;
-
+	sz_adjusters = 0;
 	if (isPeriodicPtr != NULL)
 		isPeriodic = *isPeriodicPtr;
 	if (xMPtr != NULL)
@@ -95,6 +96,20 @@ void OneIHField::Read_InstructionsOnly(istream* inConfigPtr, bool* isPeriodicPtr
 			{
 				randVariableType = ReadRandomVariableFromFile(*inConfigPtr);
 			}
+			else if (buf == "adjusters")
+			{
+				READ_NSTRING(*inConfigPtr, buf, buf);
+				if (buf != "{")
+					THROW("adjusters start should be {\n");
+				while (true)
+				{
+					OneIHField_adjuster adjuster;
+					if (adjuster.Read_OneIHField_adjuster(*inConfigPtr) == false)
+						break;
+					adjusters.push_back(adjuster);
+				}
+				sz_adjusters = adjusters.size();
+			}
 			else
 			{
 				cout << "buf:\t" << buf << '\n';
@@ -131,6 +146,7 @@ void OneIHField::Read_Initialize_OneIHField(istream& inData, istream* inConfigPt
 #endif
 
 	Modify_Resolution(resolutionFactor, sso);
+	Final_Adjustment_On_Values();
 
 #if PRNT_FLDOUT_RANDOM
 	name = g_prefileName + "field" + cntrStr + "_finalResolution.txt";
@@ -237,6 +253,21 @@ void OneIHField::Modify_Resolution(int resolutionFactor, setStatOp_type sso)
 			vals[numSegments] = vals[0];
 		else
 			vals[numSegments] = vals_BK[numSegments_BK];
+	}
+}
+
+void OneIHField::Final_Adjustment_On_Values()
+{
+	if (sz_adjusters == 0)
+		return;
+	for (unsigned int i = 0; i < vals.size(); ++i)
+	{
+		double x = xs[i];
+		for (unsigned int j = 0; j < sz_adjusters; ++j)
+		{
+			if (adjusters[j].Adjust_Value(x, vals[i]))
+				break;
+		}
 	}
 }
 
@@ -514,4 +545,78 @@ void TestInhomogeneousField(string baseNameWOExt)
 		v = oihf.getValueByCoord(x);
 		outxv << x << '\t' << v << '\n';
 	}
+}
+
+OneIHField_adjuster::OneIHField_adjuster()
+{
+	a = 1.0, b = 1.0, c = 0.0, d = 0.0, e = 1.0;
+	axm = -1e50, axM = 1e50;
+	baxm = false, baxM = false;
+}
+
+bool OneIHField_adjuster::Read_OneIHField_adjuster(istream & in)
+{
+	string buf;
+	READ_NSTRING(in, buf, buf);
+	if (buf == "}")
+		return false;
+	if (buf != "{")
+	{
+		THROW("should start with {\n");
+	}
+	READ_NSTRING(in, buf, buf);
+	baxm = false;
+	baxM = false;
+	while (buf != "}")
+	{
+		if (buf == "a")
+		{
+			READ_NDOUBLE(in, buf, a);
+		}
+		else if (buf == "b")
+		{
+			READ_NDOUBLE(in, buf, b);
+		}
+		else if (buf == "c")
+		{
+			READ_NDOUBLE(in, buf, c);
+		}
+		else if (buf == "d")
+		{
+			READ_NDOUBLE(in, buf, d);
+		}
+		else if (buf == "e")
+		{
+			READ_NDOUBLE(in, buf, e);
+		}
+		else if (buf == "axm")
+		{
+			READ_NDOUBLE(in, buf, axm);
+			baxm = true;
+		}
+		else if (buf == "axM")
+		{
+			READ_NDOUBLE(in, buf, axM);
+			baxM = true;
+		}
+		else
+		{
+			cout << "buf:\t" << buf << '\n';
+			THROW("invalid option\n");
+		}
+		READ_NSTRING(in, buf, buf);
+	}
+	return true;
+}
+
+bool OneIHField_adjuster::Adjust_Value(double location_x, double& value)
+{
+	if (baxm && (location_x < axm))
+		return false;
+	if (baxM && (location_x > axM))
+		return false;
+	double tmp = pow(value, b);
+	tmp = a * tmp + c + d * location_x;
+	value = pow(tmp, e);
+	return true;
 }

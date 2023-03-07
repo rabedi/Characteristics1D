@@ -318,46 +318,6 @@ void addNewComponentPosition(vector<T>& vec, T& newComp, int pos)
 }
 
 
-// there should be function: that for each T and flag for sorting gives val based on which vec can be sorted
-// 	void getSortingValue(T& dat, SORTING_FLAG& flag, SORTING_VALUE& val);
-template<class SORTING_VALUE, class SORTING_FLAG, class T>
-void sort_vector(vector<T>& unsortedVec, vector<int>& sortedIndices, SORTING_FLAG& flag)
-{
-	int sz = unsortedVec.size();
-	sortedIndices.resize(sz);
-	vector < Sort2mNOrderOnVal<SORTING_VALUE, int> > sorter(sz);
-
-	for (int i = 0; i < sz; ++i)
-	{
-		sorter[i].val = i;
-		getSortingValue(unsortedVec[i], flag, sorter[i].loc);
-	}
-	sort(sorter.begin(), sorter.end());
-	for (int i = 0; i < sz; ++i)
-		sortedIndices[i] = sorter[i].val;
-}
-
-
-template<class SORTING_VALUE, class SORTING_FLAG, class T>
-void sort_vector(vector<T>& unsortedVec, vector<T>& sortedVec, vector<int>& sortedIndices, SORTING_FLAG& flag)
-{
-	int sz = unsortedVec.size();
-	vector < Sort2mNOrderOnVal<SORTING_VALUE, int> > sorter(sz);
-
-	for (int i = 0; i < sz; ++i)
-	{
-		sorter[i].val = i;
-		getSortingValue(unsortedVec[i], flag, sorter[i].loc);
-	}
-	sort(sorter.begin(), sorter.end());
-	sortedVec.resize(sz);
-	sortedIndices.resize(sz);
-	for (int i = 0; i < sz; ++i)
-	{
-		sortedIndices[i] = sorter[i].val;
-		sortedVec[i] = unsortedVec[sorter[i].val];
-	}
-}
 
 /*PC 3/30/2017*/
 /*AUX FUNC*/

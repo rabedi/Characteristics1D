@@ -88,8 +88,9 @@ timeStep4_DSU_outputs
 outputTypeActive
 # pps3_stageStat: stage/stat (one line per run)
 1
+# -1 means data not printed on low disk systems
 # pps3_timeStep: timeSteps (output at uniform times)
-1
+-1
 
 
 ######################################################################################################
@@ -1021,14 +1022,101 @@ dataPointers			pps3_stageStat				output
 			}
 	
 		name_In_CSV_file	
-		psi_f_norm
+		psi_f
+
+		name_Latex
+		({\psi}_{\mathrm{f}}
+	}
+
+# ### final stage
+	# energy_final
+	{
+		isActive
+		1
+				
+		fldName
+		energy_eps_total_bulk
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bulk
+			}
+	
+		name_In_CSV_file	
+		psi_f_norm_psiC
 
 		name_Latex
 		{({\psi}_{\mathrm{f}}/\psi_c)}
 
-
 		normalizationMode
 		psiC		
+	}
+
+# ratios, to see how close psi from strain stress is to domain dissipation loss
+# final stage divided by phid at the same stress final stage
+	{
+		isActive
+		1
+				
+		fldName
+		energy_eps_dissL2phid_bulk
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bulk
+			}
+	
+		name_In_CSV_file	
+		Lpsi2phid_both_strsfstage
+
+		name_Latex
+		({L\psi_d/\phi_d})_f
+	}
+
+	# energy_final
+	{
+		isActive
+		1
+				
+		fldName
+		energy_eps_total_bulk
+
+		timeStamp
+			{
+				timeStampType	f
+				lct				epssig_bulk
+			}
+	
+		name_In_CSV_file	
+		psi_fstage2phid_finTime
+
+		name_Latex
+		{({\psi}_{\mathrm{f}}/{{\phi_d}_{\mathrm{fin,t}}}}
+		normalizationMode
+		eneDissFinal		
+	}
+
+# max stage
+	{
+		isActive
+		1
+				
+		fldName
+		energy_eps_dissL2phid_bulk
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				epssig_bulk
+			}
+	
+		name_In_CSV_file	
+		Lpsid2phid_m
+
+		name_Latex
+		({L\psi_d/\phi_d})_m
 	}
 
 	# strain_final

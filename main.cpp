@@ -110,6 +110,20 @@ int main(int argc, char *argv[])
 				THROW("ERROR: Invalid flag--value option");
 			}
 		}
+		if (opt == "wn")
+		{
+			int i = 2;
+			int numVertices = 16385; //1025, 
+			int numRealizations = 5000;
+			i++;
+			if (i < argc)
+				numVertices = (unsigned int)atoi(argv[i]);
+			i++;
+			if (i < argc)
+				numRealizations = (unsigned int)atoi(argv[i]);
+			GenerateWhiteRandomFile(numVertices, numRealizations);
+			return 0;
+		}
 	}
 
 	Solve_all_serialNumbers(solvePara);

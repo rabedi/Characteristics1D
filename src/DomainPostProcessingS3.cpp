@@ -3,6 +3,73 @@
 #include "SLDescriptorData.h"
 
 /////////////////
+string getName(pps3_om_T dat)
+{
+	if (dat == pps3_om_scalars_vectors)
+		return "scalars_vectors";
+	if (dat == pss3_om_scalars)
+		return "scalars";
+	if (dat == pps3_om_vectors)
+		return "vectors";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+void name2Type(string& name, pps3_om_T& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= pps3_om_T_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (pps3_om_T)num;
+		return;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < pps3_om_T_SIZE; ++i)
+	{
+		typeVal = (pps3_om_T)i; // casting integer to pps3_om_T, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return;
+	}
+	cout << "name\t" << name << '\n';
+	THROW("wrong name reading pps3_om_T\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, pps3_om_T dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, pps3_om_T& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+
+
+string getAddedName4OutputFile(pps3_om_T dat)
+{
+	if (dat == pps3_om_scalars_vectors)
+		return "";
+	if (dat == pss3_om_scalars)
+		return "_scalars";
+	if (dat == pps3_om_vectors)
+		return "_vectors";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+/////////////////
 string getName(PPS3_IOT dat)
 {
 	if (dat == pps3_i)
@@ -116,7 +183,8 @@ DomainPostProcessS3::DomainPostProcessS3()
 	addInvalidData = false;
 	timeStep4_DSU_outputs = 1;
 //	sep = "\t,\t";
-	sep = "\t";
+//	sep = "\t";
+	sep = ",";
 
 	version_seperatePP3Folders = true;
 	version_print_version_columns = 1;
@@ -126,6 +194,11 @@ DomainPostProcessS3::DomainPostProcessS3()
 	version_print_version_No_wOffset = true;
 	version_print_indices = true;
 	version_print_values = true;
+
+	output_modes.clear();
+	output_modes.push_back(pss3_om_scalars);
+	output_modes.push_back(pps3_om_scalars_vectors);
+	output_modes.push_back(pps3_om_vectors);
 }
 
 void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
@@ -154,13 +227,17 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 	if (version_seperatePP3Folders)
 		out_baseName += g_versionNumber_str;
 
-	if (outputTypeActive[tot])
+	if (outputTypeActive[tot] == 1)
 	{
 		string fileNameLog = root + "/" + out_baseName + "_invalid_runs.txt";
 		fstream outerr(fileNameLog.c_str(), ios::out | ios::app);
-		bool runPrinted = ComputePrint_Data(tot, accebleOverAlVals, time_outputIndex);
-		if (!accebleOverAlVals)
-			outerr << g_versionNumber << sep << g_versionNumber_wOffset << sep << g_serialNumber << sep << accebleOverAlVals << sep << runPrinted << '\n';
+		bool runPrinted;
+		for (unsigned int j = 0; j < output_modes.size(); ++j)
+		{
+			runPrinted = ComputePrint_Data(tot, accebleOverAlVals, time_outputIndex, output_modes[j]);
+			if ((j == 0) && (!accebleOverAlVals))
+				outerr << g_versionNumber << sep << g_versionNumber_wOffset << sep << g_serialNumber << sep << accebleOverAlVals << sep << runPrinted << '\n';
+		}
 	}
 	tot = pps3_timeStep;
 	out_baseName = out_baseNameBK;
@@ -171,16 +248,20 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 	}
 	fileOperation(makeD, root);
 
-	if (outputTypeActive[tot])
+	if (outputTypeActive[tot] == 1)
 	{
 		int time_outputIndex_sz = configPPS2.onesubdomainPPS2[configPPS2.mainSubdomainNo].segmentInfo.maxIndex_Interface_DSU_Fragment_Print / timeStep4_DSU_outputs;
 		string fileNameLog = root + "/" + out_baseName + "_timeIndex_invalid_runs.txt";
 		for (time_outputIndex = 1; time_outputIndex <= time_outputIndex_sz; ++time_outputIndex)
 		{
 			fstream outerr(fileNameLog.c_str(), ios::out | ios::app);
-			bool runPrinted = ComputePrint_Data(tot, accebleOverAlVals, time_outputIndex);
-			if (!accebleOverAlVals)
-				outerr << g_versionNumber << sep << g_versionNumber_wOffset << sep << g_serialNumber << sep << accebleOverAlVals << sep << runPrinted << sep << time_outputIndex << '\n';
+			bool runPrinted;
+			for (unsigned int j = 0; j < output_modes.size(); ++j)
+			{
+				runPrinted = ComputePrint_Data(tot, accebleOverAlVals, time_outputIndex, output_modes[j]);
+				if ((j == 0) && (!accebleOverAlVals))
+					outerr << g_versionNumber << sep << g_versionNumber_wOffset << sep << g_serialNumber << sep << accebleOverAlVals << sep << runPrinted << sep << time_outputIndex << '\n';
+			}
 		}
 	}
 }
@@ -202,7 +283,22 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 	READ_NSTRING(in, buf, buf);
 	while (buf != "}")
 	{
-		if (buf == "version_seperatePP3Folders")
+		if (buf == "output_modes")
+		{
+			READ_NSTRING(in, buf, buf); // should be {
+			if (buf != "{")
+				THROW("Should start with {\n");
+			READ_NSTRING(in, buf, buf);
+			output_modes.clear();
+			while (buf != "}")
+			{
+				pps3_om_T omode;
+				fromString(buf, omode);
+				output_modes.push_back(omode);
+				READ_NSTRING(in, buf, buf);
+			}
+		}
+		else if (buf == "version_seperatePP3Folders")
 		{
 			READ_NBOOL(in, buf, version_seperatePP3Folders);
 		}
@@ -281,7 +377,14 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 		{
 			for (unsigned int tot = 0; tot < PPS3_TimeOT_SIZE; ++tot)
 			{
-				READ_NBOOL(in, buf, outputTypeActive[tot]);
+				READ_NINTEGER(in, buf, outputTypeActive[tot]);
+				if (outputTypeActive[tot] == -1)
+				{
+					if (g_low_disk_space)
+						outputTypeActive[tot] = 0;
+					else
+						outputTypeActive[tot] = 1;
+				}
 			}
 		}
 		else if (buf == "timeStampOverwriters")
@@ -352,11 +455,10 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 	{
 		unsigned int sz = dataPointers[tot][pps3_i].size() + dataPointers[tot][pps3_o].size();
 		if (sz == 0)
-			outputTypeActive[tot] = false;
+			outputTypeActive[tot] = 0;
 	}
-	if (g_low_disk_space)
-		outputTypeActive[pps3_timeStep] = false;
-
+//	if (g_low_disk_space)
+//		outputTypeActive[pps3_timeStep] = 0;
 	return true;
 }
 
@@ -424,10 +526,19 @@ void DomainPostProcessS3::Print_Version_Values(ostream& out)
 	}
 }
 
-bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAlVals, int time_outputIndex)
+bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAlVals, int time_outputIndex, pps3_om_T output_mode)
 {
+	string added_name = getAddedName4OutputFile(output_mode);
+	string root2 = root;
+	if (added_name != "")
+	{
+//		root2 = root + "/" + added_name;
+		root2 = root + "/" + added_name;
+		MakeDir(root2);
+	}
 	g_SL_desc_data.Read_tdLoad();
-	string rt = root + "/";
+	string rt = root2 + "/";
+
 	accebleOverAlVals = true;
 	string fileName = rt + out_baseName;
 	OneTimeValuePPS2Data modifiableOneTimeSlns;
@@ -484,37 +595,43 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 			}
 			if (outputIsScalar)
 			{
-				vals.push_back(scalarVal);
-				if (!outputFile_exists)
+				if (output_mode != pps3_om_vectors)
 				{
-					name = preName + datPtr->name_In_CSV_file;
-					names.push_back(name);
-					names_latex.push_back(datPtr->name_Latex);
-					names_indices.push_back(-1);
+					vals.push_back(scalarVal);
+					if (!outputFile_exists)
+					{
+						name = preName + datPtr->name_In_CSV_file;
+						names.push_back(name);
+						names_latex.push_back(datPtr->name_Latex);
+						names_indices.push_back(-1);
+					}
 				}
 			}
 			else
 			{
-				fldSz = vecVal.size();
-				if (fldSz == 0)
+				if (output_mode != pss3_om_scalars)
 				{
-					accebleOverAlVals = false;
-					if (!addInvalidData)
-						return false;
-				}
-				for (unsigned int j = 0; j < fldSz; ++j)
-					vals.push_back(vecVal[j]);
-				if (!outputFile_exists)
-				{
-					nameBase = preName + datPtr->name_In_CSV_file;
-					for (unsigned int j = 0; j < fldSz; ++j)
+					fldSz = vecVal.size();
+					if (fldSz == 0)
 					{
-						string ser;
-						toString(j, ser);
-						name = nameBase + ser;
-						names.push_back(name);
-						names_latex.push_back(datPtr->name_Latex);
-						names_indices.push_back(j);
+						accebleOverAlVals = false;
+						if (!addInvalidData)
+							return false;
+					}
+					for (unsigned int j = 0; j < fldSz; ++j)
+						vals.push_back(vecVal[j]);
+					if (!outputFile_exists)
+					{
+						nameBase = preName + datPtr->name_In_CSV_file;
+						for (unsigned int j = 0; j < fldSz; ++j)
+						{
+							string ser;
+							toString(j, ser);
+							name = nameBase + ser;
+							names.push_back(name);
+							names_latex.push_back(datPtr->name_Latex);
+							names_indices.push_back(j);
+						}
 					}
 				}
 			}

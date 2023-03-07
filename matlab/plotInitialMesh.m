@@ -3,7 +3,7 @@ if nargin < 1
     serialNum = 0;
 end
 if nargin < 2
-    versionNo = 4;
+    versionNo = -1;
 end
 
 srstr = num2str(serialNum);
@@ -25,3 +25,14 @@ hold on;
 x = -0.5:1/(m - 1):0.5;
 plot(x, di);
 legend({'final', 'initial'});
+
+
+mn = min(df)
+mx = max(df)
+meanv = mean(df)
+stdv = std(df)
+[pdf_y, pdf_x] = ksdensity(df);
+figure(2);
+plot(pdf_x, pdf_y);
+%savefig(['df_pdf.fig']);
+%print('-dpng', ['df_pdf.png']);

@@ -53,6 +53,12 @@ Domain_All_Interfaces_All_Times::Domain_All_Interfaces_All_Times()
 	b_ring_opened1D_kinetic_energy_on_full_vTheta = true;
 	ring_opened1D_kinetic_energy_vr = 0.0;
 	ring_opened1D_al = 0.0;
+	fractureMode = -1;
+	hasFracture = false;
+	visualization_dir = 0;
+	visualization_numSpaceStep = -512;
+	visualization_numTimeStep = -400;
+	visualization_TimeStep = 0.0;
 }
 
 Domain_All_Interfaces_All_Times::~Domain_All_Interfaces_All_Times()
@@ -85,6 +91,7 @@ Domain_All_Interfaces_All_Times::~Domain_All_Interfaces_All_Times()
 	for (unsigned int i = 0; i < interfaces.size(); ++i)
 		delete interfaces[i];
 	Close_Files_RawData_OntTimeAllSpatialPoints();
+	Delete_v1DFiles();
 }
 
 
@@ -291,6 +298,10 @@ void Domain_All_Interfaces_All_Times::Read_BaseData(istream & in, int serialNumb
 				READ_NSTRING(in, buf, buf);
 			}
 		}
+		else if (buf == "fractureMode")
+		{
+			READ_NINTEGER(in, buf, fractureMode);
+		}
 		else if (buf == "x_min")
 		{
 			READ_NDOUBLE(in, buf, x_min);
@@ -377,6 +388,22 @@ void Domain_All_Interfaces_All_Times::Read_BaseData(istream & in, int serialNumb
 		else if (buf == "ring_opened1D_kinetic_energy_on_full_vTheta")
 		{
 			READ_NBOOL(in, buf, b_ring_opened1D_kinetic_energy_on_full_vTheta);
+		}
+		else if (buf == "visualization_dir")
+		{
+			READ_NINTEGER(in, buf, visualization_dir);
+#if DiM1
+			if (visualization_dir >= 0)
+				visualization_dir = 0;
+#endif
+		}
+		else if (buf == "visualization_numSpaceStep")
+		{
+			READ_NINTEGER(in, buf, visualization_numSpaceStep);
+		}
+		else if (buf == "visualization_numTimeStep")
+		{
+			READ_NINTEGER(in, buf, visualization_numTimeStep);
 		}
 		else if (buf == "directionalBCTypeLeftSide")
 		{
@@ -901,6 +928,8 @@ void Domain_All_Interfaces_All_Times::Form_Bulks_Interfaces_WithoutFormingConnec
 				// looking for the modifier
 				interfaceModifierPtr = &subdomain->intefaceMs[bi];
 				// getting interface fracture ...
+				if (fractureMode == 0)
+					interfaceModifierPtr->interface_flag = 0;
 				map<GID, SL_Interface_Fracture_PF*>::iterator itf = interface_fracture_map.find(interfaceModifierPtr->interface_flag);
 				if (itf == interface_fracture_map.end())
 				{
@@ -915,6 +944,8 @@ void Domain_All_Interfaces_All_Times::Form_Bulks_Interfaces_WithoutFormingConnec
 				interfacePtr->deltaCFactor = interfaceModifierPtr->deltaFactor;
 				interfacePtr->iniDamage = interfaceModifierPtr->iniDamage;
 				interfacePtr->Set_EF_Properties(interfacePF);
+				if (fractureMode == 0)
+					interfaceModifierPtr->interface_flag = 0;
 				interfacePtr->interface_flag = interfaceModifierPtr->interface_flag;
 				interfacePtr->interface_pos = interface_cntr;
 
@@ -1278,6 +1309,19 @@ void Domain_All_Interfaces_All_Times::Connect_Interfaces_Set_BC_Types__Form_PP()
 		b_ring_opened1D_damping_on_full_vTheta = false;
 		ring_opened1D_al = 0.0;
 	}
+
+	//////////////////// set global boolean whether the problem has fracture or not
+	hasFracture = false;
+	for (unsigned int i = 0; i < num_interfaces; ++i)
+		if (interfaces[i]->interface_flag != 0)
+		{
+			if (g_SL_desc_data.tdLoadComputer == NULL)
+				hasFracture = true;
+			else if (interfaces[i]->interface_flag < 100)
+				hasFracture = true;
+		}
+	/////////////////// initializing output for visualization
+	Initialize_v1D();
 }
 
 void Domain_All_Interfaces_All_Times::Compute1D_Averages()
@@ -1296,10 +1340,10 @@ void Domain_All_Interfaces_All_Times::Compute1D_Averages()
 		sz = en - st;
 		OneSubdomain_All_bulksConnectivityInfo* osabci = &bulk_interfaces_subdomains[si];
 		out << "st\t" << st << "\ten\t" << en << "\tsz\t" << sz << '\n';
-		out << "pos\tlen\taveE\taveHarmonicE\taveRho\tavec\taveZ\taveDvv\tcFromAves\tZFromAves\n";
+		out << "pos\tlen\taveE\taveHarmonicE\taveRho\tavec\taveHarmonicc\taveZ\taveDvv\tcFromAves\tZFromAves\n";
 		out << setprecision(22);
 		osabci->Zero1D_Averages();
-		double totLength = 0.0, inv_totLength, cur_AveE, cur_AveHarmonicE, cur_Averho, cur_Avec, cur_AveZ, curr_AveDD = 0.0, cFromAves, ZFromAves;
+		double totLength = 0.0, inv_totLength, cur_AveE, cur_AveHarmonicE, cur_Averho, cur_Avec, cur_AveHarmonicc, cur_AveZ, curr_AveDD = 0.0, cFromAves, ZFromAves;
 		for (unsigned int j = 0; j < sz; ++j)
 		{
 			pos = j + st;
@@ -1312,9 +1356,10 @@ void Domain_All_Interfaces_All_Times::Compute1D_Averages()
 			double c = Z / rho;
 			double E = c * Z;
 			osabci->EAve += E * len;
-			osabci->EHarmonicAve += 1.0 * len;
+			osabci->EHarmonicAve += 1.0 / E * len;
 			osabci->rhoAve += rho * len;
 			osabci->cAve += c * len;
+			osabci->cHarmonicAve += 1.0 / c * len;
 			osabci->ZAve += Z * len;
 
 			cur_AveE = osabci->EAve * inv_totLength;
@@ -1324,16 +1369,18 @@ void Domain_All_Interfaces_All_Times::Compute1D_Averages()
 			cFromAves = sqrt(cur_AveE / cur_Averho);
 			ZFromAves = cur_Averho * cFromAves;
 			cur_AveHarmonicE = totLength / osabci->EHarmonicAve;
+			cur_AveHarmonicc = totLength / osabci->cHarmonicAve;
 #if HAVE_SOURCE_ORDER0_q
 			osabci->DvvAve += bulkPtr->D_vv * len;
 			curr_AveDD = osabci->DvvAve * inv_totLength;
 #endif
-			out << pos << "\t" << totLength << "\t" << cur_AveE << "\t" << cur_AveHarmonicE << "\t" << cur_Averho << "\t" << cur_Avec << "\t" << cur_AveZ << "\t" << curr_AveDD << "\t" << cFromAves << "\t" << ZFromAves << "\n";
+			out << pos << "\t" << totLength << "\t" << cur_AveE << "\t" << cur_AveHarmonicE << "\t" << cur_Averho << "\t" << cur_Avec << "\t" << cur_AveHarmonicc << "\t" << cur_AveZ << "\t" << curr_AveDD << "\t" << cFromAves << "\t" << ZFromAves << "\n";
 		}
 		osabci->EAve *= osabci->inv_length;
 		osabci->EHarmonicAve = osabci->length / osabci->EHarmonicAve;
 		osabci->rhoAve *= osabci->inv_length;
 		osabci->cAve *= osabci->inv_length;
+		osabci->cHarmonicAve = osabci->length / osabci->cHarmonicAve;
 		osabci->ZAve *= osabci->inv_length;
 #if HAVE_SOURCE_ORDER0_q
 		osabci->DvvAve *= osabci->inv_length;
@@ -1468,6 +1515,8 @@ void Domain_All_Interfaces_All_Times::Set_InitialCondition_step()
 	}
 	if (printRaw)
 		Close_Files_RawData_OntTimeAllSpatialPoints();
+	if (b_visualization1D)
+		Print_v1D(0.0);
 }
 
 //fstream lgo("_log_out.txt", ios::out);
@@ -1494,6 +1543,15 @@ int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 	if (numTimeStep_Interface_DSU_Fragment_Print_4PP < 0)
 		numTimeStep_Interface_DSU_Fragment_Print_4PP = MAX(1, numTimes / -numTimeStep_Interface_DSU_Fragment_Print_4PP);
 
+	if (b_visualization1D)
+	{
+		if (visualization_numTimeStep < 0)
+			visualization_numTimeStep = MAX(1, numTimes / -visualization_numTimeStep);
+		visualization_TimeStep = visualization_numTimeStep * timeStep;
+		unsigned int numStep = (int)ceil(maxTimewTol / visualization_TimeStep);
+		v1Dtout << "numStep\t" << numStep << "\ttimeStep\t" << visualization_TimeStep << '\n';
+		v1Dtout << 0.0 << '\n';
+	}
 	for (unsigned int si = 0; si < num_subdomains; ++si)
 	{
 		bulk_interfaces_subdomains[si].OneSubdomain_All_bulksConnectivityInfo_Initialize();
@@ -1576,6 +1634,11 @@ int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 			Close_Files_RawData_OntTimeAllSpatialPoints();
 		current_min_time += timeStep;
 		++timeIndex;
+		if ((b_visualization1D) && (timeIndex % visualization_numTimeStep == 0))
+		{ 
+			v1Dtout << current_min_time << endl;
+			Print_v1D(current_min_time);
+		}
 
 		if (do_space_spacetime_PP)
 			for (unsigned int si = 0; si < num_subdomains; ++si)
@@ -1647,6 +1710,13 @@ void Configure_sfcm_sfcm_gen()
 {
 	if (!sfcm.success)
 		return;
+	double tSigma0 = 2.0;
+	bool alr = false; // accurate long run: these have small enough CFL and long time to ensure phid convergence. 
+	// for mass runs, it's better to turn this off, especially for high spatial mesh resolutions
+	// it seems sigma_bar -> 0 and its corresponding energy (psi_f) is a pretty good indicator of phid (about 1.15 to 1.3 factor of it)
+	// it takes much shorter to get there. If this is one, much shorter solution times are obtained, but phid is not converged
+	bool use_tSigma0Time = false;
+	double tFactor4tSigma0 = 4; /// how much past max stress should go beyond stress ~ 0
 	string key;
 	double value;
 	map<string, string>* mpPtr;
@@ -1664,59 +1734,439 @@ void Configure_sfcm_sfcm_gen()
 			ldelc = value;
 		sfcm.cfl_factor = 1.0;
 		sfcm.tFinal = 10.0;
-		sfcm.number_of_elements = 1024;
-		if ((ldelc < -1) || (la > 2) || (llc < -2.51))
-		{
-			sfcm.number_of_elements = 8192;
-			THROW("generate appropriate input meshes, update the statements below\n");
-		}
+//		int log_resolution = 10; // 1024
+		int log_resolution = 14; // 1024
 		double tol = 1e-7;
-		if (ldelc >= -1.01) // decently large correlation length
+		if (log_resolution == 14)
 		{
-			if (fabs(la + 3) < tol) // loading rate of -3
-				sfcm.tFinal = 1280;
-			if (fabs(la + 2.5) < tol) // loading rate of -3
-				sfcm.tFinal = 640;
-			else if (fabs(la + 2) < tol)
-				sfcm.tFinal = 200;
-			else if (fabs(la + 1.5) < tol)
-				sfcm.tFinal = 128;
-			else if (fabs(la + 1) < tol)
+			sfcm.number_of_elements = (int)pow(2, (int)log_resolution);
+			sfcm.cfl_factor = 1.0;
+
+			if ((ldelc < -2.4) || (la > 4.1) || (llc < -4.01))
 			{
-				sfcm.tFinal = 100;
-				sfcm.cfl_factor = 0.256;
+				THROW("generate appropriate input meshes, update the statements below\n");
 			}
-			else if (fabs(la + 0.5) < tol)
+			if (ldelc >= -1.01) // decently large correlation length
 			{
-				sfcm.tFinal = 64;
-				sfcm.cfl_factor = 0.256;
+				if (fabs(la + 3) < tol) // loading rate of -3
+					sfcm.tFinal = 1280;
+				if (fabs(la + 2.5) < tol) // loading rate of -3
+					sfcm.tFinal = 640;
+				else if (fabs(la + 2) < tol)
+					sfcm.tFinal = 200;
+				else if (fabs(la + 1.5) < tol)
+					sfcm.tFinal = 128;
+				else if (fabs(la + 1) < tol)
+				{
+					sfcm.tFinal = 100;
+					//					sfcm.cfl_factor = 0.256;
+				}
+				else if (fabs(la + 0.5) < tol)
+				{
+					sfcm.tFinal = 64;
+					//				sfcm.cfl_factor = 0.256;
+				}
+				else if (((0 - tol) <= la) && (la < (1 - tol)))
+				{
+					if (!alr)
+					{
+						sfcm.cfl_factor = 1.0;
+						sfcm.tFinal = 4.0;
+					}
+					else
+					{
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 12.0;
+					}
+					tSigma0 = 0.58;
+					//					sfcm.tFinal = 10;
+					//					sfcm.cfl_factor = 0.0128;
+				}
+				else if (((0.5 - tol) <= la) && (la < (1.5 - tol)))
+				{
+					if (!alr)
+					{
+						sfcm.cfl_factor = 1.0;
+						sfcm.tFinal = 2.5;
+					}
+					else
+					{
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 7.0;
+					}
+					tSigma0 = 0.40;
+				}
+				else if (((1 - tol) <= la) && (la < (2 - tol)))
+				{
+					if (!alr)
+					{
+						sfcm.cfl_factor = 1.0;
+						sfcm.tFinal = 1.5;
+					}
+					else
+					{
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 4.0;
+					}
+					tSigma0 = 0.086;
+//					sfcm.tFinal = 6;
+					//					sfcm.cfl_factor = 0.0128;
+				}
+//				else if (fabs(la - 2) < tol)
+				else if (((2 - tol) <=  la) && ( la <  (3 - tol)))
+				{
+					if (!alr)
+					{
+						sfcm.cfl_factor = 1.0;
+						sfcm.tFinal = 1.5;
+					}
+					else
+					{ 
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 4.0;
+					}
+					tSigma0 = 0.0360718;
+				}
+				else if (((3 - tol) <= la) && (la < (3.5 - tol)))
+				{
+					// for ldelc = -2, CF<=0.25 captures pw oscillation of stress
+					// for ldelc = -1, CF = 1 actually shows more oscillation for stress (more reasonable?)
+					// tested
+					if (ldelc <= -1.9) // low delc
+					{
+						sfcm.cfl_factor = 0.25;
+						if (!alr)
+							sfcm.tFinal = 0.5;
+						else
+							sfcm.tFinal = 1.0;
+					}
+					else
+					{
+						if (!alr)
+						{
+							sfcm.cfl_factor = 1.0;
+							sfcm.tFinal = 1.2;
+						}
+						else
+						{
+							sfcm.cfl_factor = 0.5;
+							sfcm.tFinal = 2.0;
+						}
+					}
+					tSigma0 = 0.0487062;
+				}
+				else if (((3.5 - tol) <= la) && (la < (4.0 - tol)))
+				{
+					if (ldelc <= -1.9) // low delc
+					{
+						sfcm.cfl_factor = 0.25;
+						if (!alr)
+							sfcm.tFinal = 0.35;
+						else
+							sfcm.tFinal = 1.0;
+					}
+					else
+					{
+						if (!alr)
+						{
+							sfcm.cfl_factor = 0.5;
+							sfcm.tFinal = 0.8;
+						}
+						else
+						{
+							sfcm.cfl_factor = 0.5;
+							sfcm.tFinal = 1.5;
+						}
+					}
+					tSigma0 = 0.0487062;
+				}
+				else if (((4.0 - tol) <= la) && (la < (4.5 - tol)))
+				{
+					if (!alr)
+						sfcm.tFinal = 0.2;
+					else
+						sfcm.tFinal = 0.7;
+					// 0.2 is good enough, some runs need ~0.6 for dissipated energy to converge
+					// time for sigma = 0:	0.006 for ldelc = -2, 0.03 for ldelc = -1
+					// for ldelc = -1, sigma oscillates like crazy near sigma_max for CFL < 1 but for CFL = 1 it's smooth
+					// for ldelc = -2, there is not much of such oscillation
+					sfcm.cfl_factor = 0.25;
+					tSigma0 = 0.0371094;
+				}
+				else
+				{
+					THROW("add these options later\n");
+				}
 			}
-			else if (fabs(la) < tol)
+		}
+		else if (log_resolution == 1024)
+		{
+			sfcm.number_of_elements = 1024;
+			if ((ldelc < -1) || (la > 2) || (llc < -2.51))
 			{
-				sfcm.tFinal = 10;
-				sfcm.cfl_factor = 0.128;
+				sfcm.number_of_elements = 8192;
+				THROW("generate appropriate input meshes, update the statements below\n");
 			}
-			else if (fabs(la - 1) < tol)
+			if (ldelc >= -1.01) // decently large correlation length
 			{
-				sfcm.tFinal = 1;
-				sfcm.cfl_factor = 0.0128;
+				if (fabs(la + 3) < tol) // loading rate of -3
+					sfcm.tFinal = 1280;
+				if (fabs(la + 2.5) < tol) // loading rate of -3
+					sfcm.tFinal = 640;
+				else if (fabs(la + 2) < tol)
+					sfcm.tFinal = 200;
+				else if (fabs(la + 1.5) < tol)
+					sfcm.tFinal = 128;
+				else if (fabs(la + 1) < tol)
+				{
+					sfcm.tFinal = 100;
+					sfcm.cfl_factor = 0.256;
+				}
+				else if (fabs(la + 0.5) < tol)
+				{
+					sfcm.tFinal = 64;
+					sfcm.cfl_factor = 0.256;
+				}
+				else if (fabs(la) < tol)
+				{
+					sfcm.tFinal = 10;
+					sfcm.cfl_factor = 0.128;
+				}
+				else if (fabs(la - 0.5) < tol) // added 3/1/23
+				{
+					sfcm.tFinal = 1;
+					sfcm.cfl_factor = 0.0512;
+				}
+				else if (fabs(la - 1) < tol)
+				{
+					sfcm.tFinal = 1;
+					sfcm.cfl_factor = 0.0128;
+				}
+				else if (fabs(la - 1.5) < tol)
+				{
+					sfcm.tFinal = 6;
+					sfcm.cfl_factor = 0.0128;
+				}
+				else if (fabs(la - 2) < tol)
+				{
+					sfcm.tFinal = 4;
+					sfcm.cfl_factor = 0.0128;
+					//				sfcm.cfl_factor = 0.0064;
+				}
 			}
-			else if (fabs(la - 1.5) < tol)
+			else
 			{
-				sfcm.tFinal = 6;
-				sfcm.cfl_factor = 0.0128;
+				THROW("add these options later\n");
 			}
-			else if (fabs(la - 2) < tol)
+		}
+	}
+	if (use_tSigma0Time)
+		sfcm.tFinal = tFactor4tSigma0 * tSigma0;
+		//		sfcm.tFinal = MIN(tFactor4tSigma0 * tSigma0, sfcm.tFinal);
+}
+
+void Domain_All_Interfaces_All_Times::Delete_v1DFiles()
+{
+	for (unsigned int i = 0; i < v1DOutPtr.size(); ++i)
+	{
+		for (unsigned int j = 0; j < v1DOutPtr[i].size(); ++j)
+		{
+			if (v1DOutPtr[i][j] != NULL)
 			{
-				sfcm.tFinal = 4;
-				sfcm.cfl_factor = 0.0128;
-//				sfcm.cfl_factor = 0.0064;
+				delete v1DOutPtr[i][j];
+				v1DOutPtr[i][j] = NULL;
 			}
+		}
+	}
+}
+
+void Domain_All_Interfaces_All_Times::Size_v1DFiles()
+{
+	b_visualization1D = ((visualization_dir >= 0) && (visualization_numSpaceStep != 0) && (visualization_numTimeStep != 0));
+	visualization1D_numFlds = 0;
+	Delete_v1DFiles();
+	if (!b_visualization1D)
+		return;
+	vector<string> append_v1D;
+	append_v1D.push_back("u");
+	append_v1D.push_back("v");
+	append_v1D.push_back("s");
+	if (hasFracture)
+	{
+		append_v1D.push_back("D");
+		append_v1D.push_back("DdeluMax");
+		append_v1D.push_back("Ddelu");
+	}
+	visualization1D_numFlds = append_v1D.size();
+	bool addUnderline = true;
+	if (v1DOutPtr.size() == 0)
+	{
+		v1DOutPtr.resize(num_subdomains);
+		for (unsigned int si = 0; si < subdomains.size(); ++si)
+		{
+			v1DOutPtr[si].resize(visualization1D_numFlds);
+			for (unsigned int fi = 0; fi < visualization1D_numFlds; ++fi)
+			{
+				string fileName;
+				string specificName = "visualization_" + append_v1D[fi];
+				GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName, "txt", addUnderline);
+				fstream* outPtr = new fstream();
+				outPtr->open(fileName.c_str(), ios::out);
+				v1DOutPtr[si][fi] = outPtr;
+				(*(v1DOutPtr[si][fi])) << setprecision(22);
+			}
+		}
+	}
+	string fileName;
+	string specificName = "visualization_timesteps";
+	GetSubdomainIndexed_TimeIndexed_FileName(fileName, -1, -1, specificName, "txt", addUnderline);
+	v1Dtout.open(fileName.c_str(), ios::out);
+	v1Dtout << setprecision(22);
+}
+
+void Domain_All_Interfaces_All_Times::Initialize_v1D()
+{
+	Size_v1DFiles();
+	if (!b_visualization1D)
+		return;
+	InterfaceLocation1DT sides[NUM_SIDES];
+	sides[0] = ilt_left;
+	sides[1] = ilt_right;
+
+	bool duplicateInterfaces = hasFracture;
+	SL_OneInterfaceAllTimes* interfacePtr;
+	bool addUnderline = true;
+	unsigned int nSubdomains = subdomains.size();
+	int last_subdomain = nSubdomains - 1;
+	visualization1D_xInfo.clear();
+	visualization1D_xInfo.resize(nSubdomains);
+	double a = 0.0;
+	if (ring_opened1D_al)
+		a = g_SL_desc_data.load_parameters[0];
+	for (unsigned int si = 0; si < nSubdomains; ++si)
+	{
+		vector<OneVisContour_xInfo>* visualization1D_xInfoPtr = &visualization1D_xInfo[si];
+
+		unsigned int st = subdomain_bulk_start_nos[si];
+		unsigned int en = subdomain_bulk_start_nos[si + 1];
+		unsigned int lastIndex = en - 1;
+		unsigned int sz_segments = en - st;
+		int step = visualization_numSpaceStep;
+		if (step < 0)
+			step = MAX(sz_segments / -step, 1);
+		unsigned int stt;
+		if (isPeriodic && (si == 0))
+		{
+			OneVisContour_xInfo vInfo;
+			vInfo.subdomainNo = si;
+			interfacePtr = interfaces[en - 1];
+			vInfo.interfacePtr = interfacePtr;
+			vInfo.interface_x = interfacePtr->interface_x - L;
+			vInfo.interface_index = en - 1;
+			vInfo.side4output = ilt_right; // ilt_rightWPeriodicShift;
+			visualization1D_xInfoPtr->push_back(vInfo);
+			stt = st + step - 1;
 		}
 		else
 		{
-			THROW("add these options later\n");
+			++lastIndex;
+			interfacePtr = interfaces[st];
+			OneVisContour_xInfo vInfo;
+			vInfo.subdomainNo = si;
+			vInfo.interface_index = st;
+			vInfo.interfacePtr = interfacePtr;
+			vInfo.interface_x = interfacePtr->interface_x;
+			vInfo.side4output = ilt_right;
+			visualization1D_xInfoPtr->push_back(vInfo);
+			stt = st + step;
 		}
-	}
+		for (unsigned j = stt; j < lastIndex; j += step)
+		{
+			interfacePtr = interfaces[j];
+			if (duplicateInterfaces)
+			{
+				for (unsigned int k = 0; k < NUM_SIDES; ++k)
+				{
+					OneVisContour_xInfo vInfo;
+					vInfo.subdomainNo = si;
+					vInfo.interface_index = j;
+					vInfo.interfacePtr = interfacePtr;
+					vInfo.interface_x = interfacePtr->interface_x;
+					vInfo.side4output = sides[k];
+					visualization1D_xInfoPtr->push_back(vInfo);
+				}
+			}
+			else
+			{
+				OneVisContour_xInfo vInfo;
+				vInfo.subdomainNo = si;
+				vInfo.interface_index = j;
+				vInfo.interfacePtr = interfacePtr;
+				vInfo.interface_x = interfacePtr->interface_x;
+				vInfo.side4output = ilt_twoSided;
+				visualization1D_xInfoPtr->push_back(vInfo);
+			}
+		}
+		int j = lastIndex;
+		interfacePtr = interfaces[j];
+		OneVisContour_xInfo vInfo;
+		vInfo.subdomainNo = si;
+		vInfo.interface_index = j;
+		vInfo.interfacePtr = interfacePtr;
+		vInfo.interface_x = interfacePtr->interface_x;
+		vInfo.side4output = ilt_left;
+		visualization1D_xInfoPtr->push_back(vInfo);
 
+		int num_x = visualization1D_xInfoPtr->size();
+		string fileName;
+		string specificName = "visualization_paras";
+		GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName, "txt", addUnderline);
+		fstream out(fileName.c_str(), ios::out);
+		out << setprecision(22);
+		out << "a\t" << a << '\n';
+		out << "num_x\t" << num_x << '\n';
+		out << "xs\n";
+		for (int xi = 0; xi < num_x; ++xi)
+			out << (*visualization1D_xInfoPtr)[xi].interface_x << '\t';
+		out << '\n';
+		out << "indicess\n";
+		for (int xi = 0; xi < num_x; ++xi)
+			out << (*visualization1D_xInfoPtr)[xi].interface_index << '\t';
+		out << '\n';
+	}
+}
+
+void Domain_All_Interfaces_All_Times::Print_v1D(double time)
+{
+//	if (!b_visualization1D)
+//		return;
+	SL_OneInterfaceAllTimes* interfacePtr;
+	unsigned int nSubdomains = subdomains.size();
+	vector<double> vals;
+	double delC;
+	double ax = 0.0;
+	for (unsigned int si = 0; si < nSubdomains; ++si)
+	{
+		vector<ostream*>* siV1DOutPtr = &(v1DOutPtr[si]);
+		vector<OneVisContour_xInfo>* visualization1D_xInfoPtr = &visualization1D_xInfo[si];
+		unsigned int num_x = visualization1D_xInfoPtr->size(), num_xm1 = num_x - 1;
+		for (unsigned int ii = 0; ii < num_x; ++ii)
+		{
+			OneVisContour_xInfo *vInfoPtr = &(*visualization1D_xInfoPtr)[ii];
+			interfacePtr = vInfoPtr->interfacePtr;
+			SL_interfacePPtData *ptSlnPtr = interfacePtr->timeSeqData.GetCurrentPosition();
+			delC = interfacePtr->getDeltaC();
+			bool periodicBoundaryPt = false;
+			if (b_ring_opened1D)
+			{
+				ax = g_SL_desc_data.load_parameters[0] * vInfoPtr->interface_x;
+				periodicBoundaryPt = ((ii == 0) || (ii == num_xm1));
+			}
+			ptSlnPtr->get1DValues4Visualization(vals, delC, vInfoPtr->side4output, time, ax, visualization_dir, periodicBoundaryPt);
+			for (unsigned int j = 0; j < visualization1D_numFlds; ++j)
+				(*((*siV1DOutPtr)[j])) << vals[j] << '\t';
+		}
+		for (unsigned int j = 0; j < visualization1D_numFlds; ++j)
+			(*((*siV1DOutPtr)[j])) << '\n';
+	}
 }

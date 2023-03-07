@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt -cp config/Domain/PPS3Config_Coh.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-sp -c config/Domain/Inhomogeneous_left_load_elastic.txt -cp config/Domain/PPS3Config_Elastic.txt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt -cp config/Domain/PPS3Config_Coh.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-sp -c config/Domain/Inhomogeneous_left_load_elastic.txt -cp config/Domain/PPS3Config_Elastic.txt</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

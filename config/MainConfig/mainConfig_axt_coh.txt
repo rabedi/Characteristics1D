@@ -2,7 +2,8 @@
 
 # config for solution and PPS1
 configName
-config/Domain/Inhomogeneous_axt_fracture_Coh.txt
+#config/Domain/Inhomogeneous_axt_fracture_Coh.txt
+config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt
 
 # config for PPS3 (and PPS2 inside that)
 configPPName
@@ -13,6 +14,7 @@ version_configMakerGenName
 #config/ConfigMakerVersion/configMaker_axt_short.inst
 ###########################################################
 #config/ConfigMakerVersion/configMaker_axt.inst
+#config/ConfigMakerVersion/configMaker_fine_axt.inst
 config/ConfigMakerVersion/configMaker_axt_resolution.inst
 
 # if true, the instruction file will be regenerated regardless of if it already exists or not

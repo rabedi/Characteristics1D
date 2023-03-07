@@ -413,6 +413,59 @@ void SL_interfacePPtData::SetZero()
 #endif
 }
 
+void SL_interfacePPtData::get1DValues4Visualization(vector<double>& vals, double delC, InterfaceLocation1DT side, double t, double ax, unsigned int dir, bool periodicBoundaryPt)
+{
+	double u, v, s;
+	double axt = ax * t;
+	if (side == ilt_twoSided)
+	{
+		u = 0.5 * (sl_side_ptData[SDL].u_downstream_final[dir] + sl_side_ptData[SDR].u_downstream_final[dir]) - axt;
+		v = 0.5 * (sl_side_ptData[SDL].v_downstream_final[dir] + sl_side_ptData[SDR].v_downstream_final[dir]) - ax;
+		s = 0.5 * (sl_side_ptData[SDL].sigma_downstream_final[dir] + sl_side_ptData[SDR].sigma_downstream_final[dir]);
+	}
+	else if (side == ilt_left)
+	{
+		u = sl_side_ptData[SDL].u_downstream_final[dir] - axt;
+		v = sl_side_ptData[SDL].v_downstream_final[dir] - ax;
+		s = sl_side_ptData[SDL].sigma_downstream_final[dir];
+	}
+	else if (side == ilt_right)
+	{
+		u = sl_side_ptData[SDR].u_downstream_final[dir] - axt;
+		v = sl_side_ptData[SDR].v_downstream_final[dir] - ax;
+		s = sl_side_ptData[SDR].sigma_downstream_final[dir];
+	}
+	if (!g_domain->hasFracture)
+	{
+		vals.resize(3);
+		vals[0] = u;
+		vals[1] = v;
+		vals[2] = s;
+	}
+	else
+	{
+		vals.resize(6);
+		vals[0] = u;
+		vals[1] = v;
+		vals[2] = s;
+		if (delC > 0)
+		{
+			vals[3] = interface_damage_final;
+			double delu = sl_side_ptData[SDR].u_downstream_final[dir] - sl_side_ptData[SDL].u_downstream_final[dir];
+			if (periodicBoundaryPt)
+				delu += g_domain->ring_opened1D_al * t;
+			vals[4] = MIN(maxEffDelU / delC, 1.0);
+			vals[5] = delu / delC;
+		}
+		else
+		{
+			vals[3] = 0.0;
+			vals[4] = 0.0;
+			vals[5] = 0.0;
+		}
+	}
+}
+
 ////////////////
 SL_interfacePPtData_Time_Seq::SL_interfacePPtData_Time_Seq()
 {

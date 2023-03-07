@@ -121,11 +121,11 @@ doCalculateStages
 #
 # classification	classificationName	{  Active (val) 	tol4LinValChecks (val) 	tol4FinalValChecks  (val)  forwardFinalValueSearches	(val) }
 
-classification	epssig_bulk			{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.001 forwardFinalValueSearches	1 usePositive4MaxValues	1	}
-classification	epssig_bc			{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.001  forwardFinalValueSearches	1 usePositive4MaxValues	1	 }
-classification	interfaceDissEne	{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.01  forwardFinalValueSearches	1 }
-classification	Damage				{  Active 1 	tol4LinValChecks  0.00001 	tol4FinalValChecks   0.001 forwardFinalValueSearches	1 }
-classification	U					{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.001 forwardFinalValueSearches	1 }
+classification	epssig_bulk			{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.004 forwardFinalValueSearches	1 usePositive4MaxValues	1	}
+classification	epssig_bc			{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.004  forwardFinalValueSearches	1 usePositive4MaxValues	1	 }
+classification	interfaceDissEne	{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.02  forwardFinalValueSearches	1 }
+classification	Damage				{  Active 1 	tol4LinValChecks  0.00001 	tol4FinalValChecks   0.004 forwardFinalValueSearches	1 }
+classification	U					{  Active 1 	tol4LinValChecks -0.00001 	tol4FinalValChecks  -0.004 forwardFinalValueSearches	1 }
 
 # time:
 # l, m, f -> linear, max, final stages [0], [1], and [2]

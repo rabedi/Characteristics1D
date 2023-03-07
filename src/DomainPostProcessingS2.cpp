@@ -350,6 +350,8 @@ string getLatexName(RunNormalizationQuantT dat)
 		return "U_f";
 	if (dat == ene_PhiFinal)
 		return "\\phi_f";
+	if (dat == enePhiDissLossFinal)
+		return "{\\mathcal{E}_{\\mathrm{diss,lost}}}_f";
 	if (dat == eneBCFinal)
 		return "\\mathcal{E}_{\\mathrm{bc},f}";
 	if (dat == eneInputFinal)
@@ -404,6 +406,8 @@ string getName(RunNormalizationQuantT dat)
 		return "ene_UFinal";
 	if (dat == ene_PhiFinal)
 		return "ene_PhiFinal";
+	if (dat == enePhiDissLossFinal)
+		return "eneDissFinal";
 	if (dat == eneBCFinal)
 		return "eneBCFinal";
 	if (dat == eneInputFinal)
@@ -784,7 +788,7 @@ void DataW4LineHeader::Initialize_DataW4LineHeader(string& nameIn, DataW4LineHea
 	statOut.DataW4LineHeader_Write(out);
 }
 
-void DataW4LineHeader::GetMaxAbs_FinalValue(const DataW4LineHeader& timeSequenceSummaryStat, unsigned int fldNo, bool classification_usePositive4MaxValue, bool forceTerminalvalue2ProvidedValue, double providedTerminalValue, bool forwardFinalValueSearch, double tol4FinalValCheck,
+void DataW4LineHeader::GetMaxAbs_FinalValue(const DataW4LineHeader& timeSequenceSummaryStat, unsigned int fldNo, bool classification_usePositive4MaxValue, bool forceTerminalvalue2ProvidedValue, double providedTerminalValue, bool forwardFinalValueSearch, bool checkCrossing4FinalValue, double tol4FinalValCheck,
 	bool &bValuesPositive, int& index_maxAbsVal, double& maxAbsVal, int& index_finalVal, double& finalVal)
 {
 	// value with maximum absolute value
@@ -834,14 +838,60 @@ void DataW4LineHeader::GetMaxAbs_FinalValue(const DataW4LineHeader& timeSequence
 	}
 	if (forwardFinalValueSearch)
 	{
+		bool successFulFind = false;
 		for (index_finalVal = index_maxAbsVal + 1; index_finalVal <= (int)index_lastPt; ++index_finalVal)
 		{
 			finalVal = data_vals[index_finalVal][fldNo];
 			if (fabs(finalVal - terminalVal) < absTol)
-				return;
+			{
+				successFulFind = true;
+				break;
+			}
 		}
-		index_finalVal = -1;
-		return;
+		if (!checkCrossing4FinalValue)
+		{
+			if (!successFulFind)
+				index_finalVal = -1;
+			return;
+		}
+		int index_finalValB;
+		double finalValB;
+		bool successFulFindB = false;
+		int sgn = 1;
+		if (!classification_usePositive4MaxValue)
+			sgn = -1;
+
+		for (index_finalValB = index_maxAbsVal + 1; index_finalValB <= (int)index_lastPt; ++index_finalValB)
+		{
+			finalValB = data_vals[index_finalValB][fldNo];
+			if (sgn * finalValB < 0)
+			{
+				successFulFindB = true;
+				break;
+			}
+		}
+		if (successFulFind)
+		{
+			if (successFulFindB)
+			{
+				index_finalVal = MIN(index_finalVal, index_finalValB);
+				finalVal = data_vals[index_finalVal][fldNo];
+				return;
+			}
+			return;
+		}
+		else
+		{
+			if (successFulFindB)
+			{
+				index_finalVal = index_finalValB;
+				finalVal = finalValB;
+				return;
+			}
+			index_finalVal = -1;
+			return;
+		}
+		THROW("Should not get here\n");
 	}
 	///// going backward ... no need for else as previous if returns
 //	bool success = false;
@@ -1640,8 +1690,12 @@ void OneSubdomainPPS2Data::StageRelatedData_PPS2_Write()
 			continue;
 		fstream* stage_frag_stat_outs[FragmentationCriterionT_SIZE];
 		fstream* stage_frag_sizes_outs[FragmentationCriterionT_SIZE];
+		for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+		{
+			stage_frag_stat_outs[fc] = NULL;
+			stage_frag_sizes_outs[fc] = NULL;
+		}
 		fstream  out_integral, *out_frag_stat, *out_frag_sizes;
-
 		OneClassificationPPS2Data* diffClassificationPtr = &diffClassifications[ct];
 
 		specificName = "_Summary";
@@ -1662,9 +1716,6 @@ void OneSubdomainPPS2Data::StageRelatedData_PPS2_Write()
 		{
 			for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
 			{
-				stage_frag_stat_outs[fc] = NULL;
-				stage_frag_sizes_outs[fc] = NULL;
-
 				if (configPPS2->factors2DecideFragmented[fc] > 0.0)
 				{
 					out_frag_stat = new fstream();
@@ -1812,6 +1863,11 @@ bool OneSubdomainPPS2Data::StageRelatedData_PPS2_Read(int subdomainNoIn, DomainP
 			continue;
 		fstream* stage_frag_stat_ins[FragmentationCriterionT_SIZE];
 		fstream* stage_frag_sizes_ins[FragmentationCriterionT_SIZE];
+		for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+		{
+			stage_frag_stat_ins[fc] = NULL;
+			stage_frag_sizes_ins[fc] = NULL;
+		}
 		fstream  in_integral, *in_frag_stat, *in_frag_sizes;
 
 		OneClassificationPPS2Data* diffClassificationPtr = &diffClassifications[ct];
@@ -1996,13 +2052,17 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPoi
 		if (delT < 0)
 			delT = -segmentInfo.maxTime / delT;
 		int timeStep_Factor, max_timeStep;
+/*
 		if (delT < segmentInfo.timeStep)
 		{
 			cout << "delT\t" << delT << '\n';
 			cout << "segmentInfo.timeStep\t" << segmentInfo.timeStep << '\n';
 			THROW("Increase delT = temporalFieldTimeStepValOrNumSteps\n");
 		}
+*/
 		timeStep_Factor = (int)floor(delT / segmentInfo.timeStep + 1e-7);
+		if (timeStep_Factor == 0)
+			timeStep_Factor = 1;
 		max_timeStep = segmentInfo.totalTimeSteps / timeStep_Factor;
 		unsigned int sz = max_timeStep + 1;
 		if ((max_timeStep *  timeStep_Factor) >= (int)timeSequenceSummary.numDataPoints)
@@ -2224,7 +2284,8 @@ void OneSubdomainPPS2Data::Set_Time_Stage_Indices_Times()
 		bool  bValuesPositive;
 		int index_maxAbsVal, index_finalVal;
 		double maxAbsVal, finalVal;
-		timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_sind_EneInp, classification_usePositive4MaxValue, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, classification_tol4FinalValCheck,
+		bool checkCrossing4FinalValue = false;
+		timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_sind_EneInp, classification_usePositive4MaxValue, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, checkCrossing4FinalValue, classification_tol4FinalValCheck,
 			bValuesPositive, index_maxAbsVal, maxAbsVal, index_finalVal, finalVal);
 
 		diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage = index_finalVal;
@@ -2262,7 +2323,8 @@ void OneSubdomainPPS2Data::Set_EpsSigma_Stage_Indices_Times(lstClassificationT c
 	bool  bValuesPositive;
 	int index_maxAbsVal, index_finalVal;
 	double maxAbsVal, finalVal;
-	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_sigma, classification_usePositive4MaxValue, forceTerminalvalue2ProvidedValue, 0.0, classification_forwardFinalValueSearch, classification_tol4FinalValCheck,
+	bool checkCrossing4FinalValue = true;
+	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_sigma, classification_usePositive4MaxValue, forceTerminalvalue2ProvidedValue, 0.0, classification_forwardFinalValueSearch, checkCrossing4FinalValue, classification_tol4FinalValCheck,
 		bValuesPositive, index_maxAbsVal, maxAbsVal, index_finalVal, finalVal);
 
 	loadingStagesT lsi = lst_max;
@@ -2357,7 +2419,8 @@ void OneSubdomainPPS2Data::Set_Damage_Stage_Indices_Times()
 	providedTerminalValue = 0.0;
 	if (classification_tol4FinalValCheck > 0)
 		classification_tol4FinalValCheck = -classification_tol4FinalValCheck; // want to use a relative tolerance for damage source (although we don't use the final value anyways)
-	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldno_DsrcMax, true, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, classification_tol4FinalValCheck,
+	bool checkCrossing4FinalValue = false;
+	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldno_DsrcMax, true, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, checkCrossing4FinalValue, classification_tol4FinalValCheck,
 		bValuesPositive, index_maxAbsVal, maxAbsVal, index_finalVal, finalVal);
 
 	lsi = lst_max;
@@ -2392,7 +2455,8 @@ void OneSubdomainPPS2Data::Set_PhysInterfaceDiss_Stage_Indices_Times()
 	bool  bValuesPositive;
 	int index_maxAbsVal, index_finalVal;
 	double maxAbsVal, finalVal;
-	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_diss_lost, true, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, classification_tol4FinalValCheck,
+	bool checkCrossing4FinalValue = false;
+	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_diss_lost, true, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, checkCrossing4FinalValue, classification_tol4FinalValCheck,
 		bValuesPositive, index_maxAbsVal, maxAbsVal, index_finalVal, finalVal);
 
 	loadingStagesT lsi = lst_final;
@@ -2419,7 +2483,7 @@ void OneSubdomainPPS2Data::Set_PhysInterfaceDiss_Stage_Indices_Times()
 	providedTerminalValue = 0.0;
 	if (classification_tol4FinalValCheck > 0)
 		classification_tol4FinalValCheck = -0.01; // a relative value is used for terminal, even though terminal value is not needed
-	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldno_dissPower_lost, classification_usePositive4MaxValue, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, classification_tol4FinalValCheck,
+	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldno_dissPower_lost, classification_usePositive4MaxValue, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, checkCrossing4FinalValue, classification_tol4FinalValCheck,
 		bValuesPositive, index_maxAbsVal, maxAbsVal, index_finalVal, finalVal);
 
 	lsi = lst_max;
@@ -2454,7 +2518,8 @@ void OneSubdomainPPS2Data::Set_U_Stage_Indices_Times()
 	bool  bValuesPositive;
 	int index_maxAbsVal, index_finalVal;
 	double maxAbsVal, finalVal;
-	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_U, true, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, classification_tol4FinalValCheck,
+	bool checkCrossing4FinalValue = true;
+	timeSequenceSummary.GetMaxAbs_FinalValue(timeSequenceSummaryStat, fldNo_U, true, forceTerminalvalue2ProvidedValue, providedTerminalValue, classification_forwardFinalValueSearch, checkCrossing4FinalValue, classification_tol4FinalValCheck,
 		bValuesPositive, index_maxAbsVal, maxAbsVal, index_finalVal, finalVal);
 
 	loadingStagesT lsi = lst_max;
@@ -3142,6 +3207,10 @@ int DomainPostProcessS2::get_space_spacetime_integral_index_from_name(const stri
 		return sind_phi_diss_lost_bc;
 	if (fldName == "energy_eps_recoverable_bc")
 		return sind_phi_recov_bc;
+	if (fldName == "energy_eps_diss2total_bc")
+		return sind_phi_diss2tot_bc;
+	if (fldName == "energy_eps_dissL2phid_bc")
+		return sind_phi_dissL2phid_bc;
 
 	if (fldName == "energy_eps_total_bulk")
 		return sind_phi_tot_bulk;
@@ -3149,6 +3218,10 @@ int DomainPostProcessS2::get_space_spacetime_integral_index_from_name(const stri
 		return sind_phi_diss_lost_bulk;
 	if (fldName == "energy_eps_recoverable_bulk")
 		return sind_phi_recov_bulk;
+	if (fldName == "energy_eps_diss2total_bulk")
+		return sind_phi_diss2tot_bulk;
+	if (fldName == "energy_eps_dissL2phid_bulk")
+		return sind_phi_dissL2phid_bulk;
 
 	if (fldName == "mean_interface_damage")
 		return sind_Dbar;
@@ -3346,12 +3419,16 @@ bool DomainPostProcessS2::Read_SummaryData()
 	tmps = "energy_eps_total_bc";						sind_phi_tot_bc = Find(namesNonLatex, tmps);
 	tmps = "energy_eps_diss_bc";						sind_phi_diss_lost_bc = Find(namesNonLatex, tmps);
 	tmps = "energy_eps_recoverable_bc";					sind_phi_recov_bc = Find(namesNonLatex, tmps);
+	tmps = "energy_eps_diss2total_bc";					sind_phi_diss2tot_bc = Find(namesNonLatex, tmps);
+	tmps = "energy_eps_dissL2phid_bc";					sind_phi_dissL2phid_bc = Find(namesNonLatex, tmps);
 
 	tmps = "eps_bulk" + defaultDirStr;					sind_eps_bulk = Find(namesNonLatex, tmps);
 	tmps = "sigma_bulk" + defaultDirStr;				sind_sig_bulk = Find(namesNonLatex, tmps);
 	tmps = "energy_eps_total_bulk";						sind_phi_tot_bulk = Find(namesNonLatex, tmps);
 	tmps = "energy_eps_diss_bulk";						sind_phi_diss_lost_bulk = Find(namesNonLatex, tmps);
 	tmps = "energy_eps_recoverable_bulk";				sind_phi_recov_bulk = Find(namesNonLatex, tmps);
+	tmps = "energy_eps_diss2total_bulk";					sind_phi_diss2tot_bulk = Find(namesNonLatex, tmps);
+	tmps = "energy_eps_dissL2phid_bulk";					sind_phi_dissL2phid_bulk = Find(namesNonLatex, tmps);
 
 	tmps = "mean_interface_damage";						sind_Dbar = Find(namesNonLatex, tmps);
 	tmps = "max_interface_damage";						sind_Dmax = Find(namesNonLatex, tmps);
@@ -3381,14 +3458,15 @@ bool DomainPostProcessS2::Read_SummaryData()
 			normalizations[ene_UFinal] += summaryStati->data_vals[sso_valEnd][sind_U];
 			normalizations[ene_PhiFinal] += summaryStati->data_vals[sso_valEnd][sind_phi];
 
+			normalizations[enePhiDissLossFinal] += summaryStati->data_vals[sso_valEnd][sind_diss_lost];
 			normalizations[eneBCFinal] += summaryStati->data_vals[sso_valEnd][sind_EneBC];
 			normalizations[eneInputFinal] += summaryStati->data_vals[sso_valEnd][sind_EneInp];
 		}
 	}
-	if (g_SL_desc_data.tdLoad_inputEnergy > 0.0)
+	if (g_SL_desc_data.bndryLoad_inputEnergy > 0.0)
 	{
-		normalizations[ene_PhiInitial] = g_SL_desc_data.tdLoad_inputEnergy;
-		normalizations[eneBCFinal] = g_SL_desc_data.tdLoad_inputEnergy;
+		normalizations[ene_PhiInitial] = g_SL_desc_data.bndryLoad_inputEnergy;
+		normalizations[eneBCFinal] = g_SL_desc_data.bndryLoad_inputEnergy;
 	}
 
 	normalizations[rnq_loadTimeScale] = segmentInfoPtr->loadTimeScale;

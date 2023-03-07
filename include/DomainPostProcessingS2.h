@@ -70,7 +70,7 @@ ostream& operator<<(ostream& out, FragmentationCriterionT dat);
 istream& operator>>(istream& in, FragmentationCriterionT& dat);
 
 typedef enum { RunNormalizationQuantT_none = -1, RunNormalizationQuantT_default, 
-	ene_KInitial, ene_UInitial, ene_PhiInitial, ene_KFinal, ene_UFinal, ene_PhiFinal, eneBCFinal, eneInputFinal, 
+	ene_KInitial, ene_UInitial, ene_PhiInitial, ene_KFinal, ene_UFinal, ene_PhiFinal, enePhiDissLossFinal, eneBCFinal, eneInputFinal,
 	rnq_loadTimeScale, rnq_EScale, rnq_rhoScale, rnq_dampingScale, rnq_sigmaCScale, rnq_deltaCScale, rnq_energyCScale, rnq_cScale, rnq_ZScale, rnq_tauCScale, rnq_strainCScale, rnq_velCScale, rnq_psiCScale,
 	RunNormalizationQuantT_SIZE} RunNormalizationQuantT;
 
@@ -262,7 +262,8 @@ public:
 	// finalVal
 	//		index_finalVal: index for this
 	//		finalVal: value for this
-	void GetMaxAbs_FinalValue(const DataW4LineHeader& timeSequenceSummaryStat, unsigned int fldNo, bool classification_usePositive4MaxValue, bool forceTerminalvalue2ProvidedValue, double providedTerminalValue, bool forwardFinalValueSearch, double tol4FinalValCheck, bool &bValuesPositive, int& index_maxAbsVal, double& maxAbsVal, int& index_finalVal, double& finalVal);
+	//		checkCrossing4FinalValue:			for sigma's it looks for the first time that the sign of sigma changes pass the peak value
+	void GetMaxAbs_FinalValue(const DataW4LineHeader& timeSequenceSummaryStat, unsigned int fldNo, bool classification_usePositive4MaxValue, bool forceTerminalvalue2ProvidedValue, double providedTerminalValue, bool forwardFinalValueSearch, bool checkCrossing4FinalValue, double tol4FinalValCheck, bool &bValuesPositive, int& index_maxAbsVal, double& maxAbsVal, int& index_finalVal, double& finalVal);
 
 	// to find the first time D becomes 1
 	bool GetFirstLocationGreaterThanValue(const DataW4LineHeader& timeSequenceSummaryStat, unsigned int fldNo, double providedTerminalValue, double tol4FinalValCheck, int& index);
@@ -552,8 +553,8 @@ public:
 		sind_diss_lost, sind_eneIDiss, sind_diss_interface_lost, sind_energy_phys_diss_2_input, 
 		sind_energy_phys_diss_lost_2_input, sind_energyIDiss_Recoverable_2_input,
 		sind_energy_numerical_diss_2_input, sind_diss_recov, sind_dissPower_interface_lost;
-	unsigned int sind_eps_bc, sind_eps_bulk_intfc, sind_sig_bc, sind_phi_tot_bc, sind_phi_diss_lost_bc, sind_phi_recov_bc;
-	unsigned int sind_eps_bulk, sind_sig_bulk, sind_phi_tot_bulk, sind_phi_diss_lost_bulk, sind_phi_recov_bulk;
+	unsigned int sind_eps_bc, sind_eps_bulk_intfc, sind_sig_bc, sind_phi_tot_bc, sind_phi_diss_lost_bc, sind_phi_recov_bc, sind_phi_diss2tot_bc, sind_phi_dissL2phid_bc;;
+	unsigned int sind_eps_bulk, sind_sig_bulk, sind_phi_tot_bulk, sind_phi_diss_lost_bulk, sind_phi_recov_bulk, sind_phi_diss2tot_bulk, sind_phi_dissL2phid_bulk;
 	unsigned int sind_Dbar, sind_Dmax, sind_Dmin, sind_DsrcMax, sind_P;
 	unsigned int defaultDir;
 	string defaultDirStr;

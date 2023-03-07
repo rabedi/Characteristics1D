@@ -244,6 +244,7 @@ SL_Bulk_Properties::SL_Bulk_Properties()
 	D_vv = 0.0, D_vsigma = 0.0, D_sigmav = 0.0, D_sigmasigma = 0.0;
 	has_DTerms = false;
 #endif
+	scaling_isDone = false;
 }
 
 void SL_Bulk_Properties::Read_SL_Bulk_Properties(istream& in, int bulkFlag)
@@ -607,6 +608,8 @@ void SL_Bulk_Properties::Initialize_FromInputParas()
 void SL_Bulk_Properties::Initialize_FromOther_withFactors(const SL_Bulk_Properties& other, double factorC, double factorRho, double factor_damping)
 {
 	(*this) = other;
+	if (scaling_isDone)
+		return;
 	double factor_c2 = factorC / factorRho;
 	double factor_c = sqrt(factor_c2);
 	double factor_Z = factorRho * factor_c;
@@ -637,7 +640,6 @@ void SL_Bulk_Properties::Initialize_FromOther_withFactors(const SL_Bulk_Properti
 	FactorVec(ws, factor_c);
 	FactorVec(c_rhos, factor_Z);
 	FactorVec(effective_CsIso, factorC);
-	FactorVec(effective_CsIso, factorC);
 	FactorVec(inv_c_rhos, factor_Y);
 #if HAVE_SOURCE_ORDER0_q
 	// damping factors are individually scaled such that the whole damping matrix in w system is scaled ...
@@ -646,6 +648,7 @@ void SL_Bulk_Properties::Initialize_FromOther_withFactors(const SL_Bulk_Properti
 	FactorVec(D_wlwr, factor_damping);
 	FactorVec(D_wrwl, factor_damping);
 #endif
+	scaling_isDone = true;
 }
 
 void SL_Bulk_Properties::Form_Iso_E1Rho1Default()

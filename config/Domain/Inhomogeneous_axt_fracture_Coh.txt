@@ -155,7 +155,27 @@ numSpaceStep_InterfaceRawFinalSlnScalars_AllTime_Print_4PP
 # end	space / spacetime post-process
 ######################################
 
+##################
+# start visualization data output (uniform grid for each subdomain that can be used for contour plots)
 
+# direction of visualization, if < 0, these files will not be printed
+# < 0 turns off this option
+visualization_dir
+#0
+-1
+
+# < 0, -number of interfaces - 1 (e.g. # segments) used in each subdomain for its outputs
+# > 0, the step size for that given subdomain
+visualization_numSpaceStep
+#-512
+-1
+
+# again < 0, absolute number of steps, > 0 step size
+visualization_numTimeStep
+-400
+ 
+# end visualization data
+##################
 
 interface_fracture_map
 	{

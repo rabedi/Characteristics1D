@@ -5,6 +5,7 @@
 
 // for 1D domains interfaces are left .... twosided ... right. 
 // periodic BC is twoSided too
+// ilt_rightWPeriodicShift is the right side of the very last interface which is basically the left side of the very first interface (that is not included in data)
 typedef enum {ilt_noSided = -1, ilt_twoSided, ilt_left, ilt_right, interfaceLocation1DT_SIZE} InterfaceLocation1DT;
 // characteristics is the case that incoming characteristic (zero for transmitting) from outside is given
 // bct_Symmetric: for a given direction, the characteristics are equal from opposite side
@@ -48,7 +49,7 @@ bool getExt(IOF_type dat, string& ext);
 // eff		so_elfrac_fields: tests 1 or a number of random fields that represent elastic/fracture problems
 // f		so_one_field: tests only 1 random field
 typedef enum { so_domain_sp, so_domain_s, so_domain_p, so_domain_p2, so_interface_s, so_onePoint_s, so_elfrac_fields, so_one_field, 
-so_configGen, so_configRead, solveOptions_SIZE } solveOptions;
+so_configGen, so_configRead, so_wnRandomFieldGen, solveOptions_SIZE } solveOptions;
 
 string getName(solveOptions dat);
 void name2Type(string& name, solveOptions& typeVal);

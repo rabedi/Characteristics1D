@@ -54,6 +54,8 @@ public:
 	void Read(istream& in);
 	void Output_FinalSolution(ostream& out, IOF_type iot, double space_or_time, double x, double t, bool has_ring_opened1D_al);
 	void SetZero();
+	// function needed to output 1 value for the interface for visualization
+	void get1DValues4Visualization(vector<double>& vals, double delC, InterfaceLocation1DT side, double t, double ax = 0.0, int unsigned dir = 0, bool periodicBoundaryPt = false);
 
 	SL_Interface_PtData_OneSide sl_side_ptData[NUM_SIDES];
 	double interface_damage_final;

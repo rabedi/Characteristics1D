@@ -984,7 +984,8 @@ void ElasticFractureInhomogField::ModifyElasticFracture_RandomFieldInput(string&
 	if (!Find_Version_String(key, llc_str, mpPtr))
 		return;
 
-	string np_str = "1025";
+//	string np_str = "1025";
+	string np_str = "16385";
 /*
 	if (mpPtr != NULL)
 	{
@@ -996,11 +997,22 @@ void ElasticFractureInhomogField::ModifyElasticFracture_RandomFieldInput(string&
 	if (sfcm.success && (sfcm.number_of_elements > 0))
 	{
 		int np = sfcm.number_of_elements;
-		if (factureNo > 0)
+//		if (factureNo > 0)
 			++np;
 		toString(np, np_str);
 	}
-	baseName_WOExt = "InhomogeneousFiles/cl" + llc_str + "_np" + np_str + "/initial_values";
+	double llc = -1;
+	double d_np;
+	double limt = -4.9999;
+	if (fromString(np_str, d_np) == true)
+	{
+		limt = -(log(d_np) / log(10.0));
+	}
+	fromString(llc_str, llc);
+	if (llc <= limt)//(llc <= -5.9999)
+		baseName_WOExt = "InhomogeneousFiles/cl" + llc_str + "_np" + np_str + "/initial_values";
+	else
+		baseName_WOExt = "InhomogeneousFiles/clz_np" + np_str + "/initial_values";
 }
 
 void WriteContent_BetweenCurlyBrack2OtherFile(istream& in, const string& otherFileName)

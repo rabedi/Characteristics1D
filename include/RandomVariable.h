@@ -82,6 +82,8 @@ public:
 
 	// these booleans are used to store what values are read
 	bool minMax_read, mode_read, mean_sdiv_read, mu_sigma_read;
+	bool minRead, maxRead, meanRead;
+	bool one_value;
 };
 
 class gRandVar {
@@ -161,5 +163,7 @@ double NormalCDFInverse(double p);
 double RationalApproximation(double t);
 
 int slrand();
+
+void GenerateWhiteRandomFile(int numVertices = 1025, int numRealizations = 5000, string fileName = "InhomogeneousFiles/clz");
 
 #endif

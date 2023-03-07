@@ -22,6 +22,14 @@
 #define LC_CYCLIC_TEN_COMP	2
 #define SQUARE_PULSE	3
 
+// piece-wise loading paras are
+// 0 -> t0, 1 -> l0
+// 2 -> t1, 2 -> l1
+// ...
+// load values are l0, ....
+// after final t solution is zero
+#define LC_PIECE_WISE_LIN 4 
+
 class SL_Bulk_Properties;
 
 class SL_Elastic_InterfaceProperties;
@@ -68,6 +76,7 @@ public:
 	VEC a_xt_prob;
 	// ring problem parameters
 	unsigned int load_number;
+	unsigned int sz_load_parameters;
 	vector<double> load_parameters;
 
 	//////////////////////////////////////// incident / impact / etc.
@@ -82,7 +91,7 @@ public:
 	// Z inside and outside correspond to Z's of main domain (part being investigated) and ambient/projectile (Zo) - For Dirichlet/Neumann Zo = Zi
 	// ZEffective = (2 Zi Zo) / (Zi + Zo) -> impact, Zi -> Dirichlet & Neumann (Zi + Zo)^2 / 4Zi -> incident
 	double tdLoad_Zi, tdLoad_Zo, tdLoad_ZEffective;
-	double tdLoad_inputEnergy, tdLoad_loadScale, tdAmbientProjectileLength;
+	double bndryLoad_inputEnergy, tdLoad_loadScale, tdAmbientProjectileLength;
 	bool b_tdLoad_stressScale, b_tdLoad_velScale;
 
 private:

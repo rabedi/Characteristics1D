@@ -216,6 +216,8 @@ private:
 	// ELSE
 	// IF source term == 0, this is point_fieldsPT_or_NTPIPtr used at all
 	void Compute_Bulk_vseps_NonIC(double x, SL_OneInterfaceAllTimes *interfaceLeftOfBulk, SL_OneInterfaceAllTimes* interfaceRightOfBulk, OnePoint_inBulk_Fields& point_fieldsNT, OnePoint_inBulk_Fields* point_fieldsPT_or_NTPIPtr = NULL);
+	// this is to ensure double scaling is not done
+	bool scaling_isDone;
 };
 
 // the following class is the interface between two bulks and is capable of computing Riemann I (bonded) and 

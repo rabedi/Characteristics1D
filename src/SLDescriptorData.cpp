@@ -16,10 +16,10 @@ SLDescriptorData::SLDescriptorData()
 	tdLoadSide = SDL;
 	b_tdLoad_stressScale = false;
 	b_tdLoad_velScale = false;
-
+	sz_load_parameters = 0;
 
 	tdLoad_Zi = 0.0, tdLoad_Zo = 0.0, tdLoad_ZEffective = 0.0;
-	tdLoad_inputEnergy = 0.0, tdLoad_stressScale = 0.0, tdLoad_velScale = 0.0, tdLoad_loadScale = 0.0, tdAmbientProjectileLength = 0.0;
+	bndryLoad_inputEnergy = 0.0, tdLoad_stressScale = 0.0, tdLoad_velScale = 0.0, tdLoad_loadScale = 0.0, tdAmbientProjectileLength = 0.0;
 }
 
 SLDescriptorData::~SLDescriptorData()
@@ -158,6 +158,26 @@ void SLDescriptorData::Finalize_SLDescriptorData()
 				a_xt_prob[i] = load_parameters[i];
 		}
 	}
+	else if (load_number == LC_PIECE_WISE_LIN)
+	{
+		bndryLoad_inputEnergy = 0.0;
+		unsigned int szTimes = load_parameters.size() / 2;
+		if (szTimes <= 1)
+			bndryLoad_inputEnergy = 1.0;
+		else
+		{
+			for (int j = 0; j < (int)szTimes - 1; ++j)
+			{
+				int st = 2 * j;
+				double tp = load_parameters[st];
+				double lp = load_parameters[st + 1];
+				double tn = load_parameters[st + 2];
+				double ln = load_parameters[st + 3];
+				bndryLoad_inputEnergy += 0.5 * (tn - tp) * (lp + ln);
+			}
+		}
+		bndryLoad_inputEnergy = fabs(bndryLoad_inputEnergy); // this should really be scaled by the correct impedance, if it's Dirichlet or Neumann BC, but for the <E> = 1, <rho> = 1 problems considered this is fine
+	}
 	else if (load_number == LC_CYCLIC_TEN_COMP)
 	{
 		double period = 1.0;
@@ -203,13 +223,14 @@ void SLDescriptorData::Finalize_SLDescriptorData()
 		load_parameters[4] = sigmaCompressive;
 		load_parameters[5] = additiveFactor;
 	}
+	sz_load_parameters = load_parameters.size();
 }
 
 bool SLDescriptorData::GetNonRingNonZeroTerm_SourceTerm(double x, double t, GID bulkFlag, VEC & source_v, VEC & source_sigma) const
 {
-	if ((load_number == AXT_LN) || (tdLoadComputer != NULL))
+//	if ((load_number == AXT_LN) || (tdLoadComputer != NULL))
 		return false;
-	THROW("Non-axt problem is not implemented.\n");
+//	THROW("Non-axt problem is not implemented.\n");
 }
 
 double SLDescriptorData::GetRing_p(double x, double t)
@@ -352,6 +373,48 @@ void SLDescriptorData::GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elast
 		}
 		return;
 	}
+	if (load_number == LC_PIECE_WISE_LIN)
+	{
+		if (!isLeft)
+		{
+			BC_val[0] = 0.0;
+			return;
+		}
+		double load = 1;
+		if (sz_load_parameters >= 2)
+		{
+			double t0 = load_parameters[0], l0 = load_parameters[1];
+			if (t < t0)
+				load = 0.0;
+			else if (sz_load_parameters == 2)
+				load = load_parameters[1];
+			else
+			{
+				unsigned int szd2 = sz_load_parameters / 2;
+				unsigned int j;
+				double tv;
+				for (j = 0; j < szd2; ++j)
+				{
+					tv = load_parameters[2 * j];
+					if (tv > t)
+						break;
+				}
+				if (j == szd2)
+					load = 0.0;
+				else
+				{
+					double tp = load_parameters[2 * j - 2];
+					double lp = load_parameters[2 * j - 1];
+					double tn = load_parameters[2 * j];
+					double ln = load_parameters[2 * j + 1];
+					double Np = (tn - t) / (tn - tp), Nn = 1.0 - Np;
+					load = lp * Np + ln * Nn;
+				}
+			}
+		}
+		BC_val[0] = load;
+		return;
+	}
 	THROW("The option for other load numbers is not implemented\n");
 }
 
@@ -437,6 +500,12 @@ double SLDescriptorData::GetLoadingTimeScale() const
 		return 1.0 / load_parameters[0];
 	if (tdLoadComputer != NULL)
 		return tdLoadComputer->timeScale;
+	if (load_number == LC_PIECE_WISE_LIN)
+	{
+		if (sz_load_parameters > 2)
+			return load_parameters[2];
+		return 1.0;
+	}
 	THROW("implement the option if needed\n");
 	return 1.0;
 }
@@ -479,7 +548,7 @@ void SLDescriptorData::Finalize_tdLoadParameters(double finalTime, double delT, 
 			tdLoad_ZEffective = 0.25 * tdLoad_ZEffective * tdLoad_ZEffective / tdLoad_Zi;
 			double integral_loadOut, integral_load2Out;
 			tdLoadComputer->Compute_Inegral_load_load2(finalTime, delT, integral_loadOut, integral_load2Out);
-			tdLoad_inputEnergy = tdLoad_stressScale * tdLoad_stressScale * integral_load2Out / tdLoad_ZEffective;
+			bndryLoad_inputEnergy = tdLoad_stressScale * tdLoad_stressScale * integral_load2Out / tdLoad_ZEffective;
 		}
 		else if (tdLoadType == lmt_Impact)
 		{
@@ -500,7 +569,7 @@ void SLDescriptorData::Finalize_tdLoadParameters(double finalTime, double delT, 
 				THROW("stress or vel are not set\n");
 			}
 			tdLoad_loadScale = tdLoad_velScale;
-			tdLoad_inputEnergy = 0.5 * rhoout * tdLoad_velScale * tdLoad_velScale * tdAmbientProjectileLength;
+			bndryLoad_inputEnergy = 0.5 * rhoout * tdLoad_velScale * tdLoad_velScale * tdAmbientProjectileLength;
 		}
 		else
 		{
@@ -531,7 +600,7 @@ void SLDescriptorData::Finalize_tdLoadParameters(double finalTime, double delT, 
 			tdLoad_loadScale = tdLoad_velScale;
 		double integral_loadOut, integral_load2Out;
 		tdLoadComputer->Compute_Inegral_load_load2(finalTime, delT, integral_loadOut, integral_load2Out);
-		tdLoad_inputEnergy = tdLoad_stressScale * tdLoad_stressScale * integral_load2Out / tdLoad_ZEffective;
+		bndryLoad_inputEnergy = tdLoad_stressScale * tdLoad_stressScale * integral_load2Out / tdLoad_ZEffective;
 		tdAmbientProjectileLength = 0.0;
 	}
 	Print_tdLoad();
@@ -542,7 +611,7 @@ void SLDescriptorData::Print_tdLoad()
 	string fileName = g_prefileName + "/" + "__tdLoad.txt";
 	fstream out(fileName.c_str(), ios::out);
 
-	out << "tdLoad_inputEnergy\t" << tdLoad_inputEnergy << '\n';
+	out << "bndryLoad_inputEnergy\t" << bndryLoad_inputEnergy << '\n';
 	out << "tdLoadType\t" << tdLoadType << '\n';
 	out << "tdLoadSide\t" << tdLoadSide << '\n';
 	out << "tdLoad_stressScale\t" << tdLoad_stressScale << '\n';
@@ -561,7 +630,7 @@ void SLDescriptorData::Read_tdLoad()
 	if (!in.is_open())
 		return;
 	string buf;
-	in >> buf >> tdLoad_inputEnergy;
+	in >> buf >> bndryLoad_inputEnergy;
 	in >> buf >> tdLoadType;
 	in >> buf >> tdLoadSide;
 	in >> buf >> tdLoad_stressScale;

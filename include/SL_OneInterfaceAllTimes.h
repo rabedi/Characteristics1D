@@ -121,9 +121,19 @@ public:
 	double iniDamage;
 	IOF_type iofFinalSolution, iofScalarVals;
 	ostream *outScalars, *outFinalSln, *outAdaptivity, *outIterationConv;
-
 	SL_OneInterfaceAllTimes(const SL_OneInterfaceAllTimes& other);
 	SL_OneInterfaceAllTimes& operator=(const SL_OneInterfaceAllTimes& other);
+};
+
+// this is useful in generating contour plots of data
+class OneVisContour_xInfo
+{
+public:
+	SL_OneInterfaceAllTimes* interfacePtr;
+	unsigned int subdomainNo;
+	unsigned int interface_index;
+	double interface_x;
+	InterfaceLocation1DT side4output;
 };
 
 void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn = "config/OneInterface/SampleConfig.txt");

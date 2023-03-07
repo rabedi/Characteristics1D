@@ -24,6 +24,11 @@ public:
 	//						Inputs
 	//////////////////////	serial number
 	int serialNumber;
+	// -1, fracture on, off decided based on run parameter, 0 turns it off
+	// read from file
+	int fractureMode;
+	// set after reading all interfaces
+	bool hasFracture;
 	//////////////////////	Geometry
 	vector<string> subdomain_config_names;
 	// main subdomain number
@@ -99,6 +104,12 @@ public:
 	IOF_type io_type_InterfaceRawScalars_AllTime_Print_4PP;
 	// this is similar to above, but this time data is printed for a fixed time value
 	int numSpaceStep_InterfaceRawFinalSlnScalars_AllTime_Print_4PP;
+
+	////////////////////////////////////////////////////////////////
+	/// 1D visualization files generated
+	int visualization_dir;
+	int visualization_numSpaceStep;
+	int visualization_numTimeStep;
 
 	////////////////////////////////////////////////////////////////
 	//						Computed
@@ -193,7 +204,23 @@ private:
 
 	// to compute 1D averages of E, rho, ...
 	void Compute1D_Averages();
+
+	////////////////////////////////////////////////////////////////
+	/// 1D visualization files generated
+	bool b_visualization1D;
+	unsigned int visualization1D_numFlds;
+	// indexed by subdomain, then inteface number
+	vector< vector<OneVisContour_xInfo> > visualization1D_xInfo;
+	double visualization_TimeStep;
+	void Delete_v1DFiles();
+	void Size_v1DFiles();
+	void Initialize_v1D();
+	void Print_v1D(double time);
+	
+	vector<vector<ostream*> > v1DOutPtr;
+	fstream v1Dtout; // output of time values
 };
+
 
 extern Domain_All_Interfaces_All_Times* g_domain;
 

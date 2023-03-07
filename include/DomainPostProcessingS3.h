@@ -17,6 +17,13 @@
 //						Files: DomainPostProcessingS2.*
 // Level 3				Loads results from Level2 and generates CSV files for ML and other simple plotting/processing
 //						Files: DomainPostProcessingS3.*
+typedef enum {pps3_om_scalars_vectors, pss3_om_scalars, pps3_om_vectors, pps3_om_T_SIZE} pps3_om_T;
+
+string getName(pps3_om_T dat);
+void name2Type(string& name, pps3_om_T& typeVal);
+ostream& operator<<(ostream& out, pps3_om_T dat);
+istream& operator>>(istream& in, pps3_om_T& dat);
+string getAddedName4OutputFile(pps3_om_T dat);
 
 // this break data to input and output groups (for example initial damage profile is considered input)
 typedef enum {pps3_i, pps3_o, PPS3_IOT_SIZE} PPS3_IOT;
@@ -66,12 +73,15 @@ public:
 	bool version_print_values;
 
 	/////////////////////////////////////////////////////////
+	// print, scalars + vectors, scalars, vectors, options are added in this file
+	vector<pps3_om_T> output_modes;
 
 	// out: output file
 	string root;
 	string out_baseName;
 	string out_ext; // generally it will be csv for csv files, but xlsx and txt are some other options
-	bool outputTypeActive[PPS3_TimeOT_SIZE];
+	// 0 or 1 clear, -1 is an active only in large memory access case
+	int outputTypeActive[PPS3_TimeOT_SIZE];
 	vector<PPS2_dataPointer> dataPointers[PPS3_TimeOT_SIZE][PPS3_IOT_SIZE];
 	// for spatial fields over x, we may want to change the resolution. For example, if values given at 1001 points (resolution 1000), but we want the new resolution of 100 (101 points)
 	// spatialFieldResolutionCorrector = 100 or spatialFieldResolutionCorrector = -10 (i.e. 10 fold reduction)
@@ -101,7 +111,7 @@ private:
 	//				timeIndex_DSU_Fragment4Stage = time_outputIndex * timeStep4_DSU_outputs
 	// accebleOverAlVals stores whether this data has any invalid values (e.g. a stage that does not exist in the solution)
 	// return value: true if the point is printed to the file (can be true even if accebleOverAlVals when addInvalidData == true 
-	bool ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAlVals, int time_outputIndex = -1);
+	bool ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAlVals, int time_outputIndex = -1, pps3_om_T output_mode = pps3_om_scalars_vectors);
 	string sep;
 };
 

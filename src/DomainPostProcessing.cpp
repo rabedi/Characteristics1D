@@ -171,13 +171,19 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Read_Data(istream& in)
 	for (int i = 0; i < DiM; ++i)
 		in >> sigman_R[i];
 
+	double psi_diss_2_totall_bc, psi_diss_bc_2_energy_phys_diss_lost;
 	in >> energy_eps_total_bc;
 	in >> energy_eps_diss_bc;
 	in >> energy_eps_recoverable_bc;
+	in >> psi_diss_2_totall_bc;
+	in >> psi_diss_bc_2_energy_phys_diss_lost;
 
+	double psi_diss_2_totall_bulk, psi_diss_bulk_2_energy_phys_diss_lost;
 	in >> energy_eps_total_bulk;
 	in >> energy_eps_diss_bulk;
 	in >> energy_eps_recoverable_bulk;
+	in >> psi_diss_2_totall_bulk;
+	in >> psi_diss_bulk_2_energy_phys_diss_lost;
 
 	// strain bc - body
 	for (int i = 0; i < DiM; ++i)
@@ -278,11 +284,13 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Read_Data(istream& in)
 #endif
 }
 
-void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& out)
+void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& out, double invLength)
 {
 	double input_energy2Use = input_energy;
-	if (g_SL_desc_data.tdLoad_inputEnergy > 0.0)
-		input_energy2Use = g_SL_desc_data.tdLoad_inputEnergy;
+	if (g_SL_desc_data.bndryLoad_inputEnergy > 0.0)
+		input_energy2Use = g_SL_desc_data.bndryLoad_inputEnergy;
+	double tol_input_ene = input_energy2Use * 1e-7;
+	double tol_input_ene_pl = tol_input_ene * invLength;
 
 	out << timeIndex;
 	out << '\t' << timeVal;
@@ -347,7 +355,9 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& ou
 
 	///////////// numerical dissipation energy: normalized ones
 	double energy_numerical_diss_2_input = computeRatio(numerial_energy_diss, input_energy2Use);
-	double energy_numerical_diss_2_phys_diss = computeRatio(numerial_energy_diss, phys_diss_tot);
+	double energy_numerical_diss_2_phys_diss = 0.0;
+	if (phys_diss_tot > tol_input_ene)
+		energy_numerical_diss_2_phys_diss = computeRatio(numerial_energy_diss, phys_diss_tot);
 
 	out << '\t' << energy_numerical_diss_2_input;
 	out << '\t' << energy_numerical_diss_2_phys_diss;
@@ -381,13 +391,31 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& ou
 	for (int i = 0; i < DiM; ++i)
 		out << '\t' << sigman_R[i];
 
+	double psi_diss_2_totall_bc = 0.0;
+	double psi_diss_bc_2_energy_phys_diss_lost = 0.0;
+	double denom = invLength * phys_diss_lost;
+	if (energy_eps_total_bc > tol_input_ene_pl)
+		psi_diss_2_totall_bc = computeRatio(energy_eps_diss_bc, energy_eps_total_bc);
+	if (denom > tol_input_ene_pl)
+		psi_diss_bc_2_energy_phys_diss_lost = computeRatio(energy_eps_diss_bc, denom);
 	out << '\t' << energy_eps_total_bc;
 	out << '\t' << energy_eps_diss_bc;
 	out << '\t' << energy_eps_recoverable_bc;
+	out << '\t' << psi_diss_2_totall_bc;
+	out << '\t' << psi_diss_bc_2_energy_phys_diss_lost;
 
+	double psi_diss_2_totall_bulk = 0.0;
+	double psi_diss_bulk_2_energy_phys_diss_lost = 0.0;
+	denom = invLength * phys_diss_lost;
+	if (energy_eps_total_bulk > tol_input_ene_pl)
+		psi_diss_2_totall_bulk = computeRatio(energy_eps_diss_bulk, energy_eps_total_bulk);
+	if (denom > tol_input_ene_pl)
+		psi_diss_bulk_2_energy_phys_diss_lost = computeRatio(energy_eps_diss_bulk, denom);
 	out << '\t' << energy_eps_total_bulk;
 	out << '\t' << energy_eps_diss_bulk;
 	out << '\t' << energy_eps_recoverable_bulk;
+	out << '\t' << psi_diss_2_totall_bulk;
+	out << '\t' << psi_diss_bulk_2_energy_phys_diss_lost;
 
 	// strain bc - body
 	for (int i = 0; i < DiM; ++i)
@@ -766,6 +794,18 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Data_Get_Header_Labels
 	hLabel.latexLabel = "\\bar{\\psi}_{\\mathrm{recov,bc}}";
 	hLabels.push_back(hLabel);
 
+	hLabel.subgroup = "damage";
+	hLabel.textLabel = "energy_eps_diss2total_bc";
+	hLabel.latexLabel = "{\\bar{\\psi}_{\\mathrm{diss,bc}}}/\\bar{\\psi}_{\\mathrm{bc}}";
+	hLabels.push_back(hLabel);
+
+	hLabel.subgroup = "ratio";
+	hLabel.textLabel = "energy_eps_dissL2phid_bc";
+	hLabel.latexLabel = "{L\\bar{\\psi}_{\\mathrm{diss,bc}}}/\\mathcal{E}_{\\mathrm{diss,lost}}";
+	hLabels.push_back(hLabel);
+
+	////////////////////////////////////////
+	hLabel.subgroup = "energy";
 	hLabel.textLabel = "energy_eps_total_bulk";
 	hLabel.latexLabel = "\\bar{\\psi}";
 	hLabels.push_back(hLabel);
@@ -776,6 +816,16 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Data_Get_Header_Labels
 
 	hLabel.textLabel = "energy_eps_recoverable_bulk";
 	hLabel.latexLabel = "\\bar{\\psi}_{\\mathrm{recov}}";
+	hLabels.push_back(hLabel);
+
+	hLabel.subgroup = "damage";
+	hLabel.textLabel = "energy_eps_diss2total_bulk";
+	hLabel.latexLabel = "{\\bar{\\psi}_{\\mathrm{diss}}}/\\bar{\\psi}";
+	hLabels.push_back(hLabel);
+
+	hLabel.subgroup = "ratio";
+	hLabel.textLabel = "energy_eps_dissL2phid_bulk";
+	hLabel.latexLabel = "{L\\bar{\\psi}_{\\mathrm{diss}}}/\\mathcal{E}_{\\mathrm{diss,lost}}";
 	hLabels.push_back(hLabel);
 
 	hLabel.subgroup = "strn";
@@ -1084,6 +1134,7 @@ void OneSubdomain_All_bulksConnectivityInfo::Zero1D_Averages()
 {
 	rhoAve = 0.0;
 	EAve = 0.0;
+	cHarmonicAve = 0.0;
 	cAve = 0.0;
 	ZAve = 0.0;
 	c_fromAverages = 0.0;
@@ -1784,7 +1835,7 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 	// printing the stat:
 	if (timeIndex == 0)
 		Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Data_Write_Header(*out_sd_summary);
-	spatial_ave_sum->Subdomain_spatial_ave_sum_Write_Data(*out_sd_summary);
+	spatial_ave_sum->Subdomain_spatial_ave_sum_Write_Data(*out_sd_summary, sdciPtr->inv_length);
 
 	bool b_print = false;
 	if (print_space_points)

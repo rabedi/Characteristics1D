@@ -48,8 +48,9 @@ timeStep4_DSU_outputs
 outputTypeActive
 # pps3_stageStat: stage/stat (one line per run)
 1
+# -1 means data not printed on low disk systems
 # pps3_timeStep: timeSteps (output at uniform times)
-1
+-1
 
 
 ######################################################################################################

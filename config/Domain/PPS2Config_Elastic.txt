@@ -12,32 +12,36 @@ factors2DecideFragmented
 {
 #Dbar D > Dbar -> segment is considered fragmented for "fct_Damage" criterion
 D
-0.4
+-1
+# for damage models turn this one
+#0.98 
 
 #maxDeluPrime: MaxDelU > deltaC * maxDeluPrime -> segment is considered fragmented for "fct_maxEffDelU" criterion
 Max_DelU
-10.0
+-1.0
 
 #deluPrime: delU > deltaC * deluPrime -> segment is considered fragmented for "fct_DelU" criterion
 DelU
-10.0
+-1.0
 }
 
 ###### STAGE calculation
 # if true: for all stages (lin, max, final) x (strain, ...., U) it also calculates fragmentation data
 doFragmentation_DSigmaFieldExtraction_4_Stages
-1
+#1
+0
 
 ###### Actual time step calculation (mostly to have data for matlab plots of fragment stat evolution in time, see the function plot_fragmentation_results)
 # if true, calculates fragmentation analysis and D and sigma field extraction for all available times
 doFragmentation_DSigmaFieldExtraction_4_AllTimes
-1
+#1
+0
 
 # if the above is true and below is true, the segment lengths are written. If only above is true, only the brief stat (mean, number, ...) of fragmentation sizes will be written
 # is the files sd_0__tAll__FragCrn_1_Max_DelU_SizeFragmentation, sd_0__tAll__FragCrn_2_DelU_SizeFragmentation, sd_0__tAll__FragCrn_0_D_SizeFragmentation in PPS2output folder get large turn this off
 doFragmentation_DSigmaFieldExtraction_4_AllTimes_IncludedDetailedFragmentSizes
-1
-
+#1
+0
 
 ####################################################################################################################################################################################
 ###################### CLASSIFICATION TYPES (6 available -> below) x STAGE (lin, max, final) for fracture simulations

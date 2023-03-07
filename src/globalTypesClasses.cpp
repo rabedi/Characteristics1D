@@ -219,7 +219,7 @@ string getName(solveOptions dat)
 	if (dat == so_domain_s)
 		return "s";
 	if (dat == so_domain_p)
-		return "s";
+		return "p";
 	if (dat == so_domain_p2)
 		return "p2";
 	if (dat == so_interface_s)
@@ -234,6 +234,8 @@ string getName(solveOptions dat)
 		return "cmg";
 	if (dat == so_configRead)
 		return "cmr";
+	if (dat == so_wnRandomFieldGen)
+		return "wn";
 	cout << (int)dat << '\n';
 	THROW("invalid dat");
 }

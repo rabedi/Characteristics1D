@@ -136,9 +136,10 @@ void Test_SetNewtonCotes_Points_AndWeights()
 
 double computeRatio(double numerator, double denominator)
 {
-	double max_ret = 1e40;
-	if (fabs(denominator) < 2 * DBL_MIN)
-		if (fabs(numerator) < 2 * DBL_MIN)
+	static double max_ret = 1e40;
+	static double zr = 1e10 * DBL_MIN, zrn = 100 * DBL_MIN;
+	if (fabs(denominator) < zr)
+		if (fabs(numerator) < zr) //zrn)
 			return 0;
 		else
 			if (((numerator > 0) && (denominator > 0)) || ((numerator < 0) && (denominator < 0)))
