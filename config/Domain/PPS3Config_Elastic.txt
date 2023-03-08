@@ -86,7 +86,8 @@ spatialFieldResolutionCorrector
 #									  	< 0 -> NumTimeSteps = -temporalFieldTimeStepValOrNumSteps (e.g. final time = 10, this value = -400 -> timeStep = 10/400)
 temporalFieldTimeStepValOrNumSteps
 #-400
--100
+#-100
+-10
 
 # for time outputs, we can generate outputs for all DSU stems in each case timeStep4_DSU_outputs == 1, ever other of such time value for == 2, every third for this value == 3, ...
 timeStep4_DSU_outputs
@@ -98,6 +99,7 @@ outputTypeActive
 # -1 means data not printed on low disk systems
 # pps3_timeStep: timeSteps (output at uniform times)
 -1
+#1
 
 
 ######################################################################################################
@@ -262,7 +264,7 @@ dataPointers			pps3_stageStat				output
 	# time of sigma ~ 0
 	{
 		isActive
-		1
+		000
 		
 		fldName
 		time
@@ -625,7 +627,7 @@ dataPointers			pps3_stageStat				output
 	# phi0
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valStart
@@ -644,7 +646,7 @@ dataPointers			pps3_stageStat				output
 	# phiD:   Dissipated energy - FIN stage
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -662,7 +664,7 @@ dataPointers			pps3_stageStat				output
 	# phiD:   Dissipated energy
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valEnd
@@ -769,7 +771,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical - FIN
 	{
 		isActive
-		000
+		1
 		
 		# lost, interfacial dissipation
 		fldName
@@ -806,7 +808,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / normalized by initial energy at failed statefor eps/sig bulk criterion)
 	{
 		isActive
-		000
+		1
 		
 		# lost, interfacial dissipation
 		fldName
@@ -911,7 +913,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / physical dissipation
 	{
 		isActive
-		1
+		000
 		
 		# lost, interfacial dissipation
 		fldName
@@ -931,7 +933,7 @@ dataPointers			pps3_stageStat				output
 	# phiNumerical:   Dissipated numerical / physical dissipation
 	{
 		isActive
-		1
+		000
 
 		stat_sv_type
 		valEnd
@@ -1019,7 +1021,7 @@ dataPointers			pps3_stageStat				output
 	# energy_final
 	{
 		isActive
-		1
+		000
 				
 		fldName
 		energy_eps_total_bulk
@@ -1179,7 +1181,7 @@ dataPointers			pps3_stageStat				output
 	# m/f - energy
 	{
 		isActive
-		1
+		000
 		brittlenessRatioT						m,f	
 		brittlenessFieldT						energy
 				
@@ -1198,7 +1200,7 @@ dataPointers			pps3_stageStat				output
 	# m/f - strain
 	{
 		isActive
-		1
+		000
 		brittlenessRatioT						m,f	
 		brittlenessFieldT						strain
 				
@@ -1217,7 +1219,7 @@ dataPointers			pps3_stageStat				output
 	# i/m - strain
 	{
 		isActive
-		1
+		000
 		brittlenessRatioT						i,m	
 		brittlenessFieldT						strain
 				
@@ -1698,7 +1700,7 @@ dataPointers			pps3_stageStat				output
 	# U of energy loss stabilized
 	{
 		isActive
-		000
+		1
 		
 		fldName
 		U
@@ -1818,7 +1820,7 @@ dataPointers			pps3_stageStat				output
 	# K of energy loss stabilized
 	{
 		isActive
-		000
+		1
 		
 		fldName
 		K
@@ -2146,7 +2148,7 @@ dataPointers			pps3_stageStat				output
 	# stress field
 	{
 		isActive
-		1
+		000
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2190,7 +2192,7 @@ dataPointers			pps3_stageStat				output
 	# stress field
 	{
 		isActive
-		000
+		1
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type

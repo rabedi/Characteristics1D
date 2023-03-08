@@ -303,6 +303,8 @@ interface_fracture_map
 #####################################################################################
 	}
 
+# Turn on Dirichlet for non-ring problem
+
 directionalBCTypeLeftSide
 #Dirichlet
 PeriodicOrBloch
@@ -372,9 +374,9 @@ infile_inhomogeneous_elastic_frac0
 #					>  1  -> number of segments is DECREASED by this factor (e.g. if resolutionFactor ==  10 and numSegments = 1000 -> numSegments becoms 100)
 #					<  -1 -> number of segments is INCREASED by this factor (e.g. if resolutionFactor == -10 and numSegments = 1000 -> numSegments becoms 10000)
 resolutionFactor
-#0
+0
 #10
-16
+#16
 #32
 #64
 #128
@@ -616,7 +618,7 @@ between_steps_adaptivity
 0
 
 # time step for non-adaptive runs and starting time step for adaptive ones
-# < 0, relative to domain min_del_t
+# < 0, relative to domain min_del_t -> CFL#
 uniform_del_t
 -1
 #-0.1

@@ -224,6 +224,9 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 	PPS3_TimeOT tot = pps3_stageStat;
 	root = "_PPS3";
 	fileOperation(makeD, root);
+	string rt2 = root + "/" + "timeVals";
+	MakeDir(rt2);
+
 	if (version_seperatePP3Folders)
 		out_baseName += g_versionNumber_str;
 

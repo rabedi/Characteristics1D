@@ -2049,8 +2049,14 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPoi
 		if (fldIndex < 0)
 			return false;
 		double delT = temporalFieldTimeStepValOrNumSteps;
+		int numSegmentsGiven = 0;
+		bool b_numSegmentsGiven = false;
 		if (delT < 0)
-			delT = -segmentInfo.maxTime / delT;
+		{
+			numSegmentsGiven = (int)(-delT);
+			delT = segmentInfo.maxTime / numSegmentsGiven;
+			b_numSegmentsGiven = true;
+		}
 		int timeStep_Factor, max_timeStep;
 /*
 		if (delT < segmentInfo.timeStep)
@@ -2060,12 +2066,46 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPoi
 			THROW("Increase delT = temporalFieldTimeStepValOrNumSteps\n");
 		}
 */
+
 		timeStep_Factor = (int)floor(delT / segmentInfo.timeStep + 1e-7);
 		if (timeStep_Factor == 0)
 			timeStep_Factor = 1;
 		max_timeStep = segmentInfo.totalTimeSteps / timeStep_Factor;
+		if (b_numSegmentsGiven)
+		{
+			max_timeStep = MIN(max_timeStep, numSegmentsGiven);
+			delT = timeStep_Factor * segmentInfo.timeStep;
+		}
 		unsigned int sz = max_timeStep + 1;
-		if ((max_timeStep *  timeStep_Factor) >= (int)timeSequenceSummary.numDataPoints)
+
+		string fileName;
+		string si_str;
+		string ser_str;
+		toString(subdomainNo, si_str);
+		toString(g_serialNumber, ser_str);
+		fileName = "timeVals_" + ser_str + g_versionNumber_str + "_sd_" + si_str + ".txt";
+		fileName = "_PPS3/timeVals/" + fileName;
+		fstream intimes(fileName, ios::in);
+		if (!intimes.is_open())
+		{
+			fstream ot("_PPS3/timeVals/test.txt", ios::out);
+			if (!ot.is_open())
+			{
+				string specificName = "PP3TimeValues";
+				GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, -1, -1, specificName);
+			}
+			fstream outtimes(fileName, ios::out);
+			outtimes << "max_timeStep\t" << max_timeStep << '\n';
+			outtimes << "delT\t" << delT << '\n';
+			outtimes << "maxTime\t" << (delT * (sz - 1)) << '\n';
+			outtimes << "timeStep_Factor\t" << timeStep_Factor << '\n';
+			outtimes << "timeStepOrig\t" << segmentInfo.timeStep << '\n';
+			outtimes << "numTimePoints\t" << sz << '\n';
+			for (unsigned int ti = 0; ti < sz; ++ti)
+				outtimes << ti * timeStep_Factor << '\n';
+		}
+
+		if ((max_timeStep * timeStep_Factor) >= (int)timeSequenceSummary.numDataPoints)
 		{
 			cout << "max_timeStep\t" << max_timeStep << '\n';
 			cout << "timeStep_Factor\t" << timeStep_Factor << '\n';

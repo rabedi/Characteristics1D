@@ -137,8 +137,11 @@ numTimeStep_BulkInterfacePoints_Print_4PP
 #-100
 
 #### printing [Damage, delU] only between segments (not within bulks). This is used to compute fragment size
+#ELASTIC: turn this to a larger number of time step PPS3
 numTimeStep_Interface_DSU_Fragment_Print_4PP
--1
+#-100
+-10
+#-1
 
 # for spatial segments (interval between interfaces) how many segment(s) is/are used.
 #			1 -> only the two end points at the side interfaces that already exist are used.
@@ -379,10 +382,11 @@ infile_inhomogeneous_elastic_frac0
 #					>  1  -> number of segments is DECREASED by this factor (e.g. if resolutionFactor ==  10 and numSegments = 1000 -> numSegments becoms 100)
 #					<  -1 -> number of segments is INCREASED by this factor (e.g. if resolutionFactor == -10 and numSegments = 1000 -> numSegments becoms 10000)
 resolutionFactor
-0
+#0
 #10
+8
 #16
-##32
+#32
 #64
 #128
 #256

@@ -1280,7 +1280,10 @@ void Domain_All_Interfaces_All_Times::Connect_Interfaces_Set_BC_Types__Form_PP()
 					step = 1;
 			}
 			
-			if ((step > 0) && ((interfacePtr->interface_pos - st) % step == 0)) // bulk_posL
+			int pos = interfacePtr->interface_pos;
+			if (isPeriodic)
+				pos = (pos + 1) % num_interfaces;
+			if ((step > 0) && ((pos - st) % step == 0)) // bulk_posL
 				interfacePtr->Open_fixed_x_files_SL_OneInterfaceAllTimes(io_type_InterfaceRawFinalSln_AllTime_Print_4PP, io_type_InterfaceRawScalars_AllTime_Print_4PP);
 		}
 		interfacePtr->Set1DOrtizType();
@@ -1523,7 +1526,7 @@ void Domain_All_Interfaces_All_Times::Set_InitialCondition_step()
 int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 {
 	double timeStep = g_slf_conf->uniform_del_t;
-	double maxTime = g_slf_conf->terminate_run_target_time;
+	double maxTime = ceil(g_slf_conf->terminate_run_target_time / timeStep) * timeStep;
 
 //	timeStep = maxTime / ceil(maxTime / timeStep);
 //	g_slf_conf->uniform_del_t = timeStep;
@@ -1715,7 +1718,7 @@ void Configure_sfcm_sfcm_gen()
 	// for mass runs, it's better to turn this off, especially for high spatial mesh resolutions
 	// it seems sigma_bar -> 0 and its corresponding energy (psi_f) is a pretty good indicator of phid (about 1.15 to 1.3 factor of it)
 	// it takes much shorter to get there. If this is one, much shorter solution times are obtained, but phid is not converged
-	bool use_tSigma0Time = false;
+	bool use_tSigma0Time = true;
 	double tFactor4tSigma0 = 4; /// how much past max stress should go beyond stress ~ 0
 	string key;
 	double value;
@@ -1746,157 +1749,168 @@ void Configure_sfcm_sfcm_gen()
 			{
 				THROW("generate appropriate input meshes, update the statements below\n");
 			}
-			if (ldelc >= -1.01) // decently large correlation length
+			if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
 			{
-				if (fabs(la + 3) < tol) // loading rate of -3
-					sfcm.tFinal = 1280;
-				if (fabs(la + 2.5) < tol) // loading rate of -3
-					sfcm.tFinal = 640;
-				else if (fabs(la + 2) < tol)
-					sfcm.tFinal = 200;
-				else if (fabs(la + 1.5) < tol)
-					sfcm.tFinal = 128;
-				else if (fabs(la + 1) < tol)
+				sfcm.cfl_factor = 1.0;
+				sfcm.tFinal = 1200.0;
+				tSigma0 = 1100.0;
+			}
+			else if (((-2.5 - tol) <= la) && (la < (-2.0 - tol)))
+			{
+				sfcm.cfl_factor = 1.0;
+				sfcm.tFinal = 640.0;
+				tSigma0 = 350.0;
+			}
+			else if (((-2.0 - tol) <= la) && (la < (-1.5 - tol)))
+			{
+				sfcm.cfl_factor = 1.0;
+				sfcm.tFinal = 200.0;
+				tSigma0 = 110.0;
+			}
+			else if (((-1.5 - tol) <= la) && (la < (-1.0 - tol)))
+			{
+				sfcm.cfl_factor = 1.0;
+				sfcm.tFinal = 60.0;
+				tSigma0 = 35.0;
+			}
+			else if (((-1.0 - tol) <= la) && (la < (-0.5 - tol)))
+			{
+				sfcm.cfl_factor = 1.0;
+				sfcm.tFinal = 20.0;
+				tSigma0 = 11.0;
+			}
+			else if (((-0.5 - tol) <= la) && (la < (0.0 - tol)))
+			{
+				sfcm.cfl_factor = 1.0;
+				sfcm.tFinal = 18.0;
+				tSigma0 = 4.0;
+			}
+			else if (((0 - tol) <= la) && (la < (0.5 - tol)))
+			{
+				if (!alr)
 				{
-					sfcm.tFinal = 100;
-					//					sfcm.cfl_factor = 0.256;
-				}
-				else if (fabs(la + 0.5) < tol)
-				{
-					sfcm.tFinal = 64;
-					//				sfcm.cfl_factor = 0.256;
-				}
-				else if (((0 - tol) <= la) && (la < (1 - tol)))
-				{
-					if (!alr)
-					{
-						sfcm.cfl_factor = 1.0;
-						sfcm.tFinal = 4.0;
-					}
-					else
-					{
-						sfcm.cfl_factor = 0.5;
-						sfcm.tFinal = 12.0;
-					}
-					tSigma0 = 0.58;
-					//					sfcm.tFinal = 10;
-					//					sfcm.cfl_factor = 0.0128;
-				}
-				else if (((0.5 - tol) <= la) && (la < (1.5 - tol)))
-				{
-					if (!alr)
-					{
-						sfcm.cfl_factor = 1.0;
-						sfcm.tFinal = 2.5;
-					}
-					else
-					{
-						sfcm.cfl_factor = 0.5;
-						sfcm.tFinal = 7.0;
-					}
-					tSigma0 = 0.40;
-				}
-				else if (((1 - tol) <= la) && (la < (2 - tol)))
-				{
-					if (!alr)
-					{
-						sfcm.cfl_factor = 1.0;
-						sfcm.tFinal = 1.5;
-					}
-					else
-					{
-						sfcm.cfl_factor = 0.5;
-						sfcm.tFinal = 4.0;
-					}
-					tSigma0 = 0.086;
-//					sfcm.tFinal = 6;
-					//					sfcm.cfl_factor = 0.0128;
-				}
-//				else if (fabs(la - 2) < tol)
-				else if (((2 - tol) <=  la) && ( la <  (3 - tol)))
-				{
-					if (!alr)
-					{
-						sfcm.cfl_factor = 1.0;
-						sfcm.tFinal = 1.5;
-					}
-					else
-					{ 
-						sfcm.cfl_factor = 0.5;
-						sfcm.tFinal = 4.0;
-					}
-					tSigma0 = 0.0360718;
-				}
-				else if (((3 - tol) <= la) && (la < (3.5 - tol)))
-				{
-					// for ldelc = -2, CF<=0.25 captures pw oscillation of stress
-					// for ldelc = -1, CF = 1 actually shows more oscillation for stress (more reasonable?)
-					// tested
-					if (ldelc <= -1.9) // low delc
-					{
-						sfcm.cfl_factor = 0.25;
-						if (!alr)
-							sfcm.tFinal = 0.5;
-						else
-							sfcm.tFinal = 1.0;
-					}
-					else
-					{
-						if (!alr)
-						{
-							sfcm.cfl_factor = 1.0;
-							sfcm.tFinal = 1.2;
-						}
-						else
-						{
-							sfcm.cfl_factor = 0.5;
-							sfcm.tFinal = 2.0;
-						}
-					}
-					tSigma0 = 0.0487062;
-				}
-				else if (((3.5 - tol) <= la) && (la < (4.0 - tol)))
-				{
-					if (ldelc <= -1.9) // low delc
-					{
-						sfcm.cfl_factor = 0.25;
-						if (!alr)
-							sfcm.tFinal = 0.35;
-						else
-							sfcm.tFinal = 1.0;
-					}
-					else
-					{
-						if (!alr)
-						{
-							sfcm.cfl_factor = 0.5;
-							sfcm.tFinal = 0.8;
-						}
-						else
-						{
-							sfcm.cfl_factor = 0.5;
-							sfcm.tFinal = 1.5;
-						}
-					}
-					tSigma0 = 0.0487062;
-				}
-				else if (((4.0 - tol) <= la) && (la < (4.5 - tol)))
-				{
-					if (!alr)
-						sfcm.tFinal = 0.2;
-					else
-						sfcm.tFinal = 0.7;
-					// 0.2 is good enough, some runs need ~0.6 for dissipated energy to converge
-					// time for sigma = 0:	0.006 for ldelc = -2, 0.03 for ldelc = -1
-					// for ldelc = -1, sigma oscillates like crazy near sigma_max for CFL < 1 but for CFL = 1 it's smooth
-					// for ldelc = -2, there is not much of such oscillation
-					sfcm.cfl_factor = 0.25;
-					tSigma0 = 0.0371094;
+					sfcm.cfl_factor = 1.0;
+					sfcm.tFinal = 8.0;
 				}
 				else
 				{
-					THROW("add these options later\n");
+					sfcm.cfl_factor = 1.0;
+					sfcm.tFinal = 12.0;
 				}
+//					tSigma0 = 0.58;
+				tSigma0 = 1.0;
+			}
+			else if (((0.5 - tol) <= la) && (la < (1.0 - tol)))
+			{
+				if (!alr)
+				{
+					sfcm.cfl_factor = 1.0;
+					sfcm.tFinal = 3.0;
+				}
+				else
+				{
+					sfcm.cfl_factor = 0.5;
+					sfcm.tFinal = 7.0;
+				}
+				tSigma0 = 0.40;
+			}
+			else if (((1 - tol) <= la) && (la < (2 - tol)))
+			{
+				if (!alr)
+				{
+					sfcm.cfl_factor = 1.0;
+					sfcm.tFinal = 1.7;
+				}
+				else
+				{
+					sfcm.cfl_factor = 0.5;
+					sfcm.tFinal = 4.0;
+				}
+				tSigma0 = 0.3097;
+			}
+			else if (((2 - tol) <=  la) && ( la <  (3 - tol)))
+			{
+				if (!alr)
+				{
+					sfcm.cfl_factor = 1.0;
+					sfcm.tFinal = 1.5;
+				}
+				else
+				{ 
+					sfcm.cfl_factor = 0.5;
+					sfcm.tFinal = 4.0;
+				}
+				tSigma0 = 0.112144;
+			}
+			else if (((3 - tol) <= la) && (la < (3.5 - tol)))
+			{
+				// for ldelc = -2, CF<=0.25 captures pw oscillation of stress
+				// for ldelc = -1, CF = 1 actually shows more oscillation for stress (more reasonable?)
+				// tested
+				if (ldelc <= -1.9) // low delc
+				{
+					sfcm.cfl_factor = 0.25;
+					if (!alr)
+						sfcm.tFinal = 0.5;
+					else
+						sfcm.tFinal = 1.0;
+				}
+				else
+				{
+					if (!alr)
+					{
+						sfcm.cfl_factor = 1.0;
+						sfcm.tFinal = 1.2;
+					}
+					else
+					{
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 2.0;
+					}
+				}
+				tSigma0 = 0.0487062;
+			}
+			else if (((3.5 - tol) <= la) && (la < (4.0 - tol)))
+			{
+				if (ldelc <= -1.9) // low delc
+				{
+					sfcm.cfl_factor = 0.25;
+					if (!alr)
+						sfcm.tFinal = 0.35;
+					else
+						sfcm.tFinal = 1.0;
+				}
+				else
+				{
+					if (!alr)
+					{
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 0.8;
+					}
+					else
+					{
+						sfcm.cfl_factor = 0.5;
+						sfcm.tFinal = 1.5;
+					}
+				}
+				tSigma0 = 0.0487062;
+			}
+			else if (((4.0 - tol) <= la) && (la < (4.5 - tol)))
+			{
+				if (!alr)
+					sfcm.tFinal = 0.2;
+				else
+					sfcm.tFinal = 0.7;
+				// 0.2 is good enough, some runs need ~0.6 for dissipated energy to converge
+				// time for sigma = 0:	0.006 for ldelc = -2, 0.03 for ldelc = -1
+				// for ldelc = -1, sigma oscillates like crazy near sigma_max for CFL < 1 but for CFL = 1 it's smooth
+				// for ldelc = -2, there is not much of such oscillation
+				sfcm.cfl_factor = 0.25;
+				tSigma0 = 0.0371094;
+			}
+			else
+			{
+				THROW("add these options later\n");
 			}
 		}
 		else if (log_resolution == 1024)

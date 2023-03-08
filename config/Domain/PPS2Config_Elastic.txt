@@ -18,7 +18,7 @@ D
 
 #maxDeluPrime: MaxDelU > deltaC * maxDeluPrime -> segment is considered fragmented for "fct_maxEffDelU" criterion
 Max_DelU
--1.0
+1.0
 
 #deluPrime: delU > deltaC * deluPrime -> segment is considered fragmented for "fct_DelU" criterion
 DelU
@@ -27,9 +27,10 @@ DelU
 
 ###### STAGE calculation
 # if true: for all stages (lin, max, final) x (strain, ...., U) it also calculates fragmentation data
+# don't turn it off, otherwise stress profiles at given times are not generated in csv files for elastic runs
 doFragmentation_DSigmaFieldExtraction_4_Stages
-#1
-0
+1
+#0
 
 ###### Actual time step calculation (mostly to have data for matlab plots of fragment stat evolution in time, see the function plot_fragmentation_results)
 # if true, calculates fragmentation analysis and D and sigma field extraction for all available times
