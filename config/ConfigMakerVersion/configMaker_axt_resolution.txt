@@ -1,4 +1,0 @@
-cntrV	0	nameSpec	allopts	{	grp	cfl	ind	0	str	1.0	grp	lL	ind	0	str	0	grp	E	ind	0	str	1	grp	rho	ind	0	str	1	grp	Dvv	ind	0	str	1	grp	sigc	ind	0	str	1	grp	ldelc	ind	0	str	-1	grp	la	ind	0	str	4.0	grp	dd2	ind	0	str	0.5	}
-cntrV	1	nameSpec	allopts	{	grp	cfl	ind	1	str	0.4096	grp	lL	ind	0	str	0	grp	E	ind	0	str	1	grp	rho	ind	0	str	1	grp	Dvv	ind	0	str	1	grp	sigc	ind	0	str	1	grp	ldelc	ind	0	str	-1	grp	la	ind	0	str	4.0	grp	dd2	ind	0	str	0.5	}
-cntrV	2	nameSpec	allopts	{	grp	cfl	ind	2	str	0.2048	grp	lL	ind	0	str	0	grp	E	ind	0	str	1	grp	rho	ind	0	str	1	grp	Dvv	ind	0	str	1	grp	sigc	ind	0	str	1	grp	ldelc	ind	0	str	-1	grp	la	ind	0	str	4.0	grp	dd2	ind	0	str	0.5	}
-cntrV	3	nameSpec	allopts	{	grp	cfl	ind	3	str	0.1024	grp	lL	ind	0	str	0	grp	E	ind	0	str	1	grp	rho	ind	0	str	1	grp	Dvv	ind	0	str	1	grp	sigc	ind	0	str	1	grp	ldelc	ind	0	str	-1	grp	la	ind	0	str	4.0	grp	dd2	ind	0	str	0.5	}

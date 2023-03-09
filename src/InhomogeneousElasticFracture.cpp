@@ -978,11 +978,12 @@ void ElasticFractureInhomogField::ModifyElasticFracture_RandomFieldInput(string&
 	bool versionChange = ((sfcm.success) && (sfcm_gen.subdomainNo == subdomainNo));
 	if (!versionChange)
 		return;
-	string llc_str;
+	string llc_str = "llcnone";
 	string key;	map<string, string>* mpPtr;
 	key = "llc";
 	if (!Find_Version_String(key, llc_str, mpPtr))
 		return;
+	g_logout << "\tllc_str\t" << llc_str;
 
 //	string np_str = "1025";
 	string np_str = "16385";
@@ -1009,7 +1010,7 @@ void ElasticFractureInhomogField::ModifyElasticFracture_RandomFieldInput(string&
 		limt = -(log(d_np) / log(10.0));
 	}
 	fromString(llc_str, llc);
-	if (llc <= limt)//(llc <= -5.9999)
+	if (llc >= limt)//(llc <= -5.9999)
 		baseName_WOExt = "InhomogeneousFiles/cl" + llc_str + "_np" + np_str + "/initial_values";
 	else
 		baseName_WOExt = "InhomogeneousFiles/clz_np" + np_str + "/initial_values";

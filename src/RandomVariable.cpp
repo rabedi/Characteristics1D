@@ -505,13 +505,14 @@ void statParamHolder::Read(istream & in)
 	}
 	if (sfcm.success)
 	{
-		double value;
+		double value = 0.0;
 		string key = "dd2";	map<string, string>* mpPtr;
 		if (Find_Version_Value(key, value, mpPtr))
 		{
 			double ave = 0.5 * (minV + maxV);
 			minV = ave  * (1 - value);
 			maxV =  ave * (1 + value);
+			g_logout << "\tdd2\t" << value << "\tmin\t" << minV << "\tmax\t" << maxV;
 		}
 		minMax_read = true;
 	}

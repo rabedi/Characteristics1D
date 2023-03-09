@@ -101,6 +101,9 @@ extern bool g_low_disk_space;
 extern fstream dbout;
 // can turn on or off printing for certain things
 extern bool b_db_p;
+
+// to print important things for the log of a particular run
+extern fstream g_logout;
 #if DB_ON
 #define DBF(x) x
 #define DBCHK(x) { if (b_db_p) { x } }

@@ -145,10 +145,9 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 		toString(g_versionNumber_wOffset, g_versionNumber_str);
 		g_versionNumber_str = "_V_" + g_versionNumber_str;
 		sfcm_gen.CreateSimpleFormatConfigMakerFromInstructions(solvePara.version_configMakerGenName, solvePara.version_configMaker_forceRewrite);
-		bool success = sfcm.Read(sfcm_gen.fileNameOut, g_versionNumber);
-		if (success == false)
+		sfcm.success = sfcm.Read(sfcm_gen.fileNameOut, g_versionNumber);
+		if (sfcm.success == false)
 			return true;
-		Configure_sfcm_sfcm_gen();
 	}
 	else
 		g_versionNumber_str = "";
@@ -170,6 +169,11 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 		fstream in(fileName_log.c_str(), ios::in);
 		if (in.is_open())
 			return false;
+		string fileName_logal = lg + "/__log" + cn + g_versionNumber_str + ".txt";
+		g_logout.open(fileName_logal.c_str(), ios::app);
+		g_logout << "v\t" << g_versionNumber << "\tser\t" << g_serialNumber;
+		if (g_versionNumber >= 0)
+			Configure_sfcm_sfcm_gen();
 
 		cout << "=======================================================\n";
 		cout << "============ version " << versionNumIn << " serial number " << serNumIn << " ==========\n";

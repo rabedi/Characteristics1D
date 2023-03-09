@@ -1520,6 +1520,8 @@ void Domain_All_Interfaces_All_Times::Set_InitialCondition_step()
 		Close_Files_RawData_OntTimeAllSpatialPoints();
 	if (b_visualization1D)
 		Print_v1D(0.0);
+	g_logout << endl;
+	g_logout.close();
 }
 
 //fstream lgo("_log_out.txt", ios::out);
@@ -1720,12 +1722,13 @@ void Configure_sfcm_sfcm_gen()
 	// it takes much shorter to get there. If this is one, much shorter solution times are obtained, but phid is not converged
 	bool use_tSigma0Time = true;
 	double tFactor4tSigma0 = 4; /// how much past max stress should go beyond stress ~ 0
+
+	double llc = -1, la = 0, ldelc = -1;
 	string key;
 	double value;
 	map<string, string>* mpPtr;
 	if (sfcm_gen.specificProblemName == "axt")
 	{
-		double llc = -1, la = 0, ldelc = -1;
 		key = "llc";
 		if (Find_Version_Value(key, value, mpPtr))
 			llc = value;
@@ -1745,45 +1748,54 @@ void Configure_sfcm_sfcm_gen()
 			sfcm.number_of_elements = (int)pow(2, (int)log_resolution);
 			sfcm.cfl_factor = 1.0;
 
-			if ((ldelc < -2.4) || (la > 4.1) || (llc < -4.01))
+			if ((ldelc < -2.4) || (la > 4.1) || (llc < -4.51))
 			{
+				cout << "ldelc\t" << ldelc << '\n';
+				cout << "la\t" << la << '\n';
+				cout << "llc\t" << llc << '\n';
 				THROW("generate appropriate input meshes, update the statements below\n");
 			}
-			if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
+			else if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
-				sfcm.tFinal = 1200.0;
+				sfcm.tFinal = 1100.0;
 				tSigma0 = 1100.0;
+				tFactor4tSigma0 = 1.0;
 			}
 			else if (((-2.5 - tol) <= la) && (la < (-2.0 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
-				sfcm.tFinal = 640.0;
+				sfcm.tFinal = 350.0;
 				tSigma0 = 350.0;
+				tFactor4tSigma0 = 1.0;
 			}
 			else if (((-2.0 - tol) <= la) && (la < (-1.5 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
-				sfcm.tFinal = 200.0;
+				sfcm.tFinal = 110.0; // 200.0
 				tSigma0 = 110.0;
+				tFactor4tSigma0 = 1.0;
 			}
 			else if (((-1.5 - tol) <= la) && (la < (-1.0 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
-				sfcm.tFinal = 60.0;
-				tSigma0 = 35.0;
+				sfcm.tFinal = 45.0;
+				tSigma0 = 40.0;
+				tFactor4tSigma0 = 1.0;
 			}
 			else if (((-1.0 - tol) <= la) && (la < (-0.5 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
 				sfcm.tFinal = 20.0;
 				tSigma0 = 11.0;
+				tFactor4tSigma0 = 1.0;
 			}
 			else if (((-0.5 - tol) <= la) && (la < (0.0 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
-				sfcm.tFinal = 18.0;
+				sfcm.tFinal = 15.0;
 				tSigma0 = 4.0;
+				tFactor4tSigma0 = 1.5;
 			}
 			else if (((0 - tol) <= la) && (la < (0.5 - tol)))
 			{
@@ -1797,8 +1809,8 @@ void Configure_sfcm_sfcm_gen()
 					sfcm.cfl_factor = 1.0;
 					sfcm.tFinal = 12.0;
 				}
-//					tSigma0 = 0.58;
 				tSigma0 = 1.0;
+				tFactor4tSigma0 = 2.7; //  4.0;
 			}
 			else if (((0.5 - tol) <= la) && (la < (1.0 - tol)))
 			{
@@ -1977,6 +1989,10 @@ void Configure_sfcm_sfcm_gen()
 	if (use_tSigma0Time)
 		sfcm.tFinal = tFactor4tSigma0 * tSigma0;
 		//		sfcm.tFinal = MIN(tFactor4tSigma0 * tSigma0, sfcm.tFinal);
+	g_logout << "\talr\t" << alr << "\ttFactor4tSigma0\t" << tFactor4tSigma0;
+	g_logout << "\tllc\t" << llc << "\tla\t" << la << "\tldelc\t" << ldelc;
+	g_logout << "\tuse_tSigma0Time\t" << use_tSigma0Time << "\ttFinal\t" << sfcm.tFinal << "\tcfl\t" << sfcm.cfl_factor << "\tnEle\t" << sfcm.number_of_elements;
+	g_logout.flush();
 }
 
 void Domain_All_Interfaces_All_Times::Delete_v1DFiles()

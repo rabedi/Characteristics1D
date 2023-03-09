@@ -21,3 +21,22 @@ seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh
 
 # for PP2 and 3 only
 -p -c config/Domain/Inhomogeneous_axt_fracture_Coh.txt -cp config/Domain/PPS3Config_Coh.txt
+
+-sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt -cp config/Domain/PPS3Config_Coh.txt
+
+
+# running the ring problem
+-sp -mc config/MainConfig/mainConfig_axt_coh.txt -st	0 	-en 0	-vst	0	-ven	1214
+
+
+# for random meshes
+seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st {.} -en {.} -vst 0 -ven 404'
+seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st {.} -en {.} -vst 405 -ven 809'
+seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st {.} -en {.} -vst 810 -ven 1214'
+
+# for homogeneous meshes, in mainConfig_axt_coh.txt change the file to no_random, use offset 10000
+seq 0 1214 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
+OR
+q 0 404 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
+seq 405 809 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
+seq 810 1214 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'

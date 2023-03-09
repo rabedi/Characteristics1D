@@ -1,0 +1,92 @@
+configNameOut	default
+specificProblemName	axt
+subdomainNo		0
+bulkFlag		1
+interfaceFlag	1
+#name added for this set of runs
+configSpecificName	allopts
+{
+	{	lL
+		0
+	}
+
+	{	E
+		1
+	}
+
+	{	rho
+		1
+	}
+
+	{	Dvv
+		1
+	}
+
+	{	sigc	
+		1
+	}
+
+#	{	ldelc		map { 	(	flag ,	0 )			}
+	{	ldelc
+		-1
+		-1.5
+		-2
+	}
+
+	# log10 of loading rate
+	{	la
+		4.0
+		3.5
+		3.0
+		2.5
+		2.0
+		1.5
+		1.0
+		0.5
+		0.0
+#		-0.5
+#		-1.0
+#		-1.5
+#		-2.0
+#		-2.5
+#		-3.0
+#		-3.5
+#		-4.0
+	}
+
+	# correlation length
+	# <= -log10(meshResolution) = -log10(2^14) = -4.2 --> becomes white noise
+#	{	llc		map { 	(	np ,	16385 ) 	}
+	{	llc
+		-4.5
+		-4.0
+		-3.5
+		-3.0
+		-2.5
+		-2.0
+		-1.5
+		-1.0
+		-0.5
+# 		 0.0
+# 		 0.5
+	}
+
+	# del/2 (values are from 1 - del/2, 1 + del/2, e.g. del/2 = 0.2 -> 0.8 -> 0.2
+	{	dd2
+		0.0
+#		0.1
+##		0.2
+#		0.3
+##		0.4
+#		0.5
+##		0.6
+#		0.7
+##		0.8
+#		0.9
+	}
+}
+groupOutputOrder
+{
+lL	E rho Dvv	sigc	ldelc	la	llc dd2
+#dd2	apple		sigc	rho
+}

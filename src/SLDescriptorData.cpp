@@ -128,9 +128,10 @@ void SLDescriptorData::Read(istream & in)
 	}
 	if (load_number == AXT_LN)
 	{
-		double value; map<string, string>* mpPtr;
+		double value = 0.0; map<string, string>* mpPtr;
 		if (Find_Version_Value("la", value, mpPtr))
 			load_parameters[0] = pow(10.0, value);
+		g_logout << "\tla\t" << value << "\tlrate\t" << load_parameters[0];
 	}
 	Finalize_SLDescriptorData();
 }

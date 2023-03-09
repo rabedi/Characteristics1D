@@ -3,6 +3,8 @@
 .vs/Target/v15/Browse.VC.db
 .vs/Target/v15/Browse.VC.opendb
 .vs/Target/v15/ipch/AutoPCH/124a6ac0879dfbd0/DOMAIN_ALLINTERFACESALLTIMES.ipch
+Debug/*
+Release/*
 .vs/Target/v15/ipch/AutoPCH/14baabbdccc3fa45/GLOBALMACROS.ipch
 .vs/Target/v15/ipch/AutoPCH/1958e3ddd4a2d4c4/DOMAINPOSTPROCESSING.ipch
 .vs/Target/v15/ipch/AutoPCH/1fe68887c7650c92/MAIN.ipch
@@ -44,3 +46,5 @@ Target.vcxproj.user
 .vs/Target/v15/ipch/AutoPCH/e01543ff5435acbc/INHOMOGEOUSFIELD.ipch
 Debug/Target.Build.CppClean.log
 Debug/Target.log
+InhomogeneousFiles/*
+Target.vcxproj.user

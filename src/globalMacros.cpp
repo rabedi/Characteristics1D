@@ -14,6 +14,8 @@ double g_time = 0.0;
 bool g_low_disk_space = false;
 
 bool b_db_p = false;
+fstream g_logout;
+
 #if DB_ON
 fstream dbout("_db.txt", ios::out);
 #else
