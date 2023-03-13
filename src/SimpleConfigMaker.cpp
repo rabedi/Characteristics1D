@@ -17,6 +17,7 @@ fstream dbbin("dbbin.txt", ios::out);
 
 SimpleFormatConfigMaker::SimpleFormatConfigMaker()
 {
+	Zero_SimpleFormatConfigMaker();
 	success = false;
 }
 
@@ -114,6 +115,11 @@ int generateArbitraryIndexList(const vector<int>& minVals, const vector<int>& ma
 		generateArbitraryIndexListAux(minVals, maxVals, incVals, resultsOut, resultsOutTemp, pos, inclusiveIntervals);
 	}
 	return resultsOut.size();
+}
+
+SimpleFormatConfigMaker_Generator::SimpleFormatConfigMaker_Generator()
+{
+	Clear_SimpleFormatConfigMaker_Generator();
 }
 
 void SimpleFormatConfigMaker_Generator::CreateSimpleFormatConfigMakerFromInstructions(string configMakerInstructionNameIn, bool forceRewrite)

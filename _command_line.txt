@@ -40,3 +40,25 @@ OR
 q 0 404 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
 seq 405 809 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
 seq 810 1214 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
+
+# elastic runs, spatial mesh resolution study and dirac function time
+-sp -mc config/MainConfig/mainConfig_resolution_x.txt -st	0 	-en 0	-vst	0	-ven	14
+
+
+##############
+# spatial mesh resolution studies
+# FRACTURE
+# In mainConfig_resolution_x.txt set 3 #fracture on
+-sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst 0 -ven 479
+# parallel
+seq 0 479 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst {.} -ven {.}'
+
+#Elastic wave in Random medium with Martin and Yaswanth
+# In mainConfig_resolution_x.txt set 3 #elastic on
+-sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst 0 -ven 14
+# parallel
+seq 0 14 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst {.} -ven {.}'
+
+
+generate files for the cluster
+-sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst 0 -ven 479	-np 48

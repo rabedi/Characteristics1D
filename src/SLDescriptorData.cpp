@@ -20,12 +20,16 @@ SLDescriptorData::SLDescriptorData()
 
 	tdLoad_Zi = 0.0, tdLoad_Zo = 0.0, tdLoad_ZEffective = 0.0;
 	bndryLoad_inputEnergy = 0.0, tdLoad_stressScale = 0.0, tdLoad_velScale = 0.0, tdLoad_loadScale = 0.0, tdAmbientProjectileLength = 0.0;
+
+	DiracLoadingPtr = NULL;
 }
 
 SLDescriptorData::~SLDescriptorData()
 {
 	if (tdLoadComputer != NULL)
 		delete tdLoadComputer;
+	if (DiracLoadingPtr != NULL)
+		delete DiracLoadingPtr;
 }
 
 void SLDescriptorData::Read(istream & in)
@@ -62,6 +66,16 @@ void SLDescriptorData::Read(istream & in)
 		if (buf == "load_number")
 		{
 			READ_NINTEGER(in, buf, load_number);
+		}
+		else if (buf == "DiracLoading")
+		{
+			DiracLoadingPtr = new DiracLoading();
+			DiracLoadingPtr->Read_DiracLoading(in);
+			if (!DiracLoadingPtr->IsActive())
+			{
+				delete DiracLoadingPtr;
+				DiracLoadingPtr = NULL;
+			}
 		}
 		else if (buf == "a_xt_prob")
 		{
@@ -280,7 +294,7 @@ void SLDescriptorData::Get_IC(SL_Bulk_Properties* bulk_Ptr, GID bulkFlag, double
 	}
 }
 
-void SLDescriptorData::GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elastic_InterfaceProperties* ts_bulkProps, double x, double t, VEC& BC_val) const
+void SLDescriptorData::GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elastic_InterfaceProperties* ts_bulkProps, double x, double t, VEC& BC_val, int timeIndex) const
 {
 	SL_Bulk_Properties *bulk_Ptr;
 	if (isLeft)
@@ -355,6 +369,13 @@ void SLDescriptorData::GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elast
 			BC_val[0] = value;
 		}
 		// nothing to be done for else as the BC is traction free for impact and 0 transmitting for incident case
+		return;
+	}
+	if (DiracLoadingPtr != NULL)
+	{
+		BC_val[0] = 0.0;
+		if (isLeft)
+			BC_val[0] = DiracLoadingPtr->GetBaseValue(t, timeIndex);
 		return;
 	}
 	if (load_number == SQUARE_PULSE)
@@ -675,4 +696,434 @@ double CyclicLoading::getValue(double time)
 		w0p = -(sinBeta + sin(tp));
 	}
 	return w0p * sigma0;
+}
+
+DiracLoading::DiracLoading()
+{
+	maxTime = 1.0;
+	numTimeSteps2Cover = 2;
+	fld4Int1 = di_energy;
+	Z = 1.0;
+	canOverwiseZ = true;
+	directionalBCType = bct_Neumann;
+	timeStepping_delt = 9.765625000000000e-04; // 1/1024, 1024 mesh with CFL = 1
+	totalFactor4Integral = 1.0;
+	b_maxTimeRead = false;
+	b_numTimeSteps2CoverRead = false;
+	b_simple_parabola42TimeSteps = false;
+	isActive = true;
+}
+
+void DiracLoading::Read_DiracLoading(istream& in)
+{
+	string key;	map<string, string>* mpPtr;
+	double value = -1;
+	string buf;
+	READ_NSTRING(in, buf, buf);
+	if (buf != "{")
+	{
+		if (buf == "}")
+			return;
+	}
+	READ_NSTRING(in, buf, buf);
+	while (buf != "}")
+	{
+		if (buf == "isActive")
+		{
+			READ_NBOOL(in, buf, isActive);
+		}
+		else if (buf == "maxTime")
+		{
+			double maxTimeIn;
+			READ_NDOUBLE(in, buf, maxTimeIn);
+			key = "Dirac_maxTime";
+			if (Find_Version_Value(key, value, mpPtr) == true)
+				maxTimeIn = value;
+			SetDiractMaxTime(maxTimeIn);
+		}
+		else if (buf == "numTimeSteps2Cover")
+		{
+			READ_NINTEGER(in, buf, numTimeSteps2Cover);
+			key = "Dirac_numTimeSteps2Cover";
+			if (Find_Version_Value(key, value, mpPtr) == true)
+				numTimeSteps2Cover = (int)round(value);
+			b_numTimeSteps2CoverRead = true;
+		}
+		else if (buf == "fld4Int1")
+		{
+			in >> fld4Int1;
+		}
+		else if (buf == "directionalBCType")
+		{
+			in >> directionalBCType;
+		}
+		else if (buf == "Z")
+		{
+			READ_NDOUBLE(in, buf, Z);
+		}
+		else if (buf == "ZtoUse")
+		{
+			READ_NDOUBLE(in, buf, Z);
+			canOverwiseZ = false;
+		}
+		else if (buf == "timeStepping_delt")
+		{
+			READ_NDOUBLE(in, buf, timeStepping_delt);
+		}
+		else
+		{
+			cout << "buf:\t" << buf << '\n';
+			THROW("invalid option\n");
+		}
+		READ_NSTRING(in, buf, buf);
+	}
+}
+
+void DiracLoading::Write_DiracLoading(ostream& out)
+{
+	out << "{\n";
+	out << "fld4Int1\t" << fld4Int1 << '\n';
+	out << "directionalBCType\t" << directionalBCType << '\n';
+	out << "timeStepping_delt\t" << timeStepping_delt << '\n';
+	out << "maxTime\t" << maxTime << '\n';
+	out << "numTimeSteps2Cover\t" << numTimeSteps2Cover << '\n';
+	out << "Z\t" << Z << '\n';
+	out << "}\n";
+}
+
+void DiracLoading::SetDiractMaxTime(double maxTimeIn)
+{
+	if (maxTimeIn < 0.0)
+	{
+		numTimeSteps2Cover = -(int)maxTimeIn;
+		b_numTimeSteps2CoverRead = true;
+	}
+	else
+	{
+		maxTime = maxTimeIn;
+		b_maxTimeRead = true;
+	}
+}
+
+void DiracLoading::InitializeFromOutside(double delt, BoundaryConditionT bcTypeIn, double ZIn)
+{
+	timeStepping_delt = delt;
+	directionalBCType = bcTypeIn;
+	if (canOverwiseZ)
+		Z = ZIn;
+	Initialize_DiracLoading();
+}
+
+string getName(DiracIntegralT dat)
+{
+	if (dat == di_energy)
+		return "energy";
+	if (dat == di_stress)
+		return "stress";
+	if (dat == di_velocity)
+		return "velocity";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+void name2Type(string& name, DiracIntegralT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= DiracIntegralT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (DiracIntegralT)num;
+		return;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < DiracIntegralT_SIZE; ++i)
+	{
+		typeVal = (DiracIntegralT)i; // casting integer to DiracIntegralT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return;
+	}
+	cout << "name\t" << name << '\n';
+	THROW("wrong name reading DiracIntegralT\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, DiracIntegralT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, DiracIntegralT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+
+ostream& operator<<(ostream& out, const twsvp& dat)
+{
+	out << dat.t << '\t';
+	out << dat.w << '\t';
+	out << dat.s << '\t';
+	out << dat.v << '\t';
+	out << dat.p;
+	return out;
+}
+
+twsvp::twsvp()
+{
+	t = 0.0, w = 0.0, s = 0.0, v = 0.0, p = 0.0;
+}
+
+void DiracLoading::Initialize_DiracLoading()
+{
+	if (fld4Int1 == di_energy)
+	{
+		if (directionalBCType == bct_Dirichlet)
+			physicalFactor4Int1 = 1.0 / sqrt(Z);
+		else if (directionalBCType == bct_Neumann)
+			physicalFactor4Int1 = sqrt(Z);
+		else if (directionalBCType == bct_Characteristics)
+			physicalFactor4Int1 = 2.0 * sqrt(Z);
+	}
+	else if (fld4Int1 == di_stress)
+	{
+		if (directionalBCType == bct_Dirichlet)
+			physicalFactor4Int1 = 1.0 / Z;
+		else if (directionalBCType == bct_Neumann)
+			physicalFactor4Int1 = 1.0;
+		else if (directionalBCType == bct_Characteristics)
+			physicalFactor4Int1 = 2.0;
+	}
+	else if (fld4Int1 == di_velocity)
+	{
+		if (directionalBCType == bct_Dirichlet)
+			physicalFactor4Int1 = 1.0;
+		else if (directionalBCType == bct_Neumann)
+			physicalFactor4Int1 = Z;
+		else if (directionalBCType == bct_Characteristics)
+			physicalFactor4Int1 = 2.0 * Z;
+	}
+	if (b_maxTimeRead)
+		numTimeSteps2Cover = (int)floor(0.5 * maxTime / timeStepping_delt) * 2;
+	if (numTimeSteps2Cover < 2)
+		numTimeSteps2Cover = 2;
+	maxTime = timeStepping_delt * numTimeSteps2Cover;
+	b_simple_parabola42TimeSteps = (numTimeSteps2Cover == 2);
+	if (b_simple_parabola42TimeSteps)
+	{
+		totalFactor4Integral = 0.75 / timeStepping_delt;
+		if (fld4Int1 == di_energy)
+			totalFactor4Integral = sqrt(totalFactor4Integral);
+		totalFactor4Integral *= physicalFactor4Int1;
+		cout << "this is too sharp of a time step. Increase Dirac delt by at least a factor of 2 (now it's 2x delt -> should be at least 4x delt\n";
+		cout << "maxTime at least should be\t" << 4.0 * timeStepping_delt;
+		cout << "or maxTime entered = " << -4.0 << '\n';
+#if DB_STRICT_EXIT
+		THROW("Code exits because of the error above\n");
+#endif
+	}
+	else
+	{
+		double dydt;
+		double delt3rd = timeStepping_delt / 3.0;
+		double integralVal = 0.0;
+		offset = 0.5 * maxTime;
+		for (unsigned int i = 0; i < (unsigned int)numTimeSteps2Cover / 2; ++i)
+		{
+			double t0 = i * 2 * timeStepping_delt;
+			double t1 = t0 + timeStepping_delt;
+			double t2 = t1 + timeStepping_delt;
+			double v0 = getInfinitlySmoothDeltaDirac(t0 - offset, dydt, offset, false);
+			double v1 = getInfinitlySmoothDeltaDirac(t1 - offset, dydt, offset, false);
+			double v2 = getInfinitlySmoothDeltaDirac(t2 - offset, dydt, offset, false);
+			// end points end up being computed twice, but it's OK
+			integralVal += delt3rd * (v0 + 4.0 * v1 + v2);
+		}
+		if (fld4Int1 == di_energy)
+			totalFactor4Integral = physicalFactor4Int1 / sqrt(integralVal);
+		else
+			totalFactor4Integral = physicalFactor4Int1 / integralVal;
+	}
+	inputEnergy_Dirac = 1.0;
+	if (fld4Int1 == di_stress)
+	{
+		if (b_simple_parabola42TimeSteps)
+			inputEnergy_Dirac = 0.75 / timeStepping_delt / Z;
+		else
+			inputEnergy_Dirac = 1.0 / timeStepping_delt / Z; // rought estimate
+	}
+	else if (fld4Int1 == di_velocity)
+	{
+		if (b_simple_parabola42TimeSteps)
+			inputEnergy_Dirac = 0.75 * Z / timeStepping_delt;
+		else
+			inputEnergy_Dirac = Z / timeStepping_delt; // rought estimate
+	}
+}
+
+double DiracLoading::GetBaseValue(double time, int timeIndex)
+{
+	if (b_simple_parabola42TimeSteps)
+	{
+		if (timeIndex == -1)
+			timeIndex = (int)round(time / timeStepping_delt);
+		if (timeIndex == 1)
+			return totalFactor4Integral;
+		return 0.0;
+	}
+	static double dydt;
+	double fn = getInfinitlySmoothDeltaDirac(time - offset, dydt, offset, false);
+	if (fld4Int1 == di_energy)
+		fn = sqrt(fn);
+	return totalFactor4Integral * fn;
+}
+
+void DiracLoading::Get_svp_Values(double& s, double& v, double& p, double time, int timeIndex)
+{
+	double baseVal = GetBaseValue(time, timeIndex);
+	if (directionalBCType == bct_Neumann)
+	{
+		s = baseVal;
+		v = s / Z;
+	}
+	else if (directionalBCType == bct_Dirichlet)
+	{
+		v = baseVal;
+		s = v * Z;
+	}
+	else if (directionalBCType == bct_Characteristics)
+	{
+		s = 0.5 * baseVal;
+		v = s / Z;
+	}
+	p = s * v;
+}
+
+void DiracLoading::CalculateValuesAndIntegrals(vector<twsvp>& vals, twsvp& integrals)
+{
+	unsigned int numSteps = (unsigned int)round(maxTime / timeStepping_delt);
+	unsigned int szVals = numSteps + 1;
+	vals.resize(szVals);
+	double intWeightBase = timeStepping_delt / 3.0;
+	double int1 = 0.0;
+	for (unsigned int i = 0; i < szVals; ++i)
+	{
+		twsvp* valPtr = &vals[i];
+		valPtr->t = i * timeStepping_delt;
+		Get_svp_Values(valPtr->s, valPtr->v, valPtr->p, valPtr->t, i);
+		valPtr->w = 4.0 * intWeightBase;
+		if (i % 2 == 0)
+		{
+			if ((i == 0) || (i == numSteps))
+				valPtr->w = intWeightBase;
+			else
+				valPtr->w = 2.0 * intWeightBase;
+		}
+		int1 += valPtr->w;
+		integrals.s += valPtr->w * valPtr->s;
+		integrals.v += valPtr->w * valPtr->v;
+		integrals.p += valPtr->w * valPtr->p;
+	}
+	if (fabs(int1 - maxTime) > 1e-4 * maxTime)
+	{
+		cout << "int1\t" << int1 << '\n';
+		cout << "maxTime\t" << maxTime << '\n';
+		cout << "error in integration\t";
+		THROW("int1 not equal to maxTime\n");
+	}
+}
+
+bool DiracLoading::DiracLoadingValid(ostream& out, bool printVals)
+{
+	vector<twsvp> vals; twsvp integrals;
+	CalculateValuesAndIntegrals(vals, integrals);
+	if (printVals)
+	{
+		out << "integrals\n" << integrals << '\n';
+		unsigned int sz = vals.size();
+		out << "vals\tsz\t" << sz << '\n';
+		for (unsigned int i = 0; i < sz; ++i)
+			out << vals[i] << '\n';
+	}
+	double intVal = 0.0;
+	if (fld4Int1 == di_energy)
+		intVal = integrals.p;
+	else if (fld4Int1 == di_stress)
+		intVal = integrals.s;
+	else if (fld4Int1 == di_velocity)
+		intVal = integrals.v;
+	return (fabs(intVal - 1.0) < 1e-5);
+}
+
+void Test_DiracLoading()
+{
+	double timeStepping_delt = 0.01;
+//	double maxTime = 10.0;
+	vector <double> maxTimes; // < 0, num Steps, > 0 actual times
+	if (true) // use number of steps
+	{
+		maxTimes.push_back(-2);
+		maxTimes.push_back(-4);
+		maxTimes.push_back(-6);
+		maxTimes.push_back(-10);
+	}
+	else
+	{
+		maxTimes.push_back(2.5);
+		maxTimes.push_back(3.2);
+		maxTimes.push_back(6.0);
+		maxTimes.push_back(10.2);
+		for (unsigned int i = 0; i < maxTimes.size(); ++i)
+			maxTimes[i] *= timeStepping_delt;
+	}
+
+	vector<DiracIntegralT> fld4Int1s;
+	fld4Int1s.push_back(di_energy);
+	fld4Int1s.push_back(di_stress);
+	fld4Int1s.push_back(di_velocity);
+
+	double Z = 4.0;
+
+	vector<BoundaryConditionT> directionalBCTypes;
+	directionalBCTypes.push_back(bct_Neumann);
+	directionalBCTypes.push_back(bct_Dirichlet);
+	directionalBCTypes.push_back(bct_Characteristics);
+
+	unsigned int sz_fld4Int1 = fld4Int1s.size();
+	unsigned int sz_directionalBCType = directionalBCTypes.size();
+	unsigned int sz_maxTime = maxTimes.size();
+
+	fstream out("TestFiles/TestDirac.txt", ios::out);
+	unsigned int cntr = 0;
+	for (unsigned int fi = 0; fi < sz_fld4Int1; ++fi)
+	{
+		DiracIntegralT fld4Int1 = fld4Int1s[fi];
+		for (unsigned int bi = 0; bi < sz_fld4Int1; ++bi)
+		{
+			BoundaryConditionT directionalBCType = directionalBCTypes[bi];
+			for (unsigned int mi = 0; mi < sz_maxTime; ++mi)
+			{
+				double maxTime = maxTimes[mi];
+				DiracLoading dl;
+				dl.timeStepping_delt = timeStepping_delt;
+				dl.SetDiractMaxTime(maxTime);
+				dl.directionalBCType = directionalBCType;
+				dl.fld4Int1 = fld4Int1;
+				dl.Z = Z;
+				dl.Initialize_DiracLoading();
+
+				out << "cntr_" << cntr << "st_fi_" << fld4Int1 << "_bi_" << directionalBCType << "_mi_" << maxTime << "\n";
+				bool valid = dl.DiracLoadingValid(out, true);
+				out << "valid" << valid << "\tcntr_" << cntr++ << "en_fi_" << fld4Int1 << "_bi_" << directionalBCType << "_mi_" << maxTime << "\n\n";
+			}
+		}
+	}
 }

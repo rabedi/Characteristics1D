@@ -29,7 +29,10 @@ public:
 	// inData: input for data
 	// inConfig: read INPUTs below (all booleans given) plus bool num_Vals_and_x_Provided, bool containsRepeatingEndPeriodicVal
 	// the last 3 values are provided as pointers to provide (isPeriodic, xM, xm) in case they are provided from outside
-	void Read_Initialize_OneIHField(istream& inData, istream* inConfigPtr, bool* isPeriodicPtr = NULL, double* xMPtr = NULL, double* xmPtr = NULL, int resolutionFactor = 1, setStatOp_type sso = sso_mean_arithmetic);
+	// default_ValsAtVertices: for interfacial properties, naturally the random field values are read at vertices
+	// for bulk properties such as E, rho it's the opposite and the values are more naturally read for segments
+	// if OneIHField::valsAtVertices = 0, or 1 this entry is not used. However if valsAtVertices == -1, it's overwritten by default_ValsAtVertices
+	void Read_Initialize_OneIHField(istream& inData, istream* inConfigPtr, int default_ValsAtVertices, bool* isPeriodicPtr = NULL, double* xMPtr = NULL, double* xmPtr = NULL, int resolutionFactor = 1, setStatOp_type sso = sso_mean_arithmetic);
 	// resolutionFactor 
 	//					== 0 or +/-1 nothing happens
 	//					>  1  -> number of segments is DECREASED by this factor (e.g. if resolutionFactor ==  10 and numSegments = 1000 -> numSegments becoms 100)
@@ -53,7 +56,8 @@ public:
 	OneIHField& operator=(const OneIHField& other);
 
 private:
-	bool valsAtVertices;
+	// 0 -> values are for segments, 1 -> values for vertices, -1 -> values are given for vertices in the file (e.g. 1025 vertices) but the last one is ignored while reading and data is treated aas values for segments (e.g. only 1024 values are read)
+	int valsAtVertices;
 	// for uniform grid, only values are read from the file and xs are uniformly distributed from xm, xM
 	// if the grid is not uniform, xs are also read from the file
 	bool uniformGrid;
@@ -81,12 +85,12 @@ private:
 	bool containsRepeatingEndPeriodicVal;
 
 	void Read_InstructionsOnly(istream* inConfigPtr, bool* isPeriodicPtr = NULL, double* xMPtr = NULL, double* xmPtr = NULL);
-	void Read_DataOnly(istream& inData);
+	void Read_DataOnly(istream& inData, int default_ValsAtVertices);
 
 	// only reads vals and xs if uniformGrid == false
 	// num_Vals_Provided: the size of number of values to be read given
 	// containsRepeatingEndPeriodicVal: for periodic data if values are at vertices, the input file contains the repeating value at the end
-	void Read_Vals_xs(istream& in, bool num_Vals_and_x_Provided, bool containsRepeatingEndPeriodicVal);
+	void Read_Vals_xs(istream& in, bool num_Vals_and_x_Provided, bool containsRepeatingEndPeriodicVal, int default_ValsAtVertices);
 	void Finalize_spatialPositions();
 	// is randomVariableType != NULL, the assumption is that read values are standard normal and they are mapped to target random type
 	void Finalize_Values();

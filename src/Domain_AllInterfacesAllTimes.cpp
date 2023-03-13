@@ -113,6 +113,91 @@ void Domain_All_Interfaces_All_Times::Read_Initialize(string configNameIn, int s
 	FinalizeImpactIncidentEtcLoading();
 }
 
+void Domain_All_Interfaces_All_Times::Initialize_TimeStepRelated()
+{
+	timeStep = g_slf_conf->uniform_del_t;
+	maxTime = ceil(g_slf_conf->terminate_run_target_time / timeStep) * timeStep;
+
+	//	timeStep = maxTime / ceil(maxTime / timeStep);
+	//	g_slf_conf->uniform_del_t = timeStep;
+	//	g_slf_conf->inv_uniform_del_t = 1.0 / g_slf_conf->uniform_del_t;
+	maxTimewTol = maxTime - 1e-6 * timeStep;
+
+	bool uniform_delt = true;
+	numTimes = (int)ceil(maxTime / timeStep - 1e-6);
+	if (numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP < 0)
+		numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP = MAX(1, numTimes / -numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP);
+
+	if (numTimeStep_BulkInterfacePoints_Print_4PP < 0)
+		numTimeStep_BulkInterfacePoints_Print_4PP = MAX(1, numTimes / -numTimeStep_BulkInterfacePoints_Print_4PP);
+	if (numTimeStep_Interface_DSU_Fragment_Print_4PP < 0)
+		numTimeStep_Interface_DSU_Fragment_Print_4PP = MAX(1, numTimes / -numTimeStep_Interface_DSU_Fragment_Print_4PP);
+
+	if (b_visualization1D)
+	{
+		if (visualization_numTimeStep < 0)
+			visualization_numTimeStep = MAX(1, numTimes / -visualization_numTimeStep);
+		visualization_TimeStep = visualization_numTimeStep * timeStep;
+		unsigned int numStep = (int)ceil(maxTimewTol / visualization_TimeStep);
+		v1Dtout << "numStep\t" << numStep << "\ttimeStep\t" << visualization_TimeStep << '\n';
+		v1Dtout << 0.0 << '\n';
+	}
+	for (unsigned int si = 0; si < num_subdomains; ++si)
+	{
+		bulk_interfaces_subdomains[si].OneSubdomain_All_bulksConnectivityInfo_Initialize();
+		string fileName;
+		string specificName = "keyParameters";
+		bool addUnderline = true;
+
+		GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName, "txt", addUnderline);
+
+		fstream out(fileName.c_str(), ios::out);
+		out << setprecision(22);
+		out << "isPeriodic\t" << isPeriodic << '\n';
+		out << "maxTime\t" << maxTime << '\n';
+		out << "timeStep\t" << timeStep << '\n';
+		out << "totalTimeSteps\t" << ceil(maxTimewTol / timeStep - 1e-16) << '\n';
+		out << "numTimeStep_Interface_DSU_Fragment_Print_4PP\t" << numTimeStep_Interface_DSU_Fragment_Print_4PP << '\n';
+		out << "numTimeStep_BulkInterfacePoints_Print_4PP\t" << numTimeStep_BulkInterfacePoints_Print_4PP << '\n';
+		out << "numSpatialSubsegments_BulkInterfacePoints_Print_4PP\t" << numSpatialSubsegments_BulkInterfacePoints_Print_4PP << '\n';
+		out << "numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP\t" << numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP << '\n';
+		double sigmaCScale = 1.0, deltaCScale = 1.0, energyCScale = 1.0;
+		map<GID, SL_Interface_Fracture_PF*>::const_iterator it = interface_fracture_map.find(1);
+		if (it != interface_fracture_map.end())
+			it->second->Get_sigmaC_deltaC_phiC_scales(sigmaCScale, deltaCScale, energyCScale);
+		double EScale = 1.0, rhoScale = 1.0, dampingScale = 0;
+		map<GID, SL_Bulk_Properties*>::const_iterator itb = bulk_elastic_map.find(1);
+		if (itb != bulk_elastic_map.end())
+		{
+			EScale = itb->second->E_iso;
+			rhoScale = itb->second->rho;
+#if HAVE_SOURCE_ORDER0_q
+			dampingScale = itb->second->D_vv;
+#endif
+		}
+		out << "loadTimeScale\t" << g_SL_desc_data.GetLoadingTimeScale() << '\n';
+		out << "EScale\t" << EScale << "\trhoScale\t" << rhoScale << "\tdampingScale\t" << dampingScale << '\n';
+		out << "sigmaCScale \t" << sigmaCScale << "\tsigmaCScale\t" << deltaCScale << "\tenergyCScale\t" << energyCScale << '\n';
+		bulk_interfaces_subdomains[si].PrintIndicesLengthsKeyRunParameters(out);
+	}
+	//////////////////////////////////////////////////////////////////////////////////
+	// computing 1D averages
+	Compute1D_Averages();
+
+	/// initialize Dirac function if applicable
+	if (g_SL_desc_data.DiracLoadingPtr != NULL)
+	{
+		double Z = interfaces[0]->ts_bulkProps->bulk_rightPtr->c_rhos[0];
+		g_SL_desc_data.DiracLoadingPtr->InitializeFromOutside(timeStep, directionalBCTypeLeftSide[0], Z);
+		g_SL_desc_data.bndryLoad_inputEnergy = g_SL_desc_data.DiracLoadingPtr->inputEnergy_Dirac;
+		string fn = g_prefileName + "/_DiracLoad.txt";
+		fstream out(fn.c_str(), ios::out);
+		out << setprecision(22);
+		g_SL_desc_data.DiracLoadingPtr->Write_DiracLoading(out);
+//		g_SL_desc_data.DiracLoadingPtr->DiracLoadingValid(out, true);
+	}
+}
+
 int Domain_All_Interfaces_All_Times::Main_Domain_Solution()
 {
 	Set_InitialCondition_step();
@@ -1522,86 +1607,13 @@ void Domain_All_Interfaces_All_Times::Set_InitialCondition_step()
 		Print_v1D(0.0);
 	g_logout << endl;
 	g_logout.close();
-}
-
-//fstream lgo("_log_out.txt", ios::out);
-int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
-{
-	double timeStep = g_slf_conf->uniform_del_t;
-	double maxTime = ceil(g_slf_conf->terminate_run_target_time / timeStep) * timeStep;
-
-//	timeStep = maxTime / ceil(maxTime / timeStep);
-//	g_slf_conf->uniform_del_t = timeStep;
-//	g_slf_conf->inv_uniform_del_t = 1.0 / g_slf_conf->uniform_del_t;
-	double current_min_time = 0.0;
-	double maxTimewTol = maxTime - 1e-6 * timeStep;
-	bool accept_point;
-	int timeIndex = 0;
-
-	bool uniform_delt = true;
-	unsigned int numTimes = (int)ceil(maxTime / timeStep - 1e-6);
-	if (numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP < 0)
-		numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP = MAX(1, numTimes / -numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP);
-
-	if (numTimeStep_BulkInterfacePoints_Print_4PP < 0)
-		numTimeStep_BulkInterfacePoints_Print_4PP = MAX(1, numTimes / -numTimeStep_BulkInterfacePoints_Print_4PP);
-	if (numTimeStep_Interface_DSU_Fragment_Print_4PP < 0)
-		numTimeStep_Interface_DSU_Fragment_Print_4PP = MAX(1, numTimes / -numTimeStep_Interface_DSU_Fragment_Print_4PP);
-
-	if (b_visualization1D)
-	{
-		if (visualization_numTimeStep < 0)
-			visualization_numTimeStep = MAX(1, numTimes / -visualization_numTimeStep);
-		visualization_TimeStep = visualization_numTimeStep * timeStep;
-		unsigned int numStep = (int)ceil(maxTimewTol / visualization_TimeStep);
-		v1Dtout << "numStep\t" << numStep << "\ttimeStep\t" << visualization_TimeStep << '\n';
-		v1Dtout << 0.0 << '\n';
-	}
-	for (unsigned int si = 0; si < num_subdomains; ++si)
-	{
-		bulk_interfaces_subdomains[si].OneSubdomain_All_bulksConnectivityInfo_Initialize();
-		string fileName;
-		string specificName = "keyParameters";
-		bool addUnderline = true;
-	
-		GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName, "txt", addUnderline);
-
-		fstream out(fileName.c_str(), ios::out);
-		out << setprecision(22);
-		out << "isPeriodic\t" << isPeriodic << '\n';
-		out << "maxTime\t" << maxTime << '\n';
-		out << "timeStep\t" << timeStep << '\n';
-		out << "totalTimeSteps\t" << ceil(maxTimewTol / timeStep - 1e-16) << '\n';
-		out << "numTimeStep_Interface_DSU_Fragment_Print_4PP\t" << numTimeStep_Interface_DSU_Fragment_Print_4PP << '\n';
-		out << "numTimeStep_BulkInterfacePoints_Print_4PP\t" << numTimeStep_BulkInterfacePoints_Print_4PP << '\n';
-		out << "numSpatialSubsegments_BulkInterfacePoints_Print_4PP\t" << numSpatialSubsegments_BulkInterfacePoints_Print_4PP << '\n';
-		out << "numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP\t" << numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP << '\n';
-		double sigmaCScale = 1.0, deltaCScale = 1.0, energyCScale = 1.0;
-		map<GID, SL_Interface_Fracture_PF*>::const_iterator it = interface_fracture_map.find(1);
-		if (it != interface_fracture_map.end())
-			it->second->Get_sigmaC_deltaC_phiC_scales(sigmaCScale, deltaCScale, energyCScale);
-		double EScale = 1.0, rhoScale = 1.0, dampingScale = 0;
-		map<GID, SL_Bulk_Properties*>::const_iterator itb = bulk_elastic_map.find(1);
-		if (itb != bulk_elastic_map.end())
-		{ 
-			EScale = itb->second->E_iso;
-			rhoScale = itb->second->rho;
-#if HAVE_SOURCE_ORDER0_q
-			dampingScale = itb->second->D_vv;
-#endif
-		}
-		out << "loadTimeScale\t" << g_SL_desc_data.GetLoadingTimeScale() << '\n';
-		out << "EScale\t" << EScale << "\trhoScale\t" << rhoScale << "\tdampingScale\t" << dampingScale << '\n';
-		out << "sigmaCScale \t" << sigmaCScale << "\tsigmaCScale\t" << deltaCScale << "\tenergyCScale\t" << energyCScale << '\n';
-		bulk_interfaces_subdomains[si].PrintIndicesLengthsKeyRunParameters(out);
-	}
-	//////////////////////////////////////////////////////////////////////////////////
-	// computing 1D averages
-	Compute1D_Averages();
 
 	///// Initializing post-process class
 	if (do_space_spacetime_PP)
 	{
+		int timeIndex = 0;
+		double current_min_time = 0.0;
+		bool uniform_delt = true;
 		postProcessing_subdomains.resize(num_subdomains);
 		for (unsigned int si = 0; si < num_subdomains; ++si)
 		{
@@ -1610,11 +1622,20 @@ int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 			postProcessing_subdomains[si].AddComputeTimeStep(timeIndex, current_min_time);
 		}
 	}
+}
+
+//fstream lgo("_log_out.txt", ios::out);
+int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
+{
+	double current_min_time = 0.0;
+	int timeIndex = 0;
+	int currentTimeIndex = 1;
+	bool accept_point;
 
 	while (current_min_time < maxTimewTol)
 	{
 		g_time = current_min_time;
-//		lgo << "ti" << timeIndex << '\n';
+		//		lgo << "ti" << timeIndex << '\n';
 //		lgo.flush();
 		bool printRaw = OpenFiles_RawData_OneTimeAllSpatialPoints(timeIndex, current_min_time, numTimes);
 		DBF(dbout << "\n\n\n\nTimeIndex" << timeIndex << "\tcurent_min_time\t" << current_min_time << '\n';);
@@ -1625,7 +1646,7 @@ int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 //			lgo.flush();
 			SL_OneInterfaceAllTimes* interfacePtr = interfaces[i];
 			SLInterfaceCalculator slic;
-			AdaptivityS as = interfacePtr->NonInitialStep(timeStep, accept_point, maxTime, slic);
+			AdaptivityS as = interfacePtr->NonInitialStep(timeStep, accept_point, maxTime, currentTimeIndex, slic);
 			if (printRaw && accept_point)
 				Print__RawData_OneTimeAllSpatialPoints(interfacePtr, slic);
 
@@ -1639,6 +1660,7 @@ int Domain_All_Interfaces_All_Times::TimeStepsNonAdaptive()
 			Close_Files_RawData_OntTimeAllSpatialPoints();
 		current_min_time += timeStep;
 		++timeIndex;
+		++currentTimeIndex;
 		if ((b_visualization1D) && (timeIndex % visualization_numTimeStep == 0))
 		{ 
 			v1Dtout << current_min_time << endl;
@@ -1699,6 +1721,7 @@ int MAIN_Domain(string config1, int serialNumberIn, string configBC, string conf
 	// 2. Upate time steps of time step and adaptive config based on min time step of domain
 	g_slf_conf->UpdateTimeScales(domain.min_domain_del_t, domain.max_domain_del_t);
 
+	domain.Initialize_TimeStepRelated();
 	/// debug print
 #if PRINT_DOMAIN_CONFIG
 	string fileName = g_prefileName + "/" + "__domainConfig.txt";
@@ -1715,20 +1738,26 @@ void Configure_sfcm_sfcm_gen()
 {
 	if (!sfcm.success)
 		return;
+
+	double cfl_factorBK = sfcm.cfl_factor;
+	double tFinalBK = sfcm.tFinal;
+
 	double tSigma0 = 2.0;
 	bool alr = false; // accurate long run: these have small enough CFL and long time to ensure phid convergence. 
 	// for mass runs, it's better to turn this off, especially for high spatial mesh resolutions
 	// it seems sigma_bar -> 0 and its corresponding energy (psi_f) is a pretty good indicator of phid (about 1.15 to 1.3 factor of it)
 	// it takes much shorter to get there. If this is one, much shorter solution times are obtained, but phid is not converged
-	bool use_tSigma0Time = true;
+	bool use_tSigma0Time = false;
 	double tFactor4tSigma0 = 4; /// how much past max stress should go beyond stress ~ 0
 
 	double llc = -1, la = 0, ldelc = -1;
 	string key;
 	double value;
 	map<string, string>* mpPtr;
-	if (sfcm_gen.specificProblemName == "axt")
+	bool change_cfl_tF = ((sfcm_gen.specificProblemName == "axt") || (sfcm_gen.specificProblemName == "resolution_x_F"));
+	if (change_cfl_tF)
 	{
+		use_tSigma0Time = true;
 		key = "llc";
 		if (Find_Version_Value(key, value, mpPtr))
 			llc = value;
@@ -1988,6 +2017,13 @@ void Configure_sfcm_sfcm_gen()
 	}
 	if (use_tSigma0Time)
 		sfcm.tFinal = tFactor4tSigma0 * tSigma0;
+
+	// the two statement below ensure that if cfl and final time are provided directly, they are not overwritten
+	if (cfl_factorBK > 0)
+		sfcm.cfl_factor = cfl_factorBK;
+	if (tFinalBK > 0)
+		sfcm.tFinal = tFinalBK;
+
 		//		sfcm.tFinal = MIN(tFactor4tSigma0 * tSigma0, sfcm.tFinal);
 	g_logout << "\talr\t" << alr << "\ttFactor4tSigma0\t" << tFactor4tSigma0;
 	g_logout << "\tllc\t" << llc << "\tla\t" << la << "\tldelc\t" << ldelc;

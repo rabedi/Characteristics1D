@@ -1488,6 +1488,7 @@ void SL_Elastic_InterfaceProperties::FormMaps()
 		{
 			Zl = bulk_leftPtr->c_rhos[i];
 			Zr = bulk_rightPtr->c_rhos[i];
+
 			Yl = bulk_leftPtr->inv_c_rhos[i];
 			Yr = bulk_rightPtr->inv_c_rhos[i];
 			inv_Zlpr = 1.0 / (Zl + Zr);

@@ -29,10 +29,13 @@
 // load values are l0, ....
 // after final t solution is zero
 #define LC_PIECE_WISE_LIN 4 
+//
 
 class SL_Bulk_Properties;
 
 class SL_Elastic_InterfaceProperties;
+
+class DiracLoading;
 
 class SLDescriptorData
 {	
@@ -62,7 +65,7 @@ public:
 #endif
 	) const;
 	// this is the actual boundary condition value: ts_bulkProps is the interface
-	void GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elastic_InterfaceProperties* ts_bulkProps, double x, double t, VEC& BC_val) const;
+	void GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elastic_InterfaceProperties* ts_bulkProps, double x, double t, VEC& BC_val, int timeIndex = -1) const;
 
 	/////////////////// One interface problem
 	// this function is useful for one interface problems wherein characteristics imping from left and right on it
@@ -94,13 +97,16 @@ public:
 	double bndryLoad_inputEnergy, tdLoad_loadScale, tdAmbientProjectileLength;
 	bool b_tdLoad_stressScale, b_tdLoad_velScale;
 
+	////////////////////////// Dirac loading
+	DiracLoading *DiracLoadingPtr;
+
 private:
 	void Read(istream& in);
 	double ring_p0;
 };
 
 
-// data members moved from SLDescriptorData to other classes:
+// data members moved from SLDescriptorData to other classes: 
 // -> Domain_All_Interfaces_All_Times: directionalBCTypeLeftSide, directionalBCTypeRightSide, rign_R (L/2/PI): use g_domain
 
 // ring_p -> is changed to a function that takes space-time coordiante
@@ -115,6 +121,77 @@ public:
 	double beta;	//to compute the magnitude of uniform compression		- paras[2] (if available)
 	double tr;	//the relative ramp time (w.r.t T)							- paras[3] (if available)
 };
+
+typedef enum {di_energy, di_stress, di_velocity, DiracIntegralT_SIZE} DiracIntegralT;
+
+string getName(DiracIntegralT dat);
+void name2Type(string& name, DiracIntegralT& typeVal);
+ostream& operator<<(ostream& out, DiracIntegralT dat);
+istream& operator>>(istream& in, DiracIntegralT& dat);
+
+// time integration weight, velocity, power
+class twsvp
+{
+	friend ostream& operator<<(ostream& out, const twsvp& dat);
+public:
+	twsvp();
+	double t, w, s, v, p;
+};
+
+class DiracLoading
+{
+public:
+	// main functions
+	DiracLoading();
+	void Read_DiracLoading(istream& in);
+	void Write_DiracLoading(ostream& out);
+	inline bool IsActive() const {		return isActive;	}
+	void InitializeFromOutside(double delt, BoundaryConditionT bcTypeIn, double ZIn);
+
+	// > 0 -> maximum time is provided, 
+	// < 0 -> numTimeSteps2Cover = -(int)maxTimeIn 
+	void SetDiractMaxTime(double maxTimeIn = -2);
+
+	void Initialize_DiracLoading();
+	double GetBaseValue(double time, int timeIndex = -1);
+	// s, stress, v velocity, p power = s * v
+	void Get_svp_Values(double& s, double& v, double& p, double time, int timeIndex = -1);
+	void CalculateValuesAndIntegrals(vector<twsvp>& vals, twsvp& integrals);
+	// returns true if the function achieves what is intented to do
+	bool DiracLoadingValid(ostream& out, bool printVals);
+	// these values are expected to be read from the text config file
+	double maxTime;
+	int numTimeSteps2Cover;
+	// determines the field for which the integral is one
+	DiracIntegralT fld4Int1;
+
+	// these values are expected to be set from the run	
+	// impedance
+	double Z;
+	BoundaryConditionT directionalBCType;
+	double timeStepping_delt;
+
+	double inputEnergy_Dirac;
+private:
+	double physicalFactor4Int1;
+	// this depends on loading: e.g. if BC is Neumann and want the energy to be 1, this factor is equal to 1/Z, if the loading is velocity, the factor is Z etc
+	// it also is adjusted such that the integral is exactly one, when integrated with the simpson rul
+	// this includes the effect of physical factor and numerical factor (that ensures integral is one)
+	double totalFactor4Integral;
+	double offset;
+
+	bool b_maxTimeRead;
+	bool b_numTimeSteps2CoverRead;
+	bool b_simple_parabola42TimeSteps;
+	bool isActive;
+
+	// see the reading of Z2Use in Read function
+	// if this is read, the Z of the first cell is not used in scaling the energy, etc. The Z of homogeneous material is used to determine load amplitude
+	// This is suggested as for all random simulations the same signal strength is sent in
+	bool canOverwiseZ;
+};
+
+void Test_DiracLoading();
 
 extern SLDescriptorData g_SL_desc_data;
 

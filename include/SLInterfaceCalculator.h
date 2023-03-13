@@ -145,6 +145,7 @@ public:
 	VEC wlSide_rGoing, wrSide_lGoing;
 	// it's computed from difference of current and previous times
 	double current_delT;
+	int current_timeIndex;
 	// error checks 
 	// iteration -> iteration
 	Pt_Error_Data within_step_convergence_check;

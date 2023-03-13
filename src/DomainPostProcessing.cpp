@@ -1736,7 +1736,7 @@ void Subdomain_spacetime_pp_data::Finalize_Subdomain_spatial_ave_sum_One_TimeSte
 			AddVec(spatial_ave_sum->impulse_L, spatial_ave_sum->impulse_R, spatial_ave_sum->impulse_BC);
 			spatial_ave_sum->energy_L = spatial_ave_sumPrev->energy_L;
 			spatial_ave_sum->energy_R = spatial_ave_sumPrev->energy_R;
-#if 1
+#if 0
 			for (unsigned int i = 0; i < DiM; ++i)
 			{
 				spatial_ave_sum->energy_L -= 0.5 * (spatial_ave_sumPrev->sigman_L[i] + spatial_ave_sum->sigman_L[i]) *

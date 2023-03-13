@@ -20,8 +20,8 @@ scalars_vectors
 # true: for each version there is a separate folder for all random fields of One version
 # false: the output folder is always _PP3 and contains all versions and all serial numbers
 version_seperatePP3Folders
-#1
-0
+1
+#0
 
 # 0: version columns are not added to PP3 file
 # 1: they are added

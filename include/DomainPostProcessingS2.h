@@ -80,6 +80,15 @@ void name2Type(string& name, RunNormalizationQuantT& typeVal);
 ostream& operator<<(ostream& out, RunNormalizationQuantT dat);
 istream& operator>>(istream& in, RunNormalizationQuantT& dat);
 
+typedef enum {sfo_scalar, sfo_field_x, sfo_field_t, sfo_field_other, ScalarFieldOutputT_SIZE} ScalarFieldOutputT;
+
+string getLatexName(ScalarFieldOutputT dat);
+string getName(ScalarFieldOutputT dat);
+bool name2Type(string& name, ScalarFieldOutputT& typeVal);
+ostream& operator<<(ostream& out, ScalarFieldOutputT dat);
+istream& operator>>(istream& in, ScalarFieldOutputT& dat);
+
+
 // There are multiple outputs of the code output at different resolutions (each certain number of time steps).
 // The corresponding time steps are given in the main config files and set values are printed in _sd_[subdomainNo]_keyParameters.txt
 // These time steps are listed below
@@ -297,10 +306,10 @@ public:
 
 	OneTimeOneCriterionFragmentationRawData();
 	void ComputeFragmentStatsFromFragmentSizes();
-	// fldName	= (num, mean, min, max, sdiv, cov) scalarVal = scalar	- outputIsScalar = true
-	//			= (sizes) -> vecVal = fragment_lengths					- outputIsScalar = false
+	// fldName	= (num, mean, min, max, sdiv, cov) scalarVal = scalar	- sfot = sfo_scalar
+	//			= (sizes) -> vecVal = fragment_lengths					- sfot != sfo_scalar
 	// returns true is data is valid and computed
-	bool Get_Scalar_Or_Vector_Output(setStatOp_type statType, double& scalarVal, vector<double>& vecVal, bool& outputIsScalar);
+	bool Get_Scalar_Or_Vector_Output(setStatOp_type statType, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot);
 
 	void Fragmentation_Sizes_Write(ostream& out, int timeIndex, double timeVal);
 	void Fragmentation_Sizes_Read(istream& in);
@@ -443,7 +452,7 @@ public:
 
 	// when timeStamp in dataPointer points to a actual time (as opposed to stage calculations) modifiableOneTimeSlns is created (if needed) and reused for next computations
 	// return value is true if the computed value is set correctly (e.g. the stage exists, ...)
-	bool Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, bool& outputIsScalar, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps = -400);
+	bool Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps = -400);
 
 //	computed
 	unsigned subdomainNo;
@@ -492,7 +501,7 @@ public:
 	// note that the solution can only decrease (from a fine mesh to a coarser representation)
 	// spatialFieldResolutionCorrector == 0 -> does not change the field
 	// for temporal data how many time steps should be taken from time 0 to final time
-	bool Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, bool& outputIsScalar, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps = -400, int spatialFieldResolutionCorrector = 0);
+	bool Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps = -400, int spatialFieldResolutionCorrector = 0);
 
 	// return field index in summary classes (space + spacetime integrals)
 	// -1 if the string is not found

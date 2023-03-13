@@ -893,7 +893,7 @@ dataPointers			pps3_stageStat				output
 # 	normalized numerical energy disspation - max value over time (to check solution accuracy)
 	{
 		isActive
-		000
+		1
 
 		stat_sv_type
 		max

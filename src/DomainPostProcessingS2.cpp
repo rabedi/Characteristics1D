@@ -486,6 +486,80 @@ istream& operator>>(istream& in, RunNormalizationQuantT& dat)
 }
 
 /////////////////
+string getLatexName(ScalarFieldOutputT dat)
+{
+	if (dat == sfo_scalar)
+		return "";
+	if (dat == sfo_field_x)
+		return "_x";
+	if (dat == sfo_field_t)
+		return "_t";
+	if (dat == sfo_field_other)
+		return "_f";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+string getName(ScalarFieldOutputT dat)
+{
+	if (dat == sfo_scalar)
+		return "s_";
+	if (dat == sfo_field_x)
+		return "fx_";
+	if (dat == sfo_field_t)
+		return "ft_";
+	if (dat == sfo_field_other)
+		return "f_";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+ bool name2Type(string& name, ScalarFieldOutputT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= ScalarFieldOutputT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (ScalarFieldOutputT)num;
+		return true;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < ScalarFieldOutputT_SIZE; ++i)
+	{
+		typeVal = (ScalarFieldOutputT)i; // casting integer to ScalarFieldOutputT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return true;
+	}
+	return false;
+}
+
+//operator for output
+ostream& operator<<(ostream& out, ScalarFieldOutputT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, ScalarFieldOutputT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	if (name2Type(name, dat) == false)
+	{
+		cout << name << '\n';
+		THROW("Invalid name\n");
+	}
+	return in;
+}
+
+
+/////////////////
 string getName(timeIndexType dat)
 {
 	if (dat == timeIndexType_none)
@@ -1262,12 +1336,12 @@ void OneTimeOneCriterionFragmentationRawData::ComputeFragmentStatsFromFragmentSi
 	cov_fragmentSize = sdiv_fragmentSize / mean_fragmentSize;
 }
 
-bool OneTimeOneCriterionFragmentationRawData::Get_Scalar_Or_Vector_Output(setStatOp_type statType, double& scalarVal, vector<double>& vecVal, bool& outputIsScalar)
+bool OneTimeOneCriterionFragmentationRawData::Get_Scalar_Or_Vector_Output(setStatOp_type statType, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot)
 {
 	if (statType == sso_all_field_val)
 	{
 		vecVal = fragment_lengths;
-		outputIsScalar = false;
+		sfot = sfo_field_other;
 		return (numFragments > 0);
 	}
 	if (numFragments <= 0)
@@ -1275,7 +1349,7 @@ bool OneTimeOneCriterionFragmentationRawData::Get_Scalar_Or_Vector_Output(setSta
 		scalarVal = invalidNum;
 		return false;
 	}
-	outputIsScalar = true;
+	sfot = sfo_scalar;
 	if (statType == sso_number)
 		scalarVal = numFragments;
 	else if (statType == sso_min)
@@ -2024,9 +2098,9 @@ bool OneSubdomainPPS2Data::Compute_OneTimeValuePPS2Data_4ActualTime(PPS2_TimeSta
 	return true;
 }
 
-bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPointer, double & scalarVal, vector<double>& vecVal, bool & outputIsScalar, OneTimeValuePPS2Data & modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps)
+bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps)
 {
-	outputIsScalar = true;
+	sfot = sfo_scalar;
 	/// first check if brittleness indicators are needed
 	if (datPointer.brittlenessRatioT != BrittlenessIndicatorRatioType_none)
 	{
@@ -2043,7 +2117,7 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPoi
 	// first check if this is a time history data
 	if (datPointer.stat_sv_type == sso_all_field_time_val)
 	{
-		outputIsScalar = false;
+		sfot = sfo_field_t;
 		Ensure_openning_complete_time_history_space_spacetime_integrals_summary_file();
 		int fldIndex = configPPS2->get_space_spacetime_integral_index_from_name(datPointer.fldName);
 		if (fldIndex < 0)
@@ -2115,13 +2189,16 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPoi
 		vecVal.resize(sz);
 		for (unsigned int ti = 0; ti < sz; ++ti)
 			vecVal[ti] = timeSequenceSummary.data_vals[ti * timeStep_Factor][fldIndex];
+//		sfot = sfo_field_t;
 		return true;
 	}
 	scalarVal = invalidNum;
 	// so no brittleness indicator from this point-on 
 	// next check if the data corresponds to the stats from space/spacetime integrals (i.e. timeSequenceSummaryStat)
 	bool ptNeedsFragmentation = (datPointer.fragmentationCriterion != FragmentationCriterionT_none);
-	outputIsScalar = (datPointer.stat_sv_type != sso_all_field_val);
+	bool outputIsScalar = (datPointer.stat_sv_type != sso_all_field_val);
+	if (!outputIsScalar)
+		sfot = sfo_field_x;
 	bool isScalarStatistics = ((datPointer.stat_sv_type != sso_none) && outputIsScalar);
 
 	if (isScalarStatistics && !ptNeedsFragmentation) // stat type, non-fragmentation, and scalar -> timeSequenceSummaryStat
@@ -2165,12 +2242,14 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer & datPoi
 	if (ptNeedsFragmentation)
 	{
 		OneTimeOneCriterionFragmentationRawData* fragDag = &oneTimeAllSolutions->fragmentation4Stages.fragmentationDat[datPointer.fragmentationCriterion];
-		return fragDag->Get_Scalar_Or_Vector_Output(datPointer.stat_sv_type, scalarVal, vecVal, outputIsScalar);
+		return fragDag->Get_Scalar_Or_Vector_Output(datPointer.stat_sv_type, scalarVal, vecVal, sfot);
 	}
 	// B. field related values (D, U, DelU, ...)
 	if (!outputIsScalar) // dealing with D, U, DelU, ... fields
+	{
+		sfot = sfo_field_x;
 		return oneTimeAllSolutions->fragmentation4Stages.Get_Vector_SolutionField(segmentInfo, datPointer.fldName, configPPS2->defaultDir, vecVal);
-
+	}
 	// C. dealing with space/spacetime interal values
 	int fldIndex = configPPS2->get_space_spacetime_integral_index_from_name(datPointer.fldName);
 	if (fldIndex < 0)
@@ -3044,7 +3123,7 @@ void DomainPostProcessS2::Main_DomainPostProcessS2()
 	outcheck << "1";
 }
 
-bool DomainPostProcessS2::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, bool& outputIsScalar, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps, int spatialFieldResolutionCorrector)
+bool DomainPostProcessS2::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps, int spatialFieldResolutionCorrector)
 {
 	vecVal.clear();
 	scalarVal = invalidNum;
@@ -3060,12 +3139,12 @@ bool DomainPostProcessS2::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPoint
 		int index = 0;
 		if (datPointer.timeStamp.actualTime_index >= 0)
 			index = MIN(datPointer.timeStamp.actualTime_index, (int)fields_finalResolution.size() - 1);
-		outputIsScalar = false;
+		sfot = sfo_field_x;
 		vecVal = fields_finalResolution[index];
 	}
 	else
 	{
-		retVal = onesubdomainPPS2[subDomainNo].Get_Scalar_Or_Vector_Output(datPointer, scalarVal, vecVal, outputIsScalar, modifiableOneTimeSlns, temporalFieldTimeStepValOrNumSteps);
+		retVal = onesubdomainPPS2[subDomainNo].Get_Scalar_Or_Vector_Output(datPointer, scalarVal, vecVal, sfot, modifiableOneTimeSlns, temporalFieldTimeStepValOrNumSteps);
 		if (retVal == false)
 		{
 			// if dealing with a spatial field, can size it correctly and set values to invalidNum
@@ -3079,7 +3158,7 @@ bool DomainPostProcessS2::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPoint
 		}
 		else
 		{
-			if (outputIsScalar)
+			if (sfot == sfo_scalar)
 			{
 				if (!Is_Valid_Num(scalarVal))
 					retVal = false;
@@ -3101,7 +3180,7 @@ bool DomainPostProcessS2::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPoint
 	/////  Now post-processings:
 	// Step A: normalizing, Step B: Operation (log, ...), Step C: (changing the resolution)
 	// C is only for fields
-	if (outputIsScalar)
+	if (sfot == sfo_scalar)
 	{
 		if (retVal)
 		{
@@ -3166,30 +3245,36 @@ bool DomainPostProcessS2::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPoint
 		}
 		ratio = numSegments / numSegmentsNew;
 	}
-	// offset is used as the values are given at vertices for D,S,U, etc.
-	unsigned int offset = segInfo->interface_offset;
-	if (isInifield)
+	if (ratio != 1)
 	{
-		if (vecVal.size() == segInfo->numSegments)
-			offset = 0;
-		else if (vecVal.size() != segInfo->numInterfaces)
+		// offset is used as the values are given at vertices for D,S,U, etc.
+		unsigned int offset = segInfo->interface_offset;
+		if (isInifield)
 		{
-			cout << "vecVal is not of the right size\t" << vecVal.size();
-			cout << "segInfo->numSegments\t" << segInfo->numSegments << '\n';
-			cout << "segInfo->numInterfaces\t" << segInfo->numInterfaces << '\n';
-			cout << "segInfo->interface_offset" << segInfo->interface_offset << '\n';
-			THROW("Invalid size\n");
+			unsigned int szVec = vecVal.size();
+			if (szVec == segInfo->numSegments)
+				offset = 0;
+			else if (szVec - 1 == segInfo->numSegments)
+				offset = 1;
+			else if (vecVal.size() != segInfo->numInterfaces)
+			{
+				cout << "vecVal is not of the right size\t" << vecVal.size();
+				cout << "segInfo->numSegments\t" << segInfo->numSegments << '\n';
+				cout << "segInfo->numInterfaces\t" << segInfo->numInterfaces << '\n';
+				cout << "segInfo->interface_offset" << segInfo->interface_offset << '\n';
+				THROW("Invalid size\n");
+			}
 		}
+		vector<double> vecBK = vecVal;
+		vecVal.resize(numSegmentsNew + offset);
+		for (int i = 0; i < numSegmentsNew; ++i)
+		{
+			int ii = i * ratio;
+			vecVal[i] = vecBK[ii];
+		}
+		if (offset == 1)
+			vecVal[numSegmentsNew] = vecBK[numSegments];
 	}
-	vector<double> vecBK = vecVal;
-	vecVal.resize(numSegmentsNew + offset);
-	for (int i = 0; i < numSegmentsNew; ++i)
-	{
-		int ii = i * ratio;
-		vecVal[i] = vecBK[ii];
-	}
-	if (offset == 1)
-		vecVal[numSegmentsNew] = vecBK[numSegments];
 	return retVal;
 }
 

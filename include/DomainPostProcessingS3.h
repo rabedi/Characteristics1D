@@ -113,6 +113,7 @@ private:
 	// return value: true if the point is printed to the file (can be true even if accebleOverAlVals when addInvalidData == true 
 	bool ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAlVals, int time_outputIndex = -1, pps3_om_T output_mode = pps3_om_scalars_vectors);
 	string sep;
+	string scalarFieldAddOn[ScalarFieldOutputT_SIZE], scalarFieldAddOn_Latex[ScalarFieldOutputT_SIZE];
 };
 
 void MAIN_DomainPostProcessS3(const string configFileName = "config/Domain/PPS3ConfigTest.txt");

@@ -34,6 +34,7 @@ int generateArbitraryIndexList(const vector<int>& minVals, const vector<int>& ma
 class SimpleFormatConfigMaker_Generator
 {
 public:
+	SimpleFormatConfigMaker_Generator();
 	void CreateSimpleFormatConfigMakerFromInstructions(string configMakerInstructionNameIn, bool forceRewrite = false);
 	vector<string> names;	
 	vector<map<string, string> > s2sMap;

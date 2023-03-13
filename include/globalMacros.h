@@ -112,6 +112,10 @@ extern fstream g_logout;
 #define DBCHK(x)
 #endif
 
+/// this is a vert strict error check and even for things that can work but a bit iffy, the code exits
+#define DB_STRICT_EXIT	0
+
+
 // for incident, impact, Dirichlet/Neumann BC, ... cases there are potentially two ambient regions around a zone to be characterized
 // they are in order outside/inside interfaces on the left, inside and outside interfaces on the right
 #define LO_INT	0

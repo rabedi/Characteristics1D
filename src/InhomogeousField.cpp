@@ -4,7 +4,7 @@
 
 OneIHField::OneIHField()
 {
-	valsAtVertices = true;
+	valsAtVertices = 1;
 	uniformGrid = true;
 	isPeriodic = false;
 	xm = 0.0;
@@ -48,7 +48,7 @@ void OneIHField::Read_InstructionsOnly(istream* inConfigPtr, bool* isPeriodicPtr
 		{
 			if (buf == "valsAtVertices")
 			{
-				READ_NBOOL(*inConfigPtr, buf, valsAtVertices);
+				READ_NINTEGER(*inConfigPtr, buf, valsAtVertices);
 			}
 			else if (buf == "uniformGrid")
 			{
@@ -120,17 +120,17 @@ void OneIHField::Read_InstructionsOnly(istream* inConfigPtr, bool* isPeriodicPtr
 	}
 }
 
-void OneIHField::Read_DataOnly(istream& inData)
+void OneIHField::Read_DataOnly(istream& inData, int default_ValsAtVertices)
 {
-	Read_Vals_xs(inData, num_Vals_and_x_Provided, containsRepeatingEndPeriodicVal);
+	Read_Vals_xs(inData, num_Vals_and_x_Provided, containsRepeatingEndPeriodicVal, default_ValsAtVertices);
 	Finalize_spatialPositions();
 	Finalize_Values();
 }
 
-void OneIHField::Read_Initialize_OneIHField(istream& inData, istream* inConfigPtr, bool* isPeriodicPtr, double* xMPtr, double* xmPtr, int resolutionFactor, setStatOp_type sso)
+void OneIHField::Read_Initialize_OneIHField(istream& inData, istream* inConfigPtr, int default_ValsAtVertices, bool* isPeriodicPtr, double* xMPtr, double* xmPtr, int resolutionFactor, setStatOp_type sso)
 {
 	Read_InstructionsOnly(inConfigPtr, isPeriodicPtr, xMPtr, xmPtr);
-	Read_DataOnly(inData);
+	Read_DataOnly(inData, default_ValsAtVertices);
 
 #if PRNT_FLDOUT_RANDOM
 	static int cntr = 0;
@@ -199,7 +199,7 @@ void OneIHField::Modify_Resolution(int resolutionFactor, setStatOp_type sso)
 		for (unsigned int i = 0; i < numVertices; ++i)
 			xs[i] = xs_BK[starPos[i]];
 
-		if (valsAtVertices)
+		if (valsAtVertices == 1)
 			vals.resize(numVertices);
 		else
 			vals.resize(numSegments);
@@ -218,7 +218,7 @@ void OneIHField::Modify_Resolution(int resolutionFactor, setStatOp_type sso)
 		numSegments = numSegments_BK * resolutionFactor;
 		numVertices = numSegments + 1;
 		xs.resize(numVertices);
-		if (valsAtVertices)
+		if (valsAtVertices == 1)
 			vals.resize(numVertices);
 		else
 			vals.resize(numSegments);
@@ -238,7 +238,7 @@ void OneIHField::Modify_Resolution(int resolutionFactor, setStatOp_type sso)
 			{
 				fact0 = facts0[j], fact1 = facts1[j];
 				xs[cntr] = xs_BK[i] * fact0 + xs_BK[i + 1] * fact1;
-				if (valsAtVertices)
+				if (valsAtVertices == 1)
 					vals[cntr] = vals_BK[i] * fact0 + vals_BK[i + 1] * fact1;
 				else
 					vals[cntr] = vals_BK[i];
@@ -247,7 +247,7 @@ void OneIHField::Modify_Resolution(int resolutionFactor, setStatOp_type sso)
 		}
 		xs[numSegments] = xs_BK[numSegments_BK];
 	}
-	if (valsAtVertices)
+	if (valsAtVertices == 1)
 	{
 		if (isPeriodic)
 			vals[numSegments] = vals[0];
@@ -260,20 +260,35 @@ void OneIHField::Final_Adjustment_On_Values()
 {
 	if (sz_adjusters == 0)
 		return;
-	for (unsigned int i = 0; i < vals.size(); ++i)
+	if (valsAtVertices == 1)
 	{
-		double x = xs[i];
-		for (unsigned int j = 0; j < sz_adjusters; ++j)
+		for (unsigned int i = 0; i < vals.size(); ++i)
 		{
-			if (adjusters[j].Adjust_Value(x, vals[i]))
-				break;
+			double x = xs[i];
+			for (unsigned int j = 0; j < sz_adjusters; ++j)
+			{
+				if (adjusters[j].Adjust_Value(x, vals[i]))
+					break;
+			}
+		}
+	}
+	else
+	{
+		for (unsigned int i = 0; i < vals.size(); ++i)
+		{
+			double x = 0.5 * (xs[i] + xs[i + 1]);
+			for (unsigned int j = 0; j < sz_adjusters; ++j)
+			{
+				if (adjusters[j].Adjust_Value(x, vals[i]))
+					break;
+			}
 		}
 	}
 }
 
 double OneIHField::getValueByIndex(unsigned int index) const
 {
-	if (valsAtVertices)
+	if (valsAtVertices == 1)
 		return vals[index];
 	unsigned sz = vals.size();
 	if (index >= sz)
@@ -304,7 +319,7 @@ double OneIHField::getValueByCoord(double x) const
 			return vals[vals.size() - 1];
 		}
 		relInt = (int)floor(rel);
-		if (!valsAtVertices)
+		if (valsAtVertices == 0)
 			return vals[relInt];
 		double vm = vals[relInt];
 		double vM = vals[relInt + 1];
@@ -324,7 +339,7 @@ double OneIHField::getValueByCoord(double x) const
 		if (x < xs[i])
 			break;
 	}
-	if (!valsAtVertices)
+	if (valsAtVertices == 0)
 		return vals[i - 1];
 	double vm = vals[i - 1], vM = vals[i];
 	double fM = (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
@@ -381,16 +396,22 @@ OneIHField& OneIHField::operator=(const OneIHField& other)
 	return *this;
 }
 
-void OneIHField::Read_Vals_xs(istream & in, bool num_vals_and_x_Provided, bool containsRepeatingEndPeriodicVal)
+void OneIHField::Read_Vals_xs(istream & in, bool num_vals_and_x_Provided, bool containsRepeatingEndPeriodicVal, int default_ValsAtVertices)
 {
+	bool valsAtVerticesFlexible = (valsAtVertices == -1);
+	if (valsAtVerticesFlexible)
+		valsAtVertices = default_ValsAtVertices;
 	bool addLastPeriodicValue = isPeriodic && valsAtVertices && !containsRepeatingEndPeriodicVal;
+	bool reduceReadSizebyOne = (valsAtVerticesFlexible && !valsAtVertices);
+
 	if (num_vals_and_x_Provided)
 	{
 		if (uniformGrid)
 		{
 			int num_vals;
 			in >> num_vals;
-
+			if (reduceReadSizebyOne)
+				--num_vals;
 			vals.resize(num_vals);
 			for (int i = 0; i < num_vals; ++i)
 				in >> vals[i];
@@ -406,6 +427,8 @@ void OneIHField::Read_Vals_xs(istream & in, bool num_vals_and_x_Provided, bool c
 
 			int num_vals;
 			in >> num_vals;
+			if (reduceReadSizebyOne)
+				--num_vals;
 			vals.resize(num_vals);
 			for (int i = 0; i < num_vals; ++i)
 				in >> vals[i];
@@ -424,7 +447,17 @@ void OneIHField::Read_Vals_xs(istream & in, bool num_vals_and_x_Provided, bool c
 		unsigned int sz = tmps.size();
 
 		if (uniformGrid)
-			vals = tmps;
+		{
+			if (!reduceReadSizebyOne)
+				vals = tmps;
+			else
+			{
+				int sz = (int)tmps.size();
+				vals.resize(sz - 1);
+				for (int i = 0; i < sz - 1; ++i)
+					vals[i] = tmps[i];
+			}
+		}
 		else
 		{
 			unsigned int num_xs;
@@ -440,13 +473,15 @@ void OneIHField::Read_Vals_xs(istream & in, bool num_vals_and_x_Provided, bool c
 			vals.resize(num_vals);
 			for (unsigned int i = 0; i < num_vals; ++i)
 				vals[i] = tmps[i + num_xs];
+			if (reduceReadSizebyOne)
+				vals.pop_back();
 		}
 	}
 	if (addLastPeriodicValue)
 		vals.push_back(vals[0]);
 	else
 	{
-		if (isPeriodic)
+		if (isPeriodic && (valsAtVertices == 1))
 		{
 			unsigned int sz = vals.size();
 			double valLast = vals[sz - 1];
@@ -513,7 +548,7 @@ void TestInhomogeneousField(string baseNameWOExt)
 	OneIHField oihf;
 	bool* isPeriodicPtr = NULL;
 	double* xMPtr = NULL; double* xmPtr = NULL;
-	oihf.Read_Initialize_OneIHField(inData, &inConfig, isPeriodicPtr, xMPtr, xmPtr, 1, sso_mean_arithmetic);
+	oihf.Read_Initialize_OneIHField(inData, &inConfig, 1, isPeriodicPtr, xMPtr, xmPtr, 1, sso_mean_arithmetic);
 
 	string fileNameOut = baseNameWOExt + ".out";
 	fstream out(fileNameOut.c_str(), ios::out);

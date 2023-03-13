@@ -26,7 +26,7 @@ public:
 	// this function sets the very first storage in timeSeqData, using ICs
 	void InitialStep_Use_IC(SLInterfaceCalculator& slic);
 	// 2. Next steps
-	AdaptivityS NonInitialStep(double deltaT, bool &accept_point, double& maxTime, SLInterfaceCalculator& slic);
+	AdaptivityS NonInitialStep(double deltaT, bool &accept_point, double& maxTime, int currentTimeIndex, SLInterfaceCalculator& slic);
 
 	void Set_EF_Properties(SL_Interface_Fracture_PF* interfacePFsIn, SL_Elastic_InterfaceProperties* ts_bulkPropsIn = NULL);
 	double getDeltaC() const;
@@ -68,7 +68,7 @@ public:
 	//  1) current_ptData != NULL	itern == 0 for SLInterfaceCalculator				current_ptData			
 	//  2) current_ptData == NULL	itern >  0 for SLInterfaceCalculator				last previously solved permanent point from timeSeqData	if 
 	void Compute_DownStream_Characteristics_wo_in_situ(VEC& wlSide_rGoing_WO_in_situ, VEC& wrSide_lGoing_WO_in_situ,
-		double currentTime, const SL_interface_Temp_PPtData* current_ptData = NULL);
+		double currentTime, int currentTimeIndex, const SL_interface_Temp_PPtData* current_ptData = NULL);
 
 	double getEffectiveDamage_4_InterfacialDamage_TSRs(const SL_interfacePPtData& pt);
 

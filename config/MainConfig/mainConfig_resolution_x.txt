@@ -1,0 +1,57 @@
+{
+
+# config for solution and PPS1
+configName
+#elastic
+#config/Domain/Inhomogeneous_left_load_elastic.txt
+#fracture
+config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt
+
+# config for PPS3 (and PPS2 inside that)
+configPPName
+#elastic
+#config/Domain/PPS3Config_Elastic.txt
+#fracture 
+config/Domain/PPS3Config_Coh.txt
+
+# config file for generating versions (delc, cor length, etc. combinations)
+version_configMakerGenName
+###########################################################
+#elastic
+#config/ConfigMakerVersion/configMaker_axt_resolution_x_Elastic.inst
+#fracture
+config/ConfigMakerVersion/configMaker_axt_resolution_x_Fracture.inst
+
+# if true, the instruction file will be regenerated regardless of if it already exists or not
+version_configMaker_forceRewrite
+#1
+0
+
+#  this ofset causes the versionStr used in output file names to be incremented by value below.
+# Use: We won't overwrite previous runs possibly from other instructions
+versionOffset
+0
+#use this for no_random
+#10000
+
+# loop_version_first_serial_second: see the function void Solve_all_serialNumbers
+lv1s2
+0
+
+# saving disk space (e.g. on clusters) is activated by boolean below. It will only write essential data
+low_disk_space
+1
+
+#serialNumber_st
+#0
+
+#serialNumber_en
+#1
+
+#versionNumber_st
+#8
+
+#versionNumber_en
+#9
+
+}

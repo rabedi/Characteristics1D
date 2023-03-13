@@ -325,6 +325,9 @@ void ElasticFractureInhomogField::Read_ElasticFractureInhomogField(unsigned int 
 
 void ElasticFractureInhomogField::Read_ElasticFractureInhomogField(istream & in, int* serialNumberPtrIn, bool *isPeriodicPtrIn, double *xMPtrIn, double *xmPtrIn, unsigned int subdomainNumber)
 {
+	string key, str_val; map<string, string>* mpPtr;
+	setStatOp_type sso;
+	double value = -1;
 	subdomainNo = subdomainNumber;
 
 	if (serialNumberPtrIn != NULL)
@@ -421,12 +424,11 @@ void ElasticFractureInhomogField::Read_ElasticFractureInhomogField(istream & in,
 		else if (buf == "resolutionFactor")
 		{
 			READ_NINTEGER(in, buf, resolutionFactor);
-			string key = "resFact"; map<string, string>* mpPtr;
-			double value = -1;
+			key = "resFact";
 			bool found = Find_Version_Value(key, value, mpPtr);
 			if (!found)
 			{
-				string key = "resolutionFactor";
+				key = "resolutionFactor";
 				found = Find_Version_Value(key, value, mpPtr);
 			}
 			if (found)
@@ -435,26 +437,50 @@ void ElasticFractureInhomogField::Read_ElasticFractureInhomogField(istream & in,
 		else if (buf == "sso_elasticC")
 		{
 			in >> sso_elasticC;
+			key = "ssoEE";
+			bool found = Find_Version_String(key, str_val, mpPtr);
+			if (found && (name2Type(str_val, sso) == true))
+				sso_elasticC = sso;
 		}
 		else if (buf == "sso_elasticRho")
 		{
 			in >> sso_elasticRho;
+			key = "ssoER";
+			bool found = Find_Version_String(key, str_val, mpPtr);
+			if (found && (name2Type(str_val, sso) == true))
+				sso_elasticRho = sso;
 		}
 		else if (buf == "sso_elasticDamping")
 		{
 			in >> sso_elasticDamping;
+			key = "ssoED";	str_val = "none";
+			bool found = Find_Version_String(key, str_val, mpPtr);
+			if (found && (name2Type(str_val, sso) == true))
+				sso_elasticDamping = sso;
 		}
 		else if (buf == "sso_sigma")
 		{
 			in >> sso_sigma;
+			key = "ssoFS";	str_val = "none";
+			bool found = Find_Version_String(key, str_val, mpPtr);
+			if (found && (name2Type(str_val, sso) == true))
+				sso_sigma = sso;
 		}
 		else if (buf == "sso_delta")
 		{
 			in >> sso_delta;
+			key = "ssoFD";	str_val = "none";
+			bool found = Find_Version_String(key, str_val, mpPtr);
+			if (found && (name2Type(str_val, sso) == true))
+				sso_delta = sso;
 		}
 		else if (buf == "sso_iniDamage")
 		{
 			in >> sso_iniDamage;
+			key = "ssoFI";	str_val = "none";
+			bool found = Find_Version_String(key, str_val, mpPtr);
+			if (found && (name2Type(str_val, sso) == true))
+				sso_iniDamage = sso;
 		}
 		else if (buf == "baseName_WOExt_oihf_elastic1")
 		{
@@ -738,7 +764,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_elastic_C = new OneIHField();
-		oihf_elastic_C->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticC);
+		oihf_elastic_C->Read_Initialize_OneIHField(inDat, inInstruction, 0, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticC);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -761,7 +787,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_elastic_rho = new OneIHField();
-		oihf_elastic_rho->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticRho);
+		oihf_elastic_rho->Read_Initialize_OneIHField(inDat, inInstruction, 0, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticRho);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -784,7 +810,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_elastic_rho = new OneIHField();
-		oihf_elastic_rho->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticRho);
+		oihf_elastic_rho->Read_Initialize_OneIHField(inDat, inInstruction, 0, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticRho);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -808,7 +834,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_elastic_damping = new OneIHField();
-		oihf_elastic_damping->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticDamping);
+		oihf_elastic_damping->Read_Initialize_OneIHField(inDat, inInstruction, 0, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_elasticDamping);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -865,7 +891,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_fracture_sigma = new OneIHField();
-		oihf_fracture_sigma->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_sigma);
+		oihf_fracture_sigma->Read_Initialize_OneIHField(inDat, inInstruction, 1, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_sigma);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -888,7 +914,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_fracture_delta = new OneIHField();
-		oihf_fracture_delta->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_delta);
+		oihf_fracture_delta->Read_Initialize_OneIHField(inDat, inInstruction, 1, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_delta);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -911,7 +937,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_fracture_delta = new OneIHField();
-		oihf_fracture_delta->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_delta);
+		oihf_fracture_delta->Read_Initialize_OneIHField(inDat, inInstruction, 1, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_delta);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}
@@ -935,7 +961,7 @@ void ElasticFractureInhomogField::Initialize_ElasticFractureInhomogField()
 			inInstruction = NULL;
 		}
 		oihf_fracture_iniDamage = new OneIHField();
-		oihf_fracture_iniDamage->Read_Initialize_OneIHField(inDat, inInstruction, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_iniDamage);
+		oihf_fracture_iniDamage->Read_Initialize_OneIHField(inDat, inInstruction, 1, isPeriodicPtr, xMPtr, xmPtr, resolutionFactor, sso_iniDamage);
 		if (inInstruction != NULL)
 			delete inInstruction;
 	}

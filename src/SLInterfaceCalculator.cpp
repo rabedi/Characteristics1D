@@ -14,6 +14,7 @@ SLInterfaceCalculator::SLInterfaceCalculator()
 //	x = 0.0;
 	itern = 0;
 	current_delT = 0.0;
+	current_timeIndex = -1;
 	b_directlyCalculateBondedInFinalSln = false;
 	ts_bulkProps = NULL;
 	interfacePFs = NULL;
@@ -71,6 +72,7 @@ SLInterfaceCalculator& SLInterfaceCalculator::operator=(const SLInterfaceCalcula
 	deltaCFactor = other.deltaCFactor;
 	dcont = other.dcont;
 	current_delT = other.current_delT;
+	current_timeIndex = other.current_timeIndex;
 	within_step_convergence_check = other.within_step_convergence_check;
 	between_steps_timestep_check = other.between_steps_timestep_check;
 	between_steps_adaptivity_s = other.between_steps_adaptivity_s;
@@ -640,7 +642,7 @@ AdaptivityS SLInterfaceCalculator::Main_Compute_OnePoint(bool& accept_point, IOF
 			checkConvergence = true;
 			// updating characteristics
 			if (oneIntAlltimesPtr != NULL)
-				oneIntAlltimesPtr->Compute_DownStream_Characteristics_wo_in_situ(wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ, pPtSlns->interface_time, tPtSlns);
+				oneIntAlltimesPtr->Compute_DownStream_Characteristics_wo_in_situ(wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ, pPtSlns->interface_time, current_timeIndex);
 #endif			
 			// compute star values and update the stats
 			Compute_1Cycle_vsStar_Calculation();

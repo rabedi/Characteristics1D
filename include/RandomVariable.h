@@ -49,7 +49,7 @@ typedef enum { sso_none = -1, sso_valStart, sso_valEnd, sso_index_min, sso_min, 
 #define setStatOp_type_SIZE_SHORT	sso_mean_harmonic
 
 string getName(setStatOp_type dat);
-void name2Type(string& name, setStatOp_type& typeVal);
+bool name2Type(string& name, setStatOp_type& typeVal);
 ostream& operator<<(ostream& out, setStatOp_type dat);
 istream& operator>>(istream& in, setStatOp_type& dat);
 double getStatvalue(const vector<double>& vals, setStatOp_type sso);

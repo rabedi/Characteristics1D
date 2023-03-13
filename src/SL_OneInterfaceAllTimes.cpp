@@ -312,7 +312,7 @@ void SL_OneInterfaceAllTimes::Open_fixed_x_files_SL_OneInterfaceAllTimes(IOF_typ
 }
 
 void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC& wlSide_rGoing_WO_in_situ, VEC& wrSide_lGoing_WO_in_situ,
-	double currentTime, const SL_interface_Temp_PPtData* current_ptData)
+	double currentTime, int currentTimeIndex, const SL_interface_Temp_PPtData* current_ptData)
 {
 	// much simpler way of calculating impinging characteristics
 	if (b_single_interfaceProblem)
@@ -517,9 +517,9 @@ void SL_OneInterfaceAllTimes::Compute_DownStream_Characteristics_wo_in_situ(VEC&
 			{
 				// wlSide_rGoing_WO_in_situ and wrSide_lGoing_WO_in_situ are in fact "loads" and in function SL_Elastic_InterfaceProperties::Compute_sigmaI_vI_from_wsAndBC__BoundaryCase they are interpreted correctly
 				if (miss_side == 0)
-					g_SL_desc_data.GetBoundaryConditionValue_LeftRight(true, ts_bulkProps, interface_x, currentTime, wlSide_rGoing_WO_in_situ);
+					g_SL_desc_data.GetBoundaryConditionValue_LeftRight(true, ts_bulkProps, interface_x, currentTime, wlSide_rGoing_WO_in_situ, currentTimeIndex);
 				else //if (miss_side == 1)
-					g_SL_desc_data.GetBoundaryConditionValue_LeftRight(false, ts_bulkProps, interface_x, currentTime, wrSide_lGoing_WO_in_situ);
+					g_SL_desc_data.GetBoundaryConditionValue_LeftRight(false, ts_bulkProps, interface_x, currentTime, wrSide_lGoing_WO_in_situ, currentTimeIndex);
 			}
 		}
 		else if (szMissingCalc != 0)
@@ -714,7 +714,7 @@ void SL_OneInterfaceAllTimes::InitialStep_Use_IC(SLInterfaceCalculator& slic)
 		ppt->Output_FinalSolution(*outFinalSln, iofFinalSolution, 0.0, interface_x, 0.0, has_ring_opened1D_al);
 }
 
-AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_point, double& maxTime, SLInterfaceCalculator& slic)
+AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_point, double& maxTime, int currentTimeIndex, SLInterfaceCalculator& slic)
 {
 	double maxTimeBeforeThisPoint = timeSeqData.GetMaxTime();
 	double currentTime = maxTimeBeforeThisPoint + deltaT;
@@ -723,6 +723,7 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 	unsigned int pos;
 	SL_interfacePPtData* ppt = timeSeqData.AddNewPoint(currentTime, pos);
 
+	slic.current_timeIndex = currentTimeIndex;
 	slic.oneIntAlltimesPtr = this;
 	// adding elastic and fracture pointers
 	slic.Initialize_setFromOutside_ElsticFractureProperties(ts_bulkProps, interfacePFs);
@@ -736,7 +737,7 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 	VEC wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ;
 	SL_interface_Temp_PPtData* current_ptData = NULL;
 	Compute_DownStream_Characteristics_wo_in_situ(wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ,
-		currentTime, current_ptData);
+		currentTime, slic.current_timeIndex, current_ptData);
 	slic.Initialize_setFromOutside_Incoming_Characteristics_etc(&wlSide_rGoing_WO_in_situ, &wrSide_lGoing_WO_in_situ);
 	// setting sigmaC and deltaC factors
 	slic.Initialize_setFromOutside_Fracture_InhomogeneousFactors(sigmaCFactor, deltaCFactor);
@@ -782,7 +783,7 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem()
 		if (cntr++ % 1000 == 0)
 			cout << cntr << '\n';
 		SLInterfaceCalculator slic;
-		as = NonInitialStep(as.a_delt, accept_point, maxTime, slic);
+		as = NonInitialStep(as.a_delt, accept_point, maxTime, cntr, slic);
 		AdaptivityF a_flag = as.get_a_flag();
 		if ((maxTime >= g_slf_conf->terminate_run_target_time) || (a_flag == a_terminate_run_correctly))
 			return 1;

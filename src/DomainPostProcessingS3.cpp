@@ -199,6 +199,12 @@ DomainPostProcessS3::DomainPostProcessS3()
 	output_modes.push_back(pss3_om_scalars);
 	output_modes.push_back(pps3_om_scalars_vectors);
 	output_modes.push_back(pps3_om_vectors);
+
+	for (unsigned int i = 0; i < ScalarFieldOutputT_SIZE; ++i)
+	{
+		scalarFieldAddOn[i] = getName((ScalarFieldOutputT)i);
+		scalarFieldAddOn_Latex[i] = getLatexName((ScalarFieldOutputT)i);
+	}
 }
 
 void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
@@ -272,6 +278,10 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 
 bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in)
 {
+	string key;
+	map<string, string>* mpPtr;
+	double value = -1;
+
 	string buf;
 	READ_NSTRING(in, buf, buf);
 	if (buf != "{")
@@ -367,6 +377,10 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 		else if (buf == "spatialFieldResolutionCorrector")
 		{
 			READ_NINTEGER(in, buf, spatialFieldResolutionCorrector);
+			key = "output_resolution";
+			bool found = Find_Version_Value(key, value, mpPtr);;
+			if (found)
+				spatialFieldResolutionCorrector = (int)round(value);
 		}
 		else if (buf == "temporalFieldTimeStepValOrNumSteps")
 		{
@@ -469,7 +483,7 @@ void DomainPostProcessS3::Get_Version_Header_Names(vector<string>& names, vector
 {
 	if (version_print_version_columns == 0)
 		return;
-	string preName = "inp_", tmp;
+	string preName = "inp_s_", tmp;
 	if (version_print_version_No)
 	{
 		names.push_back("verNo");
@@ -577,7 +591,9 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 		PPS3_IOT iot = (PPS3_IOT)iiot;
 		vector<PPS2_dataPointer>* datPtrs = &dataPointers[tot][iot];
 		unsigned int sz = datPtrs->size();
-		bool acceptableVals, outputIsScalar;
+		bool acceptableVals;
+		ScalarFieldOutputT sfot;
+
 		double scalarVal;
 		string preName = "inp_", nameBase, name;
 		if (iot == pps3_o)
@@ -589,23 +605,25 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 			if (tot == pps3_timeStep)
 				datPtr->timeStamp = timeStamp4FixedTime;
 			vector<double> vecVal;
-			acceptableVals = configPPS2.Get_Scalar_Or_Vector_Output(*datPtr, scalarVal, vecVal, outputIsScalar, modifiableOneTimeSlns, temporalFieldTimeStepValOrNumSteps, spatialFieldResolutionCorrector);
+			acceptableVals = configPPS2.Get_Scalar_Or_Vector_Output(*datPtr, scalarVal, vecVal, sfot, modifiableOneTimeSlns, temporalFieldTimeStepValOrNumSteps, spatialFieldResolutionCorrector);
 			if (!acceptableVals)
 			{
 				accebleOverAlVals = false;
 				if (!addInvalidData)
 					return false;
 			}
-			if (outputIsScalar)
+			if (sfot == sfo_scalar)
 			{
 				if (output_mode != pps3_om_vectors)
 				{
 					vals.push_back(scalarVal);
 					if (!outputFile_exists)
 					{
-						name = preName + datPtr->name_In_CSV_file;
+						name = preName + scalarFieldAddOn[sfot] + datPtr->name_In_CSV_file;
 						names.push_back(name);
-						names_latex.push_back(datPtr->name_Latex);
+//						string nl = "{" + datPtr->name_Latex + "}" + scalarFieldAddOn_Latex[sfot];
+						string nl = datPtr->name_Latex;
+						names_latex.push_back(nl);
 						names_indices.push_back(-1);
 					}
 				}
@@ -625,14 +643,16 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 						vals.push_back(vecVal[j]);
 					if (!outputFile_exists)
 					{
-						nameBase = preName + datPtr->name_In_CSV_file;
+						nameBase = preName + scalarFieldAddOn[sfot] + datPtr->name_In_CSV_file;
 						for (unsigned int j = 0; j < fldSz; ++j)
 						{
 							string ser;
 							toString(j, ser);
 							name = nameBase + ser;
 							names.push_back(name);
-							names_latex.push_back(datPtr->name_Latex);
+//							string nl = "{" + datPtr->name_Latex + "}" + scalarFieldAddOn_Latex[sfot];
+							string nl = datPtr->name_Latex;
+							names_latex.push_back(nl);
 							names_indices.push_back(j);
 						}
 					}

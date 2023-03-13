@@ -100,7 +100,7 @@ string getName(setStatOp_type dat)
 	THROW("invalid dat");
 }
 
-void name2Type(string& name, setStatOp_type& typeVal)
+bool name2Type(string& name, setStatOp_type& typeVal)
 {
 	int num;
 	bool success = fromString(name, num);
@@ -109,7 +109,7 @@ void name2Type(string& name, setStatOp_type& typeVal)
 		if (num >= setStatOp_type_SIZE)
 			THROW("too large of a number\n");
 		typeVal = (setStatOp_type)num;
-		return;
+		return true;
 	}
 	// at this point we know that name is not an integer ...
 	for (int i = -1; i < setStatOp_type_SIZE; ++i)
@@ -117,10 +117,9 @@ void name2Type(string& name, setStatOp_type& typeVal)
 		typeVal = (setStatOp_type)i; // casting integer to setStatOp_type, if we don't cast it C++ gives a compile error
 		string nameI = getName(typeVal);
 		if (name == nameI)
-			return;
+			return true;
 	}
-	cout << "name\t" << name << '\n';
-	THROW("wrong name reading setStatOp_type\n");
+	return false;
 }
 
 //operator for output

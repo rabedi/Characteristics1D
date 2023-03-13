@@ -11,28 +11,59 @@ infile
 #####################################################################################
 # start										ICBC
 infile_icbc
-
 {
+############################### Dirac function
+DiracLoading
+	{
+		# turn it off (0) if want the piece-wise loading to be active
+		isActive	
+		1
+		
+		# Time of Diract function
+		# < 0 -> number of time steps is given (should be even). E.g. -2 -> 2 time steps used, -4 ->  4 ts, ...
+		# > 0 -> real width of Dirac function is given
+		# -2 uses Simpson rule to set integral to 1 -> it results in 50% underestimation of phi = U + K
+		# -4 OR -12, -14, ... suggested for homogeneous domain
+		# errors for 		-2		-4		-6		-8		-10		-12		-14		-16		-18		-20
+		#					0.5		0.031	0.08	0.056	0.031	0.02	0.016	0.0122	0.0094	0.0074
+		# for heterogeneous domain, around 80, ... is better
+		maxTime
+		#-80
+		#-160
+		0.003906250000000
+		
+		# for what field the integral is 1
+		# options: energy		stress		velocity
+		# suggested: energy (otherwise energy -> infty as delt -> 0)
+		fld4Int1
+		energy
+		
+		# if this is read, the Z of the first cell is not used in scaling the energy, etc. The Z of homogeneous material is used to determine load amplitude
+		# This is suggested as for all random simulations the same signal strength is sent in
+		ZtoUse
+		1.0
+	}
+
+############################### BELOW piecewise linear (only active if above is inactive)
 # 1 -> axt, u_i = a_i xt, 4 piecewise linear
 load_number
 4
 
 # load case 1: 0 - Dim < 1 - a_i factors
-
 load_parameters
 6
 #t0
 0.0
 #l0 - initial load
-#1.0
-0.0
+1.0
+#0.0
 #t1 - ramp time
-0.2
+10.2
 #l1 - terminal load
 1.0
 #t2 - time to load to zero, equal to t1 -> quick drop to zero
 #0.25
-0.2
+10.2
 #l2 - terminal value before suddenly dropping to zero (or zero can be used)
 0.0
 # zero afterwards
@@ -315,6 +346,7 @@ interface_fracture_map
 directionalBCTypeLeftSide
 #Dirichlet
 Neumann
+#Characteristics
 
 directionalBCTypeRightSide
 #Dirichlet
@@ -383,23 +415,29 @@ infile_inhomogeneous_elastic_frac0
 #					<  -1 -> number of segments is INCREASED by this factor (e.g. if resolutionFactor == -10 and numSegments = 1000 -> numSegments becoms 10000)
 resolutionFactor
 #0
+#-2
+#-8
 #10
-8
+#8
 #16
 #32
-#64
+64
 #128
-#256
+#####256
 #512
+#4096
 #2
 
 
 ### in coarsening operations how to coarsen / "average" multiple values into one for C, rho, and damping
+# other options: min, max, mean_arithmetic, mean_harmonic, valStart, valEnd, 
 sso_elasticC
-mean_harmonic
+valStart
+#mean_harmonic
 
 sso_elasticRho
-mean_arithmetic
+valStart
+#mean_arithmetic
 
 sso_elasticDamping
 mean_arithmetic
@@ -409,6 +447,7 @@ fit sigmadelta_const
 #fit delta_const
 
 ### in coarsening operations how to coarsen / "average" multiple values into one for sigma, delta, and iniDamage
+# other options: min, max, mean_arithmetic, mean_harmonic, valStart, valEnd, 
 sso_sigma
 min
 
@@ -423,6 +462,7 @@ max
 
 ######## elastic 
 # undecided, Crho_const, rho_const, C_const, c_const, Z_const, nonconst
+#eit C_const
 eit rho_const
 #eit Crho_const
 
@@ -430,14 +470,19 @@ baseName_WOExt_oihf_elastic1
 inline
 #InhomogeneousFiles/Fake/v1_x0/file
 #InhomogeneousFiles/cl-2.5_np1025/initial_values
+#InhomogeneousFiles/cl-1.5_np1025/initial_values
 #InhomogeneousFiles/clz_np16385/initial_values
-InhomogeneousFiles/clz_np1025/initial_values
+#InhomogeneousFiles/clz_np1025/initial_values
+#InhomogeneousFiles/clz_np1024/initial_values
+InhomogeneousFiles/CD/al1.95_b0.1_np65537/initial_values
 {
 num_Vals_and_x_Provided
 1
 
+# 0 not at vertices, 1 at vertices, -1 -> for elastic properties not at vertices, for fracture at vertices | In all cases the file should have values at vertices (e.g. size 1025)
 valsAtVertices
-1
+-1
+#0
 
 uniformGrid
 1
@@ -454,11 +499,15 @@ adjusters
 {
 # raises E to the power 2 (e.g. c is provided for rho constant)
 #{		a	1.0		b	2.0		c	0.0		d	0.0		e	1.0		}
+#	# makes value 1 everywhere
+##	{		axm	-0.51	axM	0.51		a	0.0		b	1.0		c	1.00		d	0.0		e	1.0		}
 # Fake problem of value (E) = 4 on the left and 0.25 on the right ...
 #	# turns it to constant value of 4.0
-#	{		axm	-0.51	axM	0.0		a	0.0		b	1.0		c	4.0		d	0.0		e	1.0		}
+#	{		axm	-0.51	axM	0.0		a	0.0		b	1.0		c	4.00		d	0.0		e	1.0		}
 #	# turns it to constant value of 0.25
 #	{		axm	0.0	axM	0.51		a	0.0		b	1.0		c	0.25		d	0.0		e	1.0		}
+# c(x) = linear in (x) = 0.5 on left, 1.5 on right = (cL + cR)/2 + (cR - cL)x, E(x) = c(x)^2 rho(x), rho(x) = 1
+#	{		axm	-0.51 axM	0.51		a	0.0		b	1.0		c	1.0		d	1.0		e	2.0		}
 }
 
 randVariableType
@@ -504,8 +553,9 @@ InhomogeneousFiles/clz_np16385/initial_values
 num_Vals_and_x_Provided
 1
 
+# 0 not at vertices, 1 at vertices, -1 -> for elastic properties not at vertices, for fracture at vertices | In all cases the file should have values at vertices (e.g. size 1025)
 valsAtVertices
-1
+-1
 
 uniformGrid
 1
@@ -545,8 +595,9 @@ none
 #num_Vals_and_x_Provided
 #0
 
+# 0 not at vertices, 1 at vertices, -1 -> for elastic properties not at vertices, for fracture at vertices | In all cases the file should have values at vertices (e.g. size 1025)
 #valsAtVertices
-#1
+#-1
 
 #uniformGrid
 #1
@@ -659,6 +710,7 @@ between_steps_adaptivity
 
 # time step for non-adaptive runs and starting time step for adaptive ones
 # < 0, relative to domain min_del_t
+# CFL number
 uniform_del_t
 -1
 #-0.1

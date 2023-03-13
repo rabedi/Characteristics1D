@@ -12,6 +12,7 @@
 #include "DomainPostProcessingS3.h"
 #include "TSR1D.h"
 
+#include "SLDescriptorData.h"
 
 // returns true if this particular serial number was ran
 bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int versionNumIn);
@@ -69,6 +70,11 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "-np") == 0)
 			{
 				solvePara.numParallelRuns = (unsigned int)atoi(argv[++i]);
+				if (solvePara.numParallelRuns != 48)
+				{
+					cout << "Ensure 48 and 47 in slscript.sh are changed to np and np - 1\nPress any Key to continue\n";
+					getchar();
+				}
 			}
 			else if (strcmp(argv[i], "-ls") == 0)
 			{
@@ -169,7 +175,8 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 		fstream in(fileName_log.c_str(), ios::in);
 		if (in.is_open())
 			return false;
-		string fileName_logal = lg + "/__log" + cn + g_versionNumber_str + ".txt";
+		string fileName_logal = lg + "/__log" + cn + "_" + g_prefileName + ".txt";
+//		string fileName_logal = lg + "/__log" + cn + g_versionNumber_str + ".txt";
 		g_logout.open(fileName_logal.c_str(), ios::app);
 		g_logout << "v\t" << g_versionNumber << "\tser\t" << g_serialNumber;
 		if (g_versionNumber >= 0)

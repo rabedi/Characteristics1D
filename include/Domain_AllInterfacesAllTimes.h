@@ -17,6 +17,7 @@ public:
 	~Domain_All_Interfaces_All_Times();
 	// Reading the domain
 	void Read_Initialize(string configNameIn, int serialNumberIn = -1);
+	void Initialize_TimeStepRelated();
 	int Main_Domain_Solution();
 	void Print(ostream& out) const;
 
@@ -219,6 +220,10 @@ private:
 	
 	vector<vector<ostream*> > v1DOutPtr;
 	fstream v1Dtout; // output of time values
+
+	/// other data
+	double timeStep, maxTime, maxTimewTol;
+	unsigned int numTimes;
 };
 
 

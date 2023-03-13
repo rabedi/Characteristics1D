@@ -1,0 +1,120 @@
+configNameOut	default
+specificProblemName	resolution_x_F
+subdomainNo		0
+bulkFlag		1
+interfaceFlag	1
+#name added for this set of runs
+configSpecificName	allopts
+{
+# sso options: how to reduce the fields when resolution decreases (how to come up with with one value from e.g. 64 point values when resolution decreases by 64). They are 
+# Elastic: 				ssoEE (E)		ssoER (Rho)		ssoED  (damping)
+# Fracture: 			ssoES (sigmaC)	ssoFD (deltaC)	ssoFI  (initial damage)
+#		entries are 			valStart		valEnd		min		max		mean_arithmetic		mean_harmonic
+#		valStart and valEnd take the very first and last value of the field
+#		e.g. defaults for E, rho, and sigmaC are mean_harmonic, mean_arithmetic, min in the code
+	{	ssoFS
+		valStart
+		min
+	}
+
+	{	output_resolution
+		1024
+	}
+
+# final time If active, this cfl is used. if not, the value is set in Configure_sfcm_sfcm_gen()
+#	{	tF
+#		15.0
+#	}
+
+	
+# cfl for finest mesh below (10^14). If active, this cfl is used. if not, the value is set in Configure_sfcm_sfcm_gen()
+#	{	cfl
+#		1.0
+##		0.5
+#		0.25
+#	}
+
+# deltaT for all spatial mesh resolutions?
+# dt_resap:		delta t resolution adjuster power
+# for spatial mesh resolution, sometimes we just want to change mesh resolution in space, but keep deltaT the same as decided for the finest mesh so that the efect of spatial mesh resolution alone is understood
+#	0 	-> delta adjusted 		(coarsened) as the spatial mesh is coarsened 			| 		CFL		fixed
+#	1 	-> delta fixed 																	| 		CFL		get smaller as (resolutionFactor) below
+#	0.5	->	deltat decreases															|		CFL		get smaller as (resolutionFactor)^0.5
+	{	dt_resap
+		0
+#		0.5
+#		1
+	}
+
+	{	ldelc
+		-1
+#		-1.5
+#		-2
+	}
+
+	# log10 of loading rate
+	{	la
+#		4.0
+#		3.5
+		3.0
+#		2.5
+		2.0
+#		1.5
+		1.0
+#		0.5
+		0.0
+##		-0.5
+##		-1.0
+##		-1.5
+##		-2.0
+##		-2.5
+##		-3.0
+##		-3.5
+##		-4.0
+	}
+
+	# correlation length
+	# <= -log10(meshResolution) = -log10(2^14) = -4.2 --> becomes white noise
+#	{	llc		map { 	(	np ,	16385 ) 	}
+	{	llc
+#		-4.5
+		-4.0
+#		-3.5
+		-3.0
+#		-2.5
+		-2.0
+#		-1.5
+		-1.0
+#		-0.5
+## 		 0.0
+##		 0.5
+	}
+	
+	# del/2 (values are from 1 - del/2, 1 + del/2, e.g. del/2 = 0.2 -> 0.8 -> 0.2
+	{	dd2
+##		0.001
+		0.1
+##		0.2
+#		0.3
+##		0.4
+		0.5
+##		0.6
+#		0.7
+##		0.8
+		0.9
+	}
+	
+# original mesh is 2^14 resolution, factors below make it coarser by that factor	
+	{
+		resolutionFactor
+		16
+		8
+		4
+		2
+		1
+	}
+}
+groupOutputOrder
+{
+ssoFS	output_resolution	cfl	dt_resap	ldelc	la	llc	dd2		resolutionFactor
+}

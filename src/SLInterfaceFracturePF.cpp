@@ -157,6 +157,20 @@ void SLFractureGlobal_Configuration::Read(istream& in)
 			}
 			if (found)
 				uniform_del_t = value;
+			// whether to keep delt fixed for all spatial mesh resolutions or not?
+			key = "dt_resap";
+			double resolutionPower;
+			found = Find_Version_Value(key, resolutionPower, mpPtr);
+			if (found && (fabs(resolutionPower) > 1e-4))
+			{
+				key = "resolutionFactor"; // see if the resolution factor is something other than 0 and 1
+				double resolutionFactor;
+				found = Find_Version_Value(key, resolutionFactor, mpPtr);
+				if ((found) && ((resolutionFactor - 1.0) > 1e-2)) // means mesh is coarsened
+					uniform_del_t /= pow(resolutionFactor, resolutionPower);
+			}
+
+			
 			g_logout << "\tuniform_del_t\t" << uniform_del_t;
 		}
 		else if (buf == "max_del_t")

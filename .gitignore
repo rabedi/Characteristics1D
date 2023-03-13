@@ -48,3 +48,10 @@ Debug/Target.Build.CppClean.log
 Debug/Target.log
 InhomogeneousFiles/*
 Target.vcxproj.user
+.vs/Target/v15/ipch/AutoPCH/81bad113e6aa9285/GLOBALMACROS.ipch
+.vs/Target/v15/ipch/AutoPCH/aac9d96041a9214/SPACEMESH.ipch
+.vs/Target/v15/ipch/AutoPCH/b955345241a608b/COMMONFUNCTIONS.ipch
+.vs/Target/v15/ipch/AutoPCH/ccba5372d715b4cb/COMMONFUNCTIONS.ipch
+.vs/Target/v15/ipch/AutoPCH/d7ee27f7bd4568fd/GLOBALFUNCTIONS.ipch
+.vs/Target/v15/ipch/AutoPCH/de8cb49bdbf3d35a/SPACEMESH.ipch
+_log/__logInhomogeneous_axt_fracture_Coh_Ring_openedpCheck.txt
