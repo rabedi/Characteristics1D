@@ -17,6 +17,7 @@
 // returns true if this particular serial number was ran
 bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int versionNumIn);
 void Solve_all_serialNumbers(SolveParameters& solvePara);
+void Print_slscript(unsigned int numParallelRuns);
 
 int main(int argc, char *argv[])
 {
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[i], "-np") == 0)
 			{
 				solvePara.numParallelRuns = (unsigned int)atoi(argv[++i]);
+				Print_slscript(solvePara.numParallelRuns);
 				if (solvePara.numParallelRuns != 48)
 				{
 					cout << "Ensure 48 and 47 in slscript.sh are changed to np and np - 1\nPress any Key to continue\n";
@@ -321,3 +323,25 @@ void Solve_all_serialNumbers(SolveParameters& solvePara)
 	}
 }
 
+void Print_slscript(unsigned int numParallelRuns)
+{
+	fstream out("slscript.sh", ios::out);
+	out << "#!/bin/bash\n";
+	out << "#This file is a submission script to request the ISAAC resources from Slurm\n";
+	out << "#SBATCH -J Micro_out			       #The name of the job\n";
+	out << "#SBATCH -A ACF-UTK0011              # The project account to be charged\n";
+	out << "#SBATCH --nodes=1                     # Number of nodes\n";
+	out << "#SBATCH --ntasks-per-node=" << numParallelRuns << "        # cpus per node\n";
+	out << "#SBATCH --partition=campus           # If not specified then default is \"campus\"\n";
+	out << "#SBATCH --time=1-00:00:00             # Wall time (days-hh:mm:ss)\n";
+	out << "#SBATCH --error=job.e%J	       # The file where run time errors will be dumped\n";
+	out << "#SBATCH --output=job.o%J	       # The file where the output of the terminal will be dumped\n";
+	out << "#SBATCH --qos=campus\n";
+	out << "#SBATCH --array=0-" << numParallelRuns - 1 << '\n';
+
+	out << "\n\n";
+
+	out << "####------ ACF mpich ------:\n";
+	out << "srun  sh ./script$SLURM_ARRAY_TASK_ID\n";
+	out << "############ end of PBSscript ##########\n";
+}

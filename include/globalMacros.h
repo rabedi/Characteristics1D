@@ -89,6 +89,7 @@ extern string g_prefileNamePPS2;
 // these values are written to files when entry is invalid so that in read in it's clear the values are invalid
 extern double invalidNonnegativeNum;
 extern double invalidNum;
+#define IS_INVALID(x) (fabs(x) > 1e39)
 
 // serial number correspond to the input random domain to be read (dealing with input domain)
 extern int g_serialNumber;

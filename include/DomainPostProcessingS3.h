@@ -56,6 +56,8 @@ public:
 	// true: for each version there is a separate folder for all random fields of One version
 	// false: the output folder is always _PP3 and contains all versions and all serial numbers
 	bool version_seperatePP3Folders;
+	// true: values that are not computed (e.g. values when phid is stabilized) are printed as nan rather than 1e40
+	bool print_uncomputed_vals_as_nan;
 	// 0: version columns are not added to PP3 file
 	// 1: they are added
 	// 2: only columns of fields that have more than 1 values (e.g. more than 1 cor. length, ...) are written

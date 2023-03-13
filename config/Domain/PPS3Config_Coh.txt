@@ -23,6 +23,10 @@ version_seperatePP3Folders
 1
 #0
 
+# 1: values that are not computed (e.g. values when phid is stabilized) are printed as nan rather than 1e40
+print_uncomputed_vals_as_nan
+1
+
 # 0: version columns are not added to PP3 file
 # 1: they are added
 # 2: only columns of fields that have more than 1 values (e.g. more than 1 cor. length, ...) are written

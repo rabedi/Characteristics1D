@@ -187,6 +187,7 @@ DomainPostProcessS3::DomainPostProcessS3()
 	sep = ",";
 
 	version_seperatePP3Folders = true;
+	print_uncomputed_vals_as_nan = true;
 	version_print_version_columns = 1;
 	version_print_before_accept_serial = false;
 	// prints version Number from the list of versions in generator file
@@ -314,6 +315,10 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 		else if (buf == "version_seperatePP3Folders")
 		{
 			READ_NBOOL(in, buf, version_seperatePP3Folders);
+		}
+		else if (buf == "print_uncomputed_vals_as_nan")
+		{
+			READ_NBOOL(in, buf, print_uncomputed_vals_as_nan);
 		}
 		else if (buf == "version_seperatePP3Folders")
 		{
@@ -715,11 +720,28 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 	}
 	int indLast = szVals - 1;
 	out << setprecision(22);
-	for (unsigned int i = 0; i < szVals; ++i)
+	if (!print_uncomputed_vals_as_nan)
 	{
-		out << vals[i];
-		if (i != indLast)
-			out << sep;
+		for (unsigned int i = 0; i < szVals; ++i)
+		{
+			out << vals[i];
+			if (i != indLast)
+				out << sep;
+		}
+	}
+	else
+	{
+		double vl;
+		for (unsigned int i = 0; i < szVals; ++i)
+		{
+			vl = vals[i];
+			if (!IS_INVALID(vl))
+				out << vl;
+			else
+				out << "NaN";
+			if (i != indLast)
+				out << sep;
+		}
 	}
 	out << "\n";
 	return true;
