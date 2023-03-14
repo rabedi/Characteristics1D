@@ -303,7 +303,7 @@ void Solve_all_serialNumbers(SolveParameters& solvePara)
 				for (int serNum = solvePara.serialNumber_st; serNum <= solvePara.serialNumber_en; ++serNum)
 				{
 					remainder = cntr++ % solvePara.numParallelRuns;
-					(*(outPtrs[remainder])) << "./solver -sp - mc " << solvePara.solveParametersConfigName << " -st " << serNum << " -en " << serNum << " -vst " << versionNumber << " -ven " << versionNumber << '\n';
+					(*(outPtrs[remainder])) << "./solver -sp -mc " << solvePara.solveParametersConfigName << " -st " << serNum << " -en " << serNum << " -vst " << versionNumber << " -ven " << versionNumber << '\n';
 				}
 			}
 		}
@@ -314,7 +314,7 @@ void Solve_all_serialNumbers(SolveParameters& solvePara)
 				for (int versionNumber = solvePara.versionNumber_st; versionNumber <= solvePara.versionNumber_en; ++versionNumber)
 				{
 					remainder = cntr++ % solvePara.numParallelRuns;
-					(*(outPtrs[remainder])) << "./solver -sp - mc " << solvePara.solveParametersConfigName << " -st " << serNum << " -en " << serNum << " -vst " << versionNumber << " -ven " << versionNumber << '\n';
+					(*(outPtrs[remainder])) << "./solver -sp -mc " << solvePara.solveParametersConfigName << " -st " << serNum << " -en " << serNum << " -vst " << versionNumber << " -ven " << versionNumber << '\n';
 				}
 			}
 		}
@@ -343,5 +343,7 @@ void Print_slscript(unsigned int numParallelRuns)
 
 	out << "####------ ACF mpich ------:\n";
 	out << "srun  sh ./script$SLURM_ARRAY_TASK_ID\n";
+//	out << "srun  sh ./script$SLURM_ARRAY_TASK_ID\n";
+	out << "sh script$SLURM_ARRAY_TASK_ID.sh\n";
 	out << "############ end of PBSscript ##########\n";
 }

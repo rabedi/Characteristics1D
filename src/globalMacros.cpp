@@ -1,4 +1,5 @@
 #include "globalMacros.h"
+#include "SLInterfaceFracturePF.h"
 
 int g_interfaceFlags_IncImp[4];
 int g_bulkFlags_IncImp[NUM_SIDES];
@@ -29,7 +30,10 @@ bool Is_Valid_Num(double val)
 
 void setGlobalMembers()
 {
-//	printf("%d\n", _getmaxstdio());
+	if (g_slf_conf == NULL)
+		g_slf_conf = new SLFractureGlobal_Configuration();
+
+	//	printf("%d\n", _getmaxstdio());
 //	_setmaxstdio(32768);
 	//_setmaxstdio(8192);
 //	printf("%d\n", _getmaxstdio());

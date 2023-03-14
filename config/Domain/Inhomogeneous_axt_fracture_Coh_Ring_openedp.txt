@@ -195,8 +195,8 @@ visualization_dir
 # < 0, -number of interfaces - 1 (e.g. # segments) used in each subdomain for its outputs
 # > 0, the step size for that given subdomain
 visualization_numSpaceStep
-#-512
--1
+-1024
+#-1
 
 # again < 0, absolute number of steps, > 0 step size
 visualization_numTimeStep

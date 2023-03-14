@@ -35,7 +35,7 @@ seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh
 seq 0 100 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st {.} -en {.} -vst 810 -ven 1214'
 
 # for homogeneous meshes, in mainConfig_axt_coh.txt change the file to no_random, use offset 10000
-seq 0 1214 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
+seq 0 242 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
 OR
 q 0 404 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
 seq 405 809 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst {.} -ven {.}'
@@ -47,7 +47,7 @@ seq 810 1214 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_axt_
 
 ##############
 # spatial mesh resolution studies
-# FRACTURE
+# FRACTURE - if both delc 0.1 and 0.01 are used the number is 960
 # In mainConfig_resolution_x.txt set 3 #fracture on
 -sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst 0 -ven 479
 # parallel
@@ -61,4 +61,4 @@ seq 0 14 | parallel -j 9 './solver -sp -mc config/MainConfig/mainConfig_resoluti
 
 
 generate files for the cluster
--sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst 0 -ven 479	-np 48
+-sp -mc config/MainConfig/mainConfig_resolution_x.txt -st 0 -en 0 -vst 0 -ven 479 -np 48

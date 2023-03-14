@@ -3,7 +3,7 @@
 #include "SL_Interface_PtData.h"
 #include "SLInterfaceCalculator.h"
 
-extern SLFractureGlobal_Configuration* g_slf_conf = new SLFractureGlobal_Configuration();
+extern SLFractureGlobal_Configuration* g_slf_conf = NULL;
 
 SLFractureGlobal_Configuration::SLFractureGlobal_Configuration()
 {
