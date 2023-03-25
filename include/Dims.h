@@ -70,9 +70,9 @@ using namespace std;
 #define PI 3.1415926535897932384626433832795
 #endif
 
-constexpr auto NUM_SIDES = 2;
-constexpr auto SDL = 0;
-constexpr auto SDR = 1;
+#define NUM_SIDES 2
+#define SDL 0
+#define SDR 1
 
 #define Dcomplex std::complex<double>
 

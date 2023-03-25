@@ -1754,7 +1754,9 @@ void Configure_sfcm_sfcm_gen()
 	string key;
 	double value;
 	map<string, string>* mpPtr;
-	bool change_cfl_tF = ((sfcm_gen.specificProblemName == "axt") || (sfcm_gen.specificProblemName == "resolution_x_F"));
+	bool change_spatial_mesh_res = (sfcm_gen.specificProblemName == "axt_medium");
+
+	bool change_cfl_tF = ((sfcm_gen.specificProblemName == "axt") || (sfcm_gen.specificProblemName == "resolution_x_F") || change_spatial_mesh_res);
 	if (change_cfl_tF)
 	{
 		use_tSigma0Time = true;
@@ -1784,12 +1786,15 @@ void Configure_sfcm_sfcm_gen()
 				cout << "llc\t" << llc << '\n';
 				THROW("generate appropriate input meshes, update the statements below\n");
 			}
-			else if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
+			if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
 				sfcm.tFinal = 1100.0;
 				tSigma0 = 1100.0;
 				tFactor4tSigma0 = 1.0;
+
+				if (change_spatial_mesh_res)
+					sfcm.direct_resolutionFactor = 16; // coarsening by factor of 16
 			}
 			else if (((-2.5 - tol) <= la) && (la < (-2.0 - tol)))
 			{
@@ -1797,6 +1802,9 @@ void Configure_sfcm_sfcm_gen()
 				sfcm.tFinal = 350.0;
 				tSigma0 = 350.0;
 				tFactor4tSigma0 = 1.0;
+
+				if (change_spatial_mesh_res)
+					sfcm.direct_resolutionFactor = 16; // coarsening by factor of 16
 			}
 			else if (((-2.0 - tol) <= la) && (la < (-1.5 - tol)))
 			{
@@ -1804,6 +1812,9 @@ void Configure_sfcm_sfcm_gen()
 				sfcm.tFinal = 110.0; // 200.0
 				tSigma0 = 110.0;
 				tFactor4tSigma0 = 1.0;
+
+				if (change_spatial_mesh_res)
+					sfcm.direct_resolutionFactor = 8; // coarsening by factor of 8
 			}
 			else if (((-1.5 - tol) <= la) && (la < (-1.0 - tol)))
 			{
@@ -1811,6 +1822,9 @@ void Configure_sfcm_sfcm_gen()
 				sfcm.tFinal = 45.0;
 				tSigma0 = 40.0;
 				tFactor4tSigma0 = 1.0;
+
+				if (change_spatial_mesh_res)
+					sfcm.direct_resolutionFactor = 4; // coarsening by factor of 4
 			}
 			else if (((-1.0 - tol) <= la) && (la < (-0.5 - tol)))
 			{
@@ -1818,6 +1832,9 @@ void Configure_sfcm_sfcm_gen()
 				sfcm.tFinal = 20.0;
 				tSigma0 = 11.0;
 				tFactor4tSigma0 = 1.0;
+
+				if (change_spatial_mesh_res)
+					sfcm.direct_resolutionFactor = 2; // coarsening by factor of 2
 			}
 			else if (((-0.5 - tol) <= la) && (la < (0.0 - tol)))
 			{
@@ -1825,6 +1842,9 @@ void Configure_sfcm_sfcm_gen()
 				sfcm.tFinal = 15.0;
 				tSigma0 = 4.0;
 				tFactor4tSigma0 = 1.5;
+
+				if (change_spatial_mesh_res)
+					sfcm.direct_resolutionFactor = 2; // coarsening by factor of 2
 			}
 			else if (((0 - tol) <= la) && (la < (0.5 - tol)))
 			{
@@ -1951,6 +1971,7 @@ void Configure_sfcm_sfcm_gen()
 			}
 			else
 			{
+				cout << "la\t" << la << '\n';
 				THROW("add these options later\n");
 			}
 		}

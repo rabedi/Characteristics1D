@@ -24,6 +24,7 @@ public:
 	double cfl_factor;
 	double tFinal; 
 	int number_of_elements; // how many elements the input mesh should have - this is number of sampling for KL mesh
+	int direct_resolutionFactor;
 private:
 	void Zero_SimpleFormatConfigMaker();
 };

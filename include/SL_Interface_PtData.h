@@ -25,9 +25,9 @@ typedef enum { rmode_stick, rmode_sep, rmode_slip} RiemannMode_StorageT;
 #define TSR_STAGE_IO 0
 
 #if DiM2a3_F
-constexpr auto NUMSLRMN = 3;
+#define NUMSLRMN 3
 #else
-constexpr auto NUMSLRMN = 2;
+#define NUMSLRMN 2
 #endif
 
 // the first 3 are also used for labeling target values

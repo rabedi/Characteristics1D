@@ -77,12 +77,12 @@ addInvalidData
 # note that the solution can only decrease (from a fine mesh to a coarser representation)
 # spatialFieldResolutionCorrector == 0 -> does not change the field
 spatialFieldResolutionCorrector
-0
+#0
 #8
 #-4
 #-8 
 #- 1024 mesh to 128 mesh
-
+1024
 
 
 # For temporal fields (e.g. energyDissipated, sigma_homogenized, etc.) there are two options:

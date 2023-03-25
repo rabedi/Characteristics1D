@@ -399,6 +399,7 @@ mean_arithmetic
 fit delta_const
 
 ### in coarsening operations how to coarsen / "average" multiple values into one for sigma, delta, and iniDamage
+#change
 sso_sigma
 min
 

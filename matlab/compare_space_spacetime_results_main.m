@@ -8,6 +8,7 @@ if nargin < 2
 %    versionNums = [11, 12, 13];
     versionNums = 0:2;
 %    versionNums = 0;
+    versionNums = 30000:30003;
 end
 if nargin < 3
     subdomainNo = 0;

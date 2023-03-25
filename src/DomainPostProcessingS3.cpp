@@ -542,7 +542,15 @@ void DomainPostProcessS3::Print_Version_Values(ostream& out)
 		if (version_print_values)
 		{
 			double tmpv = 0.0;
-			fromString(sfcm.sVals[gii], tmpv);
+			string str = sfcm.sVals[gii];
+			if (!fromString(sfcm.sVals[gii], tmpv))
+			{
+				setStatOp_type typeVal;
+				if (name2Type(str, typeVal) == true)
+					tmpv = (double)typeVal;
+				else
+					tmpv = sfcm.indices[gii];
+			}
 			out << tmpv << sep;
 		}
 	}
@@ -738,7 +746,7 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 			if (!IS_INVALID(vl))
 				out << vl;
 			else
-				out << "NaN";
+				out << "nan"; // "NaN";
 			if (i != indLast)
 				out << sep;
 		}

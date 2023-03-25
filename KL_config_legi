@@ -1,11 +1,12 @@
 #--------------------------------#
 # Define the compiler to be used #
-CXX       := g++
+CXX       := icpc
+#CXX       := g++
 #--------------------------------#
 # flags
-#CXX_FLAGS := -ggdb  -std=c++11
-CXX_FLAGS := -O3  -std=c++11
-
+# CXX_FLAGS := -Ofast -xHost -std=c++11
+CXX_FLAGS := -Ofast -qmkl=sequential -static-intel -flto=full
+# CXX_FLAGS := -Ofast  -std=c++11
 
 # And the method to build libraries
 AR=ar cru

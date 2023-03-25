@@ -424,6 +424,8 @@ void ElasticFractureInhomogField::Read_ElasticFractureInhomogField(istream & in,
 		else if (buf == "resolutionFactor")
 		{
 			READ_NINTEGER(in, buf, resolutionFactor);
+			if (sfcm.direct_resolutionFactor != 0)
+				resolutionFactor = sfcm.direct_resolutionFactor;
 			key = "resFact";
 			bool found = Find_Version_Value(key, value, mpPtr);
 			if (!found)

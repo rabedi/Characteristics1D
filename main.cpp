@@ -72,11 +72,6 @@ int main(int argc, char *argv[])
 			{
 				solvePara.numParallelRuns = (unsigned int)atoi(argv[++i]);
 				Print_slscript(solvePara.numParallelRuns);
-				if (solvePara.numParallelRuns != 48)
-				{
-					cout << "Ensure 48 and 47 in slscript.sh are changed to np and np - 1\nPress any Key to continue\n";
-					getchar();
-				}
 			}
 			else if (strcmp(argv[i], "-ls") == 0)
 			{

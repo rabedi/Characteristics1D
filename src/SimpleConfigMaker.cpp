@@ -79,6 +79,7 @@ void SimpleFormatConfigMaker::Zero_SimpleFormatConfigMaker()
 	cfl_factor = -1.0;
 	tFinal = -10.0;
 	number_of_elements = -1024;
+	direct_resolutionFactor = 0;
 }
 
 void generateArbitraryIndexListAux(const vector<int>& minVals, const vector<int>& maxVals, const vector<int>& incVals, vector< vector<int> >& resultsOut, vector< vector<int> >& resultsIn, int pos, bool inclusiveIntervals)
