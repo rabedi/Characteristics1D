@@ -6,8 +6,6 @@ import math
 import os
 import statistics
 
-#rootIFFolder = "../Characteristics1D/InhomogeneousFiles/"
-
 class StatOfVec:
     def __init__(self, valsIn = []):
             if (len(valsIn) > 0):
@@ -98,14 +96,16 @@ def valReduction(valsIn, meshp2In, valsAtVert, meshp2Out = -1, reduction_sso = 3
             valsOut[-1] = bkVal
     return valsOut
 
-
 class InpF:
+    rootIFFOlder = "../InhomogeneousFiles/"
     def __init__(self):
         pass
+    @staticmethod
+    def setInputMeshRootFolder(rootFolderIn = "../InhomogeneousFiles/"):
+        rootIFFOlder = rootFolderIn
     # dd2 is the "span" parameter of pointwise PDF
     # sso_valStart = 0, sso_valEnd = 1, sso_min = 3, sso_max = 5, sso_mean_arithmetic = 6, sso_mean_harmonic = 10
     def Initialize_InpF(self, valsAtVert = True, meshp2 = 14, serNo = 0, llc = -4, dd2 = 0.7, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1):
-        rootIFFOlder = "data/InhomogeneousFiles/"
         nSeg = 2**meshp2
         if (meshp2_4Simulation == -1):
             meshp2_4Simulation = meshp2
@@ -121,7 +121,7 @@ class InpF:
             if (llc > -4.1):
                 str_llc = "{:.1f}".format(llc)
             if (meshp2 == 14):
-                fn = rootIFFOlder + "cl" + str_llc + "_np16385/initial_values_" + str(int(serNo)) + ".txt"
+                fn = InpF.rootIFFOlder + "/cl" + str_llc + "_np16385/initial_values_" + str(int(serNo)) + ".txt"
             self.vals = np.loadtxt(fn)[1:]
             minV = 1 - dd2
             maxV = 1 + dd2

@@ -1,6 +1,3 @@
-import Runs4AllParaSet
-import Enumerator
-
 import numpy as np
 import pandas as pd
 import pickle
@@ -615,10 +612,18 @@ def read_csv(root = "data/Characteristics_data"):
 
 def main_function():
 
-    folderSource = "data/2023_03_24"
-    folderDest = "data/Characteristics_data"
+    #README:
+    # 1. set the path to "InhomogeneousFiles" folder
+    InpF.setInputMeshRootFolder("../InhomogeneousFiles")
+    # 2. set path to "2023_03_24". I put it inside a "data" folder for myself. You can adjust this path
+    folderSource = "../../data/2023_03_24"
+    # 3. If needed, adjust output path were the files are generated
+    folderDest = "../../data/Characteristics_data"
+    generatePlots = False
     cd = Characteristics_data()
     cd.Main_Characteristics_data(folderSource, folderDest)
+    if (not generatePlots):
+        return
 
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
