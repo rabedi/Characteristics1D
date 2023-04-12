@@ -65,7 +65,8 @@ LoadComputer
 #	modelParas	{ 	4.0		0.0		0.0		0.0	}
 
 	signalType	UnitSquare
-	modelParas	{ 	10.0			}
+#	modelParas	{ 	10.0			}
+	modelParas	{ 	3.0			}
 }
 ###############################
 
@@ -263,8 +264,8 @@ visualization_dir
 # < 0, -number of interfaces - 1 (e.g. # segments) used in each subdomain for its outputs
 # > 0, the step size for that given subdomain
 visualization_numSpaceStep
-#-512
--1
+-512
+#-1
 
 # again < 0, absolute number of steps, > 0 step size
 visualization_numTimeStep
@@ -446,13 +447,15 @@ infile
 directSpaceSizeModifier
 #-2
 #-4
--20
+-10
+#-20
 
 numRepeatSequence
-10
+#10
 #1
 #4
 #2
+40
 
 }
 
@@ -635,7 +638,8 @@ terminate_run_target_time
 #0.8
 #80.0
 #20.0
-40.0
+#40.0
+160.0
 #8.00
 #0.7
 
@@ -696,8 +700,8 @@ between_steps_adaptivity
 # < 0, relative to domain min_del_t
 uniform_del_t
 #-1.0
-#-0.1
--0.03
+-0.1
+#-0.03
 #-0.01
 #-1.0
 #-0.128

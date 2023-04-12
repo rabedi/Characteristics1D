@@ -5,6 +5,8 @@ import os
 import shutil
 import rutil as rutil
 import math
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import pickle
 import rmulti_index as rmi 
 from rmulti_index import SMIndex as SMIndex
@@ -33,6 +35,8 @@ dist_logs["phi_d_norm_phi0_tFin"] = 10
 dist_logs["phi_d_norm_phi_input_F"] = 10
 dist_logs["psi_f"] = 10
 dist_logs["psi_f_norm_psiC"] = 10
+dist_logs["eps_f"] = 10
+dist_logs["eps_f_norm"] = 10
 dist_logs["lbar_F"] = 10
 
 def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
@@ -41,6 +45,8 @@ def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3O
     #change
     c_ver0 = "verNo"
     c_ver1 = "verWOffsetNo"
+    c_lldelc_ind = "indldelc"
+    c_lldelc_v = "inp_s_ldelc"
     c_la_ind = "indla"
     c_la_v = "inp_s_la"
     c_dd2_ind = "inddd2"
@@ -50,22 +56,47 @@ def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3O
     
     i_ver0 = db.columns.get_loc(c_ver0)
     i_ver1 = db.columns.get_loc(c_ver1)
+    i_ldelc_ind = db.columns.get_loc(c_lldelc_ind)
+    i_ldelc_v = db.columns.get_loc(c_lldelc_v)
     i_la_ind = db.columns.get_loc(c_la_ind)
     i_la_v = db.columns.get_loc(c_la_v)
     i_dd2_ind = db.columns.get_loc(c_dd2_ind)
     i_dd2_v = db.columns.get_loc(c_dd2_v)
     i_llc_ind = db.columns.get_loc(c_llc_ind)
     i_llc_v = db.columns.get_loc(c_llc_v)
+    i_col_phidtf = db.columns.get_loc("out_s_phi_d_tFin")
+    log10Inv = 1.0 / np.log(10)
 
     nRows = db.shape[0]
-    for i in range(nRows):
-        ver0 = int(db.iloc[i, i_ver0])
-        ver1 = int(db.iloc[i, i_ver1])
-        la_ind = int(db.iloc[i, i_la_ind])
-        la_v = db.iloc[i, i_la_v]
-        dd2_ind = int(db.iloc[i, i_dd2_ind])
-        dd2_v = db.iloc[i, i_dd2_v]
-        llc_v = db.iloc[i, i_llc_v]
+    ii = 0
+    for i, row in db.iterrows():
+        ver0 = int(row[i_ver0])
+        ver1 = int(row[i_ver1])
+        la_ind = int(row[i_la_ind])
+        la_v = row[i_la_v]
+        ldelc_v = row[i_ldelc_v]
+        dd2_ind = int(row[i_dd2_ind])
+        dd2_v = row[i_dd2_v]
+        llc_v = row[i_llc_v]
+
+        phidtf = row[i_col_phidtf]
+        if (phidtf < 0):
+            db = db.drop(i, axis=0)
+            continue
+        logphid = np.log(phidtf) * log10Inv
+        if (la_v > -1.1):
+            logphidMin = -0.45 + la_v * 0.6125
+        else:
+            logphidMin = -1.5
+        logphidMin = logphidMin + (ldelc_v + 1)
+        if (la_v < -1.1):
+            logphidMin -= (dd2_v - 0.1) 
+
+        # decrementing by 1 so to drop bad data
+        logphidMin = logphidMin - 2
+        if (logphid < logphidMin):
+            db = db.drop(i, axis=0)
+            continue
 
         ver0 = min(ver0 % 2000, ver1 % 2000)
         ver1 = ver0
@@ -89,17 +120,19 @@ def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3O
         la_ind = int(round(2 * la_v)) + 6         
         ver1 = ver0
 
-        db.iloc[i, i_ver0] = ver0 
-        db.iloc[i, i_ver1] = ver1 
+        db.iloc[ii, i_ver0] = ver0 
+        db.iloc[ii, i_ver1] = ver1 
 
-        db.iloc[i, i_la_ind] = la_ind
-        db.iloc[i, i_la_v] = la_v
+        db.iloc[ii, i_la_ind] = la_ind
+        db.iloc[ii, i_la_v] = la_v
          
-        db.iloc[i, i_dd2_ind] = dd2_ind
-        db.iloc[i, i_dd2_v] = dd2_v
+        db.iloc[ii, i_dd2_ind] = dd2_ind
+        db.iloc[ii, i_dd2_v] = dd2_v
 
         llc_ind = int(-2 * llc_v) - 1
-        db.iloc[i, i_llc_ind] = llc_ind
+        db.iloc[ii, i_llc_ind] = llc_ind
+        ii += 1
+    nRows = db.shape[0]
     return db
     #db.to_csv(filename, index=False,header=True)
     #db.to_csv("data/x.csv", index=False,header=True)
@@ -122,8 +155,13 @@ class OneScalarSetData:
 
 
 class Characteristics_data:
+
+    lineColors = ["black", "blue", "red", "darkgreen", "peru", "darkorchid", "gray", "pink", "violet", \
+                  "cyan", "firebrick", "royalblue", "lime", "darkslategrey", "orange"]
+    markers = ["o", "s", "D", "p", "^", "<", ">", "P", "d", "X", "+", "x", "*", ".", "1", "2", "3", "4", "8"]
+
     def __init__(self):
-        self.print_spatial_field_csv = True
+        self.print_spatial_field_csv = False #True
         self.add_spatial_field_stat = True
 
         self.pd_data = pd.DataFrame()
@@ -155,6 +193,17 @@ class Characteristics_data:
         self.WriteTextData()
         self.Add_SpatialFieldData()
         self.CalculateStatesOverSameInputParaSet()
+
+    def Main_Plot_Scatter(self, folderSource = "../data/2023_03_22_source", folderDest = "../data/Characteristics_data"):
+        self.folderSource = folderSource
+        self.folderDest = folderDest
+        self.GenerateOneSortedFile()
+        self.FormMultiIndexMatrix_AfterSortedMatrix()
+        self.WriteTextData()
+        self.print_spatial_field_csv = False
+        self.add_spatial_field_stat = True
+        self.Add_SpatialFieldData()
+        self.PlotScatter()
 
     def WriteTextData(self):
         fn = self.folderDest + "/allData/mainMembers.txt"
@@ -188,6 +237,7 @@ class Characteristics_data:
             file_names = glob.glob(self.folderSource + "/*.{}".format('csv') )
             cnt = 0
             for fn in file_names:
+                print(fn)
                 if cnt==0:
                     self.pd_data = read_updata_csv(fn)
                 else:
@@ -258,8 +308,10 @@ class Characteristics_data:
         if ((self.print_spatial_field_csv == True) and os.path.isfile(fieldFile)):
             self.print_spatial_field_csv = False
         if ((self.add_spatial_field_stat) and os.path.isfile(allFile_wxs)):
+            self.pd_data_w_iniField = pd.read_csv(allFile_wxs)
+            self.pd_data_w_iniField = self.pd_data_w_iniField.apply(pd.to_numeric, errors='coerce')
             self.add_spatial_field_stat = False
-        if (self.add_spatial_field_stat == False):
+        elif (self.add_spatial_field_stat == False):
             self.pd_data_w_iniField = self.pd_data
         if ((self.print_spatial_field_csv == False) and (self.add_spatial_field_stat == False)):
             return
@@ -417,3 +469,147 @@ class Characteristics_data:
             self.pdStats[si].to_csv(fdestAll + "/stat" + namesStat[si] + ".csv", index=False,header=True)
         with open(fdestAll + "/stat_vals.pkl", 'wb') as f:
             pickle.dump(self.pdStat_vals, f)            
+
+    def PlotScatter(self):
+        posMean = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_mean")
+        posMin = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_mn")
+        poscov = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_cov")
+        posstd = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_std")
+        clmns = [posMin, posMean, poscov, posstd]
+        nms = ["min", "mean", "cov", "std"]
+        # col_out_indices = [i for i, name in enumerate(self.pd_data_w_iniField.columns) if (('out_' in name) or ("inp_sfx_" in name))]
+        col_out_indices = [i for i, name in enumerate(self.pd_data_w_iniField.columns) if ('out_' in name)]
+        sz = min(len(nms), 4)
+        for ci in range(sz):
+            self.PlotScatterAux(ci, clmns[ci], nms[ci], col_out_indices)
+
+
+    def PlotScatterAux(self, ci, clmn, nm, col_out_indices):
+        # sortingFields = ["llc", "dd2", "ldelc", "la"]
+        plotRoot = "scatters_" + str(ci) + nm 
+        rutil.rmkdir(plotRoot)
+        plotRoot += "/"
+        xlbl = nm + "(s(x))"
+
+        totalIndSize = len(self.sz_ind_sortings)
+        fldNames = []
+        for cyi, cy in enumerate(col_out_indices):
+            nmTmp = "fld_" + str(cyi) + "_" + self.pd_data_w_iniField.columns[cy]
+            fldNames.append(nmTmp)  
+            rutil.rmkdir(plotRoot + nmTmp)
+
+        outer_indices = [2, 3, 1]
+        inner_indices = [0]
+        sz_outer = len(outer_indices)
+        directionalSizes_outer = []
+        for ind in outer_indices:
+            directionalSizes_outer.append(self.sz_ind_sortings[ind])
+        smi_outer = SMIndex()
+        smi_outer.Initialize_MultiIndex(directionalSizes_outer)
+
+        sz_inner = len(inner_indices)
+        directionalSizes_inner = []
+        for ind in inner_indices:
+            directionalSizes_inner.append(self.sz_ind_sortings[ind])
+        smi_inner = SMIndex()
+        smi_inner.Initialize_MultiIndex(directionalSizes_inner)
+
+        for olin in range(smi_outer.totalSz):
+            omulti = smi_outer.SI2MI(olin)
+
+            outName = ""
+            for [ocntr, oind] in enumerate(outer_indices):
+                str_ind = str(omulti[ocntr])
+                strTmp = "I_" + sortingFields[oind] + "=" + str_ind
+                if (ocntr > 0):
+                    outName += "_"
+                outName += strTmp
+
+            numRuns = 0
+            sts = []
+            ens = []
+            imultis = []
+            ilins = []
+            linIndexAlls = []
+            for ilin in range(smi_inner.totalSz):
+                imulti = smi_inner.SI2MI(ilin)
+                # getting full index of this run
+                indTotal = np.zeros(totalIndSize)
+                for jj, po in enumerate(outer_indices):
+                    indTotal[po] = omulti[jj]
+                for jj, pi in enumerate(inner_indices):
+                    indTotal[pi] = imulti[jj]
+
+                # now go from total index to lin index over all runs
+                linIndexAll = self.s2mi.MI2SI(indTotal)
+                # see if there is data for this
+                if (self.runNoSets[linIndexAll] == None):
+                    continue
+                # so there is data in it
+                numRuns += 1
+                st = self.runNoSets[linIndexAll].st
+                en = self.runNoSets[linIndexAll].en
+                sts.append(st)
+                ens.append(en)
+                imultis.append(imulti)
+                ilins.append(ilin)
+                linIndexAlls.append(linIndexAll)
+
+            if (numRuns == 0):
+                continue
+
+            rutil.rmkdir(plotRoot + outName)
+
+            for cyi, cy in enumerate(col_out_indices):
+                fig, ax = plt.subplots()
+                ax.set_adjustable('box')
+                of = plotRoot + outName 
+                rutil.rmkdir(of)
+                fldName = fldNames[cyi]
+                nm_out_fld = of + "/" + outName + fldName
+                nm_fld_out = plotRoot + "/" + fldName + "/" + fldName + outName
+
+                lc = Characteristics_data.lineColors[0]
+                mkr = Characteristics_data.markers[0]
+
+                for rn in range(numRuns):
+                    st = sts[rn]
+                    en = ens[rn]
+                    imulti = imultis[rn]
+                    ilin = ilins[rn]
+                    linIndexAll = linIndexAlls[rn]
+                    xVals = self.pd_data_w_iniField.iloc[st:en, clmn]
+                    if (sz_inner > 0):
+                        lc = Characteristics_data.lineColors[imulti[0]]
+                        if (sz_inner > 1):
+                            mkr = Characteristics_data.markers[imulti[1]]
+                    lbl = ""
+                    if (sz_inner == 1):
+                        lbl = str(self.runNoSets[linIndexAll].scalar_input_vals[0])
+                    elif (sz_inner > 1):
+                        for [icntr, iind] in enumerate(inner_indices):
+                            str_vl = str(self.runNoSets[linIndexAll].scalar_input_vals[iind])
+                            strTmp = sortingFields[iind] + "=" + str_vl
+                            if (icntr > 0):
+                                lbl += ","
+                            lbl += strTmp
+
+                    yVals = self.pd_data_w_iniField.iloc[st:en, cy]
+                    plt.scatter(xVals, yVals, marker=mkr, color=lc, label=lbl)
+
+                if sz_inner > 0:
+                    plt.legend()
+                plt.xlabel(xlbl)
+                plt.ylabel(fldName)
+                # fig.show()
+
+                plotFullNameWOExt = nm_out_fld #
+                pltName = plotFullNameWOExt + ".svg"
+                plt.savefig(pltName, format='svg')
+                pltName = plotFullNameWOExt + ".png"
+                plt.savefig(pltName, format='png')
+                fig.clf()
+                plt.close()
+
+                shutil.copy(plotFullNameWOExt + ".png", nm_fld_out + ".png")
+                shutil.copy(plotFullNameWOExt + ".svg", nm_fld_out + ".svg")

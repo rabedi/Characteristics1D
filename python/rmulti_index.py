@@ -113,7 +113,7 @@ class SMIndex:
         ind = 0
         for i in range(self.order):
             ind += self.totalDirectionalFactors[i] * multiIndex[i]
-        return ind
+        return (int)(ind)
 
     # single to multi index
     def SI2MI(self, singleIndex):

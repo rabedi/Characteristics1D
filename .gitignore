@@ -55,3 +55,4 @@ Target.vcxproj.user
 .vs/Target/v15/ipch/AutoPCH/d7ee27f7bd4568fd/GLOBALFUNCTIONS.ipch
 .vs/Target/v15/ipch/AutoPCH/de8cb49bdbf3d35a/SPACEMESH.ipch
 _log/__logInhomogeneous_axt_fracture_Coh_Ring_openedpCheck.txt
+*.pyc

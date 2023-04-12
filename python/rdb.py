@@ -174,23 +174,32 @@ class PlotOMISplit_AllPlots:
 
 class DataBaseSplits:
     # inpColDict is a dictionary of input columns
-    def Initialize_DataBaseSplits(self, db, inpColDict, dist_logs = {}, folderDest = "data/Characteristics_data"):
-
-        self.col_out_indices = [i for i, name in enumerate(db.columns) if 'out_' in name]
+    def Initialize_DataBaseSplits(self, db, inpColDict, dist_logs = {}, folderDest = "data/Characteristics_data", plotFillMode = 0):
+        self.plotFillMode = plotFillMode
+        self.col_out_indices = [i for i, name in enumerate(db.columns) if (('out_' in name) or ("inp_sfx_" in name))]
         self.num_out = len(self.col_out_indices)
 
         self.db = db
-        summaryName_min = folderDest  + "/allData/stat_mn.csv"
-        summaryName_max = folderDest  + "/allData/stat_mx.csv"
-        try:
-            self.db_min = pd.read_csv(summaryName_min)
+        if (self.plotFillMode == 0):
+            summaryName_min = folderDest  + "/allData/stat_mn.csv"
+            summaryName_max = folderDest  + "/allData/stat_mx.csv"
             try:
-                self.db_max = pd.read_csv(summaryName_max)
-                self.db_has_db_mM = 1
+                self.db_min = pd.read_csv(summaryName_min)
+                try:
+                    self.db_max = pd.read_csv(summaryName_max)
+                    self.db_has_db_mM = 1
+                except IOError:
+                    self.db_has_db_mM = 0
             except IOError:
                 self.db_has_db_mM = 0
-        except IOError:
-            self.db_has_db_mM = 0
+        else:
+            summary_std = folderDest  + "/allData/stat_std.csv"
+            try:
+                self.db_std = pd.read_csv(summary_std)
+                self.db_max = self.db + self.db_std
+                self.db_min = self.db - self.db_std
+            except IOError:
+                self.db_has_db_mM = 0
 
         self.db_inp_cols = []
         self.db_colnames = []
@@ -332,7 +341,11 @@ class DataBaseSplits:
                 val = self.db_inp_cols[ind].vals[indI]
                 tmpIndName = "I" + allPlots.colNames[ii] + "=" + str(indI)
                 onePlot.plot_nameBaseFromIndices += tmpIndName
-                tmpValName = "V" + allPlots.colNames[ii] + str(val)
+                if val.is_integer():
+                    str_num = f"{val:.0f}"  # No decimal places for integers
+                else:
+                    str_num = f"{val:.1f}"                 
+                tmpValName = "V" + allPlots.colNames[ii] + str_num
                 onePlot.plot_nameBaseFromVals += tmpValName
                 onePlot.onePlot_vals.append(val)
                 onePlot.onePlot_dict_line_prop_2_ind[self.db_inp_cols[ind].lineprop] = onePlot.onePlot_indices[ii]
@@ -514,7 +527,7 @@ class DataBaseSplits:
                             if (self.db_logs[fj] > 0):
                                 y = [math.log(abs(yv), self.db_logs[fj]) for yv in y]
                                 yaxis_log = True
-                            if (fiField and self.db_logs[colx]):
+                            if (fiField and (self.db_logs[colx] > 0)):
                                 x = [math.log(abs(xv), self.db_logs[colx]) for xv in x]
                                 xaxis_log = True
                             line.set_ydata(y)
@@ -535,12 +548,20 @@ class DataBaseSplits:
                                     line.set_label(lab)
 
                             ax.add_line(line)
-                            if (not np.isnan(x).all()):
-                                xm = min(np.nanmin(x), xm)
-                                xM = max(np.nanmax(x), xM)
-                            if (not np.isnan(y).all()):
-                                ym = min(np.nanmin(y), ym)
-                                yM = max(np.nanmax(y), yM)
+                            for xi in x:
+                                if (np.isnan(xi) or np.isinf(xi)):
+                                    continue
+                                if (xi < xm):
+                                    xm = xi
+                                if (xi > xM):
+                                    xM = xi
+                            for yi in y:
+                                if (np.isnan(yi) or np.isinf(yi)):
+                                    continue
+                                if (yi < ym):
+                                    ym = yi
+                                if (yi > yM):
+                                    yM = yi
                         if (plotFill):
                             ax.fill_between(xms, yms, yMs, alpha=0.2)
                         ++cntr_curves
@@ -548,7 +569,7 @@ class DataBaseSplits:
             #fig.show()
 
             # fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9)
-            if (xM >= xm):
+            if ((xM >= xm) and (not math.isnan(xM)) and (not math.isnan(xm))):
                 xmM = max(np.abs(xm), np.abs(xM))
                 txmM = max(1e-3 * xmM, 1e-11)
                 delx = xM - xm
@@ -559,7 +580,7 @@ class DataBaseSplits:
                 xMdx = xM + dx
                 plt.xlim([xmdx, xMdx])
 
-            if (yM >= ym):
+            if ((yM >= ym) and (not math.isnan(yM)) and (not math.isnan(ym))):
                 ymM = max(np.abs(ym), np.abs(yM))
                 tymM = max(1e-3 * ymM, 1e-11)
                 dely = yM - ym
@@ -570,6 +591,8 @@ class DataBaseSplits:
                 yMdy = yM + dy
                 plt.ylim([ymdy, yMdy])
 
+            if (math.isnan(xm) or math.isnan(xM) or math.isnan(ym) or math.isnan(yM)):
+                continue
 
             if (xaxis_log):
                 xl = "log(" + fiName + ")"
@@ -602,8 +625,13 @@ class DataBaseSplits:
             shutil.copy(plotFullNameWOExt + ".png", cpFWOExt + ".png")
             shutil.copy(plotFullNameWOExt + ".svg", cpFWOExt + ".svg")
 
-def read_csv(root = "data/Characteristics_data"):
-    summaryName = root + "/allData/stat_mean.csv"
+def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
+    if (readMainLineMode == 0):
+        summaryName = root + "/allData/stat_mean.csv"
+    elif (readMainLineMode == 1):
+        summaryName = root + "/allData/stat_cov.csv"
+    elif (readMainLineMode == 2):
+        summaryName = root + "/allData/stat_std.csv"
     try:
         pd_data = pd.read_csv(summaryName)
     except IOError:
@@ -616,31 +644,52 @@ def main_function():
     # 1. set the path to "InhomogeneousFiles" folder
     InpF.setInputMeshRootFolder("../InhomogeneousFiles")
     # 2. set path to "2023_03_24". I put it inside a "data" folder for myself. You can adjust this path
-    folderSource = "../../data/2023_03_24"
+    folderSource = "../../data/2023_04_11"
     # 3. If needed, adjust output path were the files are generated
     folderDest = "../../data/Characteristics_data"
-    generatePlots = False
+    generatePlots = True
     cd = Characteristics_data()
+
+    # scatter plots
+    if (False):
+        cd.Main_Plot_Scatter(folderSource, folderDest)
+        return
+ 
     cd.Main_Characteristics_data(folderSource, folderDest)
     if (not generatePlots):
         return
 
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
-    pd_data = read_csv(folderDest)
+    # option 0 # -> default
+    option = 1 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std
+    plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
+    plotFill = False
+    if (plotFill):
+        readMainLineMode = 0
+    pd_data = read_csv(folderDest, readMainLineMode)
 
-    plotFill = 0
 
     inpColDict = {}
+
     if (not plotFill):
-        inpColDict["la"] = "fillstyle" #"c" # color
-        inpColDict["llc"] = "c" # line style
-        inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
-    #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
-        inpColDict["dd2"] = "marker" # marker fill color
-    #    inpColDict["resolutionFactor"] = "none"
-        # other options "lw", "ms"
-        # log of what quantities is taken
+        if (option == 0):
+            inpColDict["la"] = "fillstyle" #"c" # color
+            inpColDict["llc"] = "c" # line style
+            inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+        #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
+            inpColDict["dd2"] = "marker" # marker fill color
+        elif (option == 1):
+            inpColDict["la"] = "marker" #"c" # color
+            inpColDict["llc"] = "fillstyle" # line style
+            inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+            inpColDict["dd2"] = "c" # marker fill color
+        elif (option == 2):
+            inpColDict["la"] = "c" #"c" # color
+            inpColDict["llc"] = "fillstyle" # line style
+            inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+            inpColDict["dd2"] = "marker" # marker fill color
     else:
         inpColDict["la"] = "ls" #"c" # color
         inpColDict["llc"] = "fillstyle" # line style
@@ -661,42 +710,65 @@ def main_function():
     dist_logs["lbar_F"] = 10
     """
     dbs = DataBaseSplits()
-    dbs.Initialize_DataBaseSplits(pd_data, inpColDict, dist_logs, folderDest)
+    dbs.Initialize_DataBaseSplits(pd_data, inpColDict, dist_logs, folderDest, plotFillMode)
 
     splitInstructions = PlotOMISplit_Instruction()
 #    splitInstructions.out_col_nameBases.append("ssoFS")
     if (not plotFill):
-        splitInstructions.out_col_nameBases.append("dd2")
-        splitInstructions.out_col_nameBases.append("ldelc")
-        #   splitInstructions.out_col_nameBases.append("la")
-        #   splitInstructions.out_col_nameBases.append("llc")
+        # default option
+        if (option == 0):
+            splitInstructions.out_col_nameBases.append("dd2")
+            splitInstructions.out_col_nameBases.append("ldelc")
+            #   splitInstructions.out_col_nameBases.append("la")
+            #   splitInstructions.out_col_nameBases.append("llc")
+            splitInstructions.in_col_nameBase = "la"
+        elif (option == 1):
+            splitInstructions.out_col_nameBases.append("la")
+            splitInstructions.out_col_nameBases.append("ldelc")
+            splitInstructions.in_col_nameBase = "llc"
+        elif (option == 2):
+            splitInstructions.out_col_nameBases.append("dd2")
+            splitInstructions.out_col_nameBases.append("ldelc")
+            splitInstructions.in_col_nameBase = "llc"
     else:
         splitInstructions.out_col_nameBases.append("dd2")
         #   splitInstructions.out_col_nameBases.append("ldelc")
         #   splitInstructions.out_col_nameBases.append("la")
         splitInstructions.out_col_nameBases.append("llc")
+        splitInstructions.in_col_nameBase = "la"
 
 #    splitInstructions.in_col_nameBase = "resolutionFactor"
-    splitInstructions.in_col_nameBase = "la"
 
     # want to make sure it can figure it out automatically
     # splitInstructions.mid_col_nameBases.append("dd2")
 
     allPlots, splitInstructions = dbs.Generate_AllPlots_fromSplitInstructions(splitInstructions)
 
-    fj = -1 # all output fields
-    fi = -1 # inner loop
-    dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, plotFill)
+    # plott all values versus inner parameter
+    if True:
+        fj = -1 # all output fields
+        fi = -1 # inner loop
+        dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, plotFill)
+
+    # plotting mean(min(strenth)) (or mean(strength), cov(strength)), etc. where the second operator is over space
+    # versus all fields
+    # 22 -> inp_sfx_sim_mean
+    # 23 -> inp_sfx_sim_mn
+    # 25 -> inp_sfx_sim_cov
+    if False:
+        fj = -1 # all output fields
+        fi = 22 # inner loop
+        dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, plotFill)
 
     # example of plotting one field version the other: 
-    if 0:
+    if False:
         fi = 40 #phid
         fj = 56 # sigmaM
         dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi)
 
     # example of running multiple fields as y axis in a plot
     # last argument is how to differentiate lines for different fields
-    if 0:
+    if False:
         fi = [-1]
         fj = [21, 22] # time of max and 0
         dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, "ls")
@@ -713,6 +785,18 @@ def main_function():
         vals = pinp.GetStatVecVals(addRaw)
         print(names)
         print(vals)
+
+    # sample random mesh realizations
+    if (False):
+        a1 = InpF()
+        a1.Initialize_InpF(valsAtVert = True, meshp2 = 14, serNo = 0, llc = -3.0, dd2 = 0.2, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1)
+        a2 = InpF()
+        a2.Initialize_InpF(valsAtVert = True, meshp2 = 14, serNo = 0, llc = -1.5, dd2 = 0.6, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1)
+        with open("test1.txt", "w") as fl:
+            print(a1.vals,file=fl)
+        with open("test2.txt", "w") as fl:
+            print(a2.vals,file=fl)
+        return
 
 
 def main():
