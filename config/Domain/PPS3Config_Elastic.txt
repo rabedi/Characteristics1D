@@ -97,7 +97,7 @@ temporalFieldTimeStepValOrNumSteps
 # for time outputs, we can generate outputs for all DSU stems in each case timeStep4_DSU_outputs == 1, ever other of such time value for == 2, every third for this value == 3, ...
 # there are 10 DSU time steps, so to get output in the middle and final time use 5
 timeStep4_DSU_outputs
-5
+50
 
 outputTypeActive
 # pps3_stageStat: stage/stat (one line per run)
