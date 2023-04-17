@@ -88,3 +88,9 @@ Isaac 2023/03/20
 
 
 -sp -mc config/MainConfig/mainConfig_axt_coh_medium.txt -st	0 	-en 0	-vst	0	-ven	15
+-sp -c config/Domain/MM_fracture.txt -cp config/Domain/PPS3Config_MM.txt
+
+
+./solver -sp -mc config/MainConfig/mainConfig_elastic_x.txt -st 0 -en 10 -vst 0 -ven 1
+
+-sp -mc config/MainConfig/mainConfig_elastic_x.txt -st 0 -en 0 -vst 0 -ven 24

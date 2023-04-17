@@ -355,7 +355,14 @@ void GetSubdomainIndexed_SpaceIndexed_FileName(string& fileName, int spaceIndexO
 			posStr = "xPos_dl_" + posStrL + "_dR_" + posStrR;
 		}
 	}
-	nameBase = g_prefileName + posStr + "_" + specificName;
+	if (g_versionNumber < 0)
+		nameBase = g_prefileName + posStr + "_" + specificName;
+	else
+	{
+		string fldr = "../" + posStr;
+		MakeDir(fldr);
+		nameBase = fldr + "/" + g_prefileNameWOSlash + "_" + posStr + "_" + specificName;
+	}
 //	nameBase = g_prefileName + "_" + specificName + posStr;
 	fileName = nameBase + "." + ext;
 }
@@ -381,10 +388,13 @@ SolveParameters::SolveParameters()
 	numParallelRuns = -1;
 	solveParametersConfigName = "config/mainConfig_axt_coh.txt";
 	b_solveParametersConfigName = false;
+	PPS2_outside = true;
+	delete_runFolders = 2;
+
 #if VCPP
-	low_disk_space = false;
+	low_disk_space = 0;
 #else
-	low_disk_space = true;
+	low_disk_space = 1;
 #endif
 }
 
@@ -437,7 +447,20 @@ void SolveParameters::Read_SolveParameters(string solveParametersConfigNameIn)
 		}
 		else if (buf == "low_disk_space")
 		{
-			READ_NBOOL(in, buf, low_disk_space);
+			READ_NINTEGER(in, buf, low_disk_space);
+			if (low_disk_space < 0)
+			{
+				if (low_disk_space == -2)
+					low_disk_space = 2;
+				else if (low_disk_space == -1)
+				{
+#if VCPP
+					low_disk_space = 0;
+#else
+					low_disk_space = 1;
+#endif
+				}
+			}
 		}
 		else if (buf == "serialNumber_st")
 		{
@@ -458,6 +481,22 @@ void SolveParameters::Read_SolveParameters(string solveParametersConfigNameIn)
 		else if (buf == "np")
 		{
 			READ_NBOOL(in, buf, numParallelRuns);
+		}
+		else if (buf == "PPS2_outside")
+		{
+			READ_NBOOL(in, buf, PPS2_outside);
+		}
+		else if (buf == "delete_runFolders")
+		{
+			READ_NINTEGER(in, buf, delete_runFolders);
+			if (delete_runFolders == 3)
+			{
+#if VCPP
+				delete_runFolders = 0;
+#else
+				delete_runFolders = 1;
+#endif
+			}
 		}
 		else
 		{

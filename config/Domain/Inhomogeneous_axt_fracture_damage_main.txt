@@ -220,7 +220,7 @@ eit Crho_const
 
 baseName_WOExt_oihf_elastic1
 inline
-InhomogeneousFiles/Fake/v1_x0/file
+../InhomogeneousFiles/Fake/v1_x0/file
 {
 num_Vals_and_x_Provided
 0
@@ -249,7 +249,7 @@ Triangle
 endinline
 
 # baseName_WOExt_oihf_elastic2
-# InhomogeneousFiles/Fake/v1_x0/file
+# ../InhomogeneousFiles/Fake/v1_x0/file
 
 
 #### fracture 
@@ -258,15 +258,15 @@ fit sigmadelta_const
 
 # baseName_WOExt_oihf_fracture1
 # inline
-# InhomogeneousFiles/Fake/v1_x0/file
+# ../InhomogeneousFiles/Fake/v1_x0/file
 
 # baseName_WOExt_oihf_fracture2
 # inline
-# InhomogeneousFiles/Fake/v1_x0/file
+# ../InhomogeneousFiles/Fake/v1_x0/file
 
 baseName_WOExt_oihf_fracture_iniDamage
 inline
-InhomogeneousFiles/Fake/v1_x0/file
+../InhomogeneousFiles/Fake/v1_x0/file
 {
 num_Vals_and_x_Provided
 0

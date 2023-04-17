@@ -2,16 +2,17 @@
 
 # config for solution and PPS1
 configName
-config/Domain/MM_fracture.txt
+config/Domain/Inhomogeneous_left_load_elastic.txt
 
 # config for PPS3 (and PPS2 inside that)
 configPPName
-config/Domain/PPS3Config_MM.txt
+config/Domain/PPS3Config_Elastic.txt
 
 # config file for generating versions (delc, cor length, etc. combinations)
 version_configMakerGenName
 ###########################################################
-config/ConfigMakerVersion/configMaker_MM.inst
+#elastic
+config/ConfigMakerVersion/configMaker_x_Elastic.inst
 
 # if true, the instruction file will be regenerated regardless of if it already exists or not
 version_configMaker_forceRewrite
@@ -22,18 +23,20 @@ version_configMaker_forceRewrite
 # Use: We won't overwrite previous runs possibly from other instructions
 versionOffset
 0
-#1000
+#use this for no_random
+#10000
 
 # loop_version_first_serial_second: see the function void Solve_all_serialNumbers
 lv1s2
 0
+
 
 # saving disk space (e.g. on clusters) is activated by boolean below. It will only write essential data
 # 0												-> writes all the files
 # 1 (all computers) OR (-1 on NonWindows)		-> does not write the big files (x_Pos ...)
 # 2, or -2										-> does not write big files except x_Pos (useful for elastic runs with Martin)	
 low_disk_space
--1
+-2
 
 # prints PPS2 outside the folder: Good for running many folders together and intending to have all the _PPS2's in the same place
 PPS2_outside

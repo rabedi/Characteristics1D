@@ -9,11 +9,12 @@ if nargin < 2
 end
 if nargin < 3
     versionNum = -1;
+    versionNum = 0;
 %    versionNum = 14;
 end
 if nargin < 4
 %    subdomainNos = [0, 1, 2];
-    subdomainNos = 1;
+    subdomainNos = 0;
 end
 if nargin < 5
     hasFracture = -1;

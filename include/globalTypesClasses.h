@@ -119,7 +119,7 @@ public:
 	// loop_version_first_serial_second: see the function void Solve_all_serialNumbers
 	bool lv1s2;
 	// to only write out necessary information
-	bool low_disk_space;
+	int low_disk_space;
 
 	// this is used to generate script for parallel runs (.sh files)
 	// if the number < 0, the scripts are not generated
@@ -134,6 +134,9 @@ public:
 	double xm, xM;
 
 	bool isDomain;
+	bool PPS2_outside;
+	// 0 does not delete, 1 deletes, 2 only deletes in low disk scenario
+	int delete_runFolders;
 };
 
 // timeIndex < 0, does not print time position

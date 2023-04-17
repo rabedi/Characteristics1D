@@ -419,9 +419,9 @@ eit Crho_const
 
 baseName_WOExt_oihf_elastic1
 inline
-#InhomogeneousFiles/Fake/v1_x0/file
-#InhomogeneousFiles/cl-2.5_np1025/initial_values
-InhomogeneousFiles/clz_np16385/initial_values
+#../InhomogeneousFiles/Fake/v1_x0/file
+#../InhomogeneousFiles/cl-2.5_np1025/initial_values
+../InhomogeneousFiles/clz_np16385/initial_values
 {
 num_Vals_and_x_Provided
 1
@@ -458,10 +458,10 @@ endinline
 
 baseName_WOExt_oihf_fracture1
 inline
-#InhomogeneousFiles/Fake/v1_x0/file
-#InhomogeneousFiles/cl-2.5_np1025/initial_values
-#InhomogeneousFiles/clz_np1025/initial_values
-InhomogeneousFiles/clz_np16385/initial_values
+#../InhomogeneousFiles/Fake/v1_x0/file
+#../InhomogeneousFiles/cl-2.5_np1025/initial_values
+#../InhomogeneousFiles/clz_np1025/initial_values
+../InhomogeneousFiles/clz_np16385/initial_values
 {
 num_Vals_and_x_Provided
 1
@@ -497,12 +497,12 @@ endinline
 
 # baseName_WOExt_oihf_fracture2
 # inline
-# InhomogeneousFiles/Fake/v1_x0/file
+# ../InhomogeneousFiles/Fake/v1_x0/file
 
 baseName_WOExt_oihf_fracture_iniDamage
 none
 #inline
-#InhomogeneousFiles/Fake/v1_x0/file
+#../InhomogeneousFiles/Fake/v1_x0/file
 #{
 #num_Vals_and_x_Provided
 #0

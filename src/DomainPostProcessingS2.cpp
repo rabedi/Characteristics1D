@@ -3288,6 +3288,8 @@ int DomainPostProcessS2::get_space_spacetime_integral_index_from_name(const stri
 		return sind_K;
 	if (fldName == "U")
 		return sind_U;
+	if (fldName == "U2phi")
+		return sind_U2phi;
 	if (fldName == "phys_diss_tot")
 		return sind_diss_tot;
 	if (fldName == "phys_diss_lost")
@@ -3519,6 +3521,7 @@ bool DomainPostProcessS2::Read_SummaryData()
 	tmps = "phi";										sind_phi = Find(namesNonLatex, tmps);
 	tmps = "K";											sind_K = Find(namesNonLatex, tmps);
 	tmps = "U";											sind_U = Find(namesNonLatex, tmps);
+	tmps = "U2phi";										sind_U2phi = Find(namesNonLatex, tmps);
 	tmps = "input_energy";								sind_EneInp = Find(namesNonLatex, tmps);
 	tmps = "energy_BC";									sind_EneBC = Find(namesNonLatex, tmps);
 	tmps = "energy_L";									sind_EneL = Find(namesNonLatex, tmps);

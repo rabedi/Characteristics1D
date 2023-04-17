@@ -662,10 +662,10 @@ def main_function():
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
-    option = 1 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 0 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std
     plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
-    plotFill = False
+    plotFill = True
     if (plotFill):
         readMainLineMode = 0
     pd_data = read_csv(folderDest, readMainLineMode)

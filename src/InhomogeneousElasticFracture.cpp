@@ -1009,39 +1009,50 @@ void ElasticFractureInhomogField::ModifyElasticFracture_RandomFieldInput(string&
 	string llc_str = "llcnone";
 	string key;	map<string, string>* mpPtr;
 	key = "llc";
-	if (!Find_Version_String(key, llc_str, mpPtr))
-		return;
-	g_logout << "\tllc_str\t" << llc_str;
+	if (Find_Version_String(key, llc_str, mpPtr))
+	{
+		g_logout << "\tllc_str\t" << llc_str;
 
-//	string np_str = "1025";
-	string np_str = "16385";
-/*
-	if (mpPtr != NULL)
-	{
-		map<string, string>::iterator it = mpPtr->find("np");
-		if (it != mpPtr->end())
-			np_str = it->second;
-	}
-*/
-	if (sfcm.success && (sfcm.number_of_elements > 0))
-	{
-		int np = sfcm.number_of_elements;
-//		if (factureNo > 0)
+		//	string np_str = "1025";
+		string np_str = "16385";
+		/*
+			if (mpPtr != NULL)
+			{
+				map<string, string>::iterator it = mpPtr->find("np");
+				if (it != mpPtr->end())
+					np_str = it->second;
+			}
+		*/
+		if (sfcm.success && (sfcm.number_of_elements > 0))
+		{
+			int np = sfcm.number_of_elements;
+			//		if (factureNo > 0)
 			++np;
-		toString(np, np_str);
+			toString(np, np_str);
+		}
+		double llc = -1;
+		double d_np;
+		double limt = -4.9999;
+		if (fromString(np_str, d_np) == true)
+		{
+			limt = -(log(d_np) / log(10.0));
+		}
+		fromString(llc_str, llc);
+		if (llc >= limt)//(llc <= -5.9999)
+			baseName_WOExt = "../InhomogeneousFiles/cl" + llc_str + "_np" + np_str + "/initial_values";
+		else
+			baseName_WOExt = "../InhomogeneousFiles/clz_np" + np_str + "/initial_values";
 	}
-	double llc = -1;
-	double d_np;
-	double limt = -4.9999;
-	if (fromString(np_str, d_np) == true)
+	key = "alpha";
+	string str, alpha_str = "1.95", beta_str = "0.1";
+	if (Find_Version_String(key, str, mpPtr))
 	{
-		limt = -(log(d_np) / log(10.0));
+		alpha_str = str;
+		key = "beta";
+		if (Find_Version_String(key, str, mpPtr))
+			beta_str = str;
+		baseName_WOExt = "../InhomogeneousFiles/CD/al" + alpha_str + "b" + beta_str + "_np65537/initial_values";
 	}
-	fromString(llc_str, llc);
-	if (llc >= limt)//(llc <= -5.9999)
-		baseName_WOExt = "InhomogeneousFiles/cl" + llc_str + "_np" + np_str + "/initial_values";
-	else
-		baseName_WOExt = "InhomogeneousFiles/clz_np" + np_str + "/initial_values";
 }
 
 void WriteContent_BetweenCurlyBrack2OtherFile(istream& in, const string& otherFileName)

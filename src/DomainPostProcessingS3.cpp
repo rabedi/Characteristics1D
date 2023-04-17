@@ -402,7 +402,7 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 				READ_NINTEGER(in, buf, outputTypeActive[tot]);
 				if (outputTypeActive[tot] == -1)
 				{
-					if (g_low_disk_space)
+					if (g_low_disk_space != 0)
 						outputTypeActive[tot] = 0;
 					else
 						outputTypeActive[tot] = 1;
@@ -479,7 +479,7 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 		if (sz == 0)
 			outputTypeActive[tot] = 0;
 	}
-//	if (g_low_disk_space)
+//	if (g_low_disk_space == 1)
 //		outputTypeActive[pps3_timeStep] = 0;
 	return true;
 }

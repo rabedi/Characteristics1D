@@ -7,7 +7,8 @@
 
 // CFL
 // See the private class in SL_interfacePPtData_Time_Seq, the size - timeSeqPtrs
-#define SIZE_PT_TIME_SEQUENCE	10000
+#define SIZE_PT_TIME_SEQUENCE	7
+//////////////////////#define SIZE_PT_TIME_SEQUENCE	10000
 //#define SIZE_PT_TIME_SEQUENCE	162
 //#define SIZE_PT_TIME_SEQUENCE	2002
 //#define SIZE_PT_TIME_SEQUENCE	50000
@@ -84,6 +85,7 @@ typedef long GID;
 extern double s_invalidNum;
 
 extern string g_prefileName;
+extern string g_prefileNameWOSlash;
 extern string g_prefileNamePPS2;
 
 // these values are written to files when entry is invalid so that in read in it's clear the values are invalid
@@ -95,8 +97,8 @@ extern double invalidNum;
 extern int g_serialNumber;
 extern double g_time;
 
-// if true, it does not generate large files
-extern bool g_low_disk_space;
+// if 1, it does not generate large files, 0 it does, 2 -> only prints fixed space data
+extern int g_low_disk_space;
 
 #define DB_ON 0
 extern fstream dbout;

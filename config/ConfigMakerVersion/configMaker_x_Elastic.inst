@@ -1,0 +1,74 @@
+configNameOut	default
+specificProblemName	x_Elastic
+subdomainNo		0
+bulkFlag		1
+interfaceFlag	1
+#name added for this set of runs
+configSpecificName	allopts
+{
+#	{	tF
+##		1.2
+#		1.0
+##		0.8
+#	}
+	
+#	{	cfl
+#		1.0
+##		0.5
+##		0.25
+#	}
+
+	
+# original mesh is 2^16 resolution, factors below make it coarser by that factor	
+#	{
+#		resolutionFactor
+##		512
+#		256
+##		128
+##		64
+##		32
+##		16
+##		8
+##		4
+##		2
+##		1
+#	}
+
+	# del/2 (values are from 1 - del/2, 1 + del/2, e.g. del/2 = 0.2 -> 0.8 -> 0.2
+	{	dd2
+		0.9
+##		0.8
+#		0.7
+##		0.6
+		0.5
+##		0.4
+#		0.3
+##		0.2
+##		0.001
+		0.1
+	}
+
+	{
+		alpha
+		1.95
+		1.5
+		1
+		0.5
+		0.1
+	}
+	
+	{
+		beta
+		0.1
+		0.5
+		1
+		1.5
+		1.9
+	}
+	
+}
+groupOutputOrder
+{
+dd2		alpha	beta
+#tF	cfl	resolutionFactor	dd2		alpha	beta
+}

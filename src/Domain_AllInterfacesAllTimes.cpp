@@ -576,9 +576,10 @@ void Domain_All_Interfaces_All_Times::Read_BaseData(istream & in, int serialNumb
 		b_x_min = true;
 		x_min = 0.0;
 	}
-	if (g_low_disk_space)
+	if (g_low_disk_space != 0)
 	{
-		numSpaceStep_InterfaceRawFinalSlnScalars_AllTime_Print_4PP = 0;
+		if (g_low_disk_space == 1)
+			numSpaceStep_InterfaceRawFinalSlnScalars_AllTime_Print_4PP = 0;
 		numTimeStep_InterfaceRawFinalSlnScalars_AllSpace_Print_4PP = 0;
 
 		numTimeStep_BulkInterfacePoints_Print_4PP = -1;
@@ -1200,7 +1201,7 @@ void Domain_All_Interfaces_All_Times::Connect_Interfaces_Set_BC_Types__Form_PP()
 			min_domain_del_t = MIN(min_domain_del_t, interfacePtr->min_delT);
 			max_domain_del_t = MAX(max_domain_del_t, interfacePtr->max_delT);
 			interfacePtr->sz_subDomainNos = GetInterfaceBulkSide_Subdomains_RelIndices(interfacePtr, interfacePtr->subDomainNos, interfacePtr->relPos_wrt_subDomainStartPoints);
-			if ((!g_low_disk_space) || (interfacePtr->interface_flag == g_interfaceFlags_IncImp[LI_INT]) || (interfacePtr->interface_flag == g_interfaceFlags_IncImp[RI_INT]))
+			if ((g_low_disk_space != 1) || (interfacePtr->interface_flag == g_interfaceFlags_IncImp[LI_INT]) || (interfacePtr->interface_flag == g_interfaceFlags_IncImp[RI_INT]))
 				interfacePtr->Open_fixed_x_files_SL_OneInterfaceAllTimes(io_type_InterfaceRawFinalSln_AllTime_Print_4PP, io_type_InterfaceRawScalars_AllTime_Print_4PP, interfacePtr->subDomainNos[0], interfacePtr->subDomainNos[0]);
 
 			if (g_SL_desc_data.tdLoadComputer != NULL)

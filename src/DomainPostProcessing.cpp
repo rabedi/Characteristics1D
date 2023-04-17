@@ -86,6 +86,8 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Read_Data(istream& in)
 	in >> phi_dsum;
 	in >> K_dsum;
 	in >> U_dsum;
+	double rat;
+	in >> rat;
 
 	///////////// energy: INPUT
 	// Input total = phi_time=0 + input BC + input source
@@ -301,6 +303,10 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Write_Data(ostream& ou
 	out << '\t' << phi_dsum;
 	out << '\t' << K_dsum;
 	out << '\t' << U_dsum;
+	double rat = 0.0;
+	if (phi_dsum > tol_input_ene)
+		rat = U_dsum / phi_dsum;
+	out << "\t" << rat;
 
 	///////////// energy: INPUT
 	// Input total = phi_time=0 + input BC + input source
@@ -566,6 +572,10 @@ void Subdomain_spatial_ave_sum::Subdomain_spatial_ave_sum_Data_Get_Header_Labels
 
 	hLabel.textLabel = "U";
 	hLabel.latexLabel = "U";
+	hLabels.push_back(hLabel);
+
+	hLabel.textLabel = "U2phi";
+	hLabel.latexLabel = "U2phi";
 	hLabels.push_back(hLabel);
 
 	hLabel.subgroup = "input";

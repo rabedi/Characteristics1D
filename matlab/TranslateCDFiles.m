@@ -9,22 +9,27 @@ if nargin < 3
     log2NumSegments = 16;
 end
 if nargin < 4
-    numRealizations = 500;
+    numRealizations = 1000;
+    numRealizations = 200;
 end
 nSeg = 2^log2NumSegments;
 nSegSer = num2str(nSeg);
 nPts = nSeg + 1;
 nPtsSer = num2str(nPts);
 
-rootFolder = ['../InhomogeneousFiles/CD/al', alpha, '_b', beta];
+rootFolder = ['../InhomogeneousFiles/CD/al', alpha, 'b', beta];
 targetFolder = [rootFolder, '_np', nPtsSer];
 %targetFolder = [rootFolder, '_np', nSegSer];
 [status,msg,msgID] = mkdir(targetFolder);
 for i = 1:numRealizations
     ii = i - 1;
-    istr = num2str(1, '%0.3f');
+    istr = num2str(i, '%0.3f');
     fn = [rootFolder, '/cauchyaa', nSegSer, '_al', alpha, '_b', beta, '_', istr, '.csv'];
-%   fidi = fopen(fn, 'r');
+    fidi = fopen(fn, 'r');
+    if (fidi < 0)
+        return;
+    end
+    fclose(fidi);
 %    datVals = cell(nPts, 1);
 %    for j = 1:nPts
 %       datVals{j} = fscanf(fidi, '%f');

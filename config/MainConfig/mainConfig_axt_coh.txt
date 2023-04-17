@@ -35,8 +35,20 @@ lv1s2
 0
 
 # saving disk space (e.g. on clusters) is activated by boolean below. It will only write essential data
+# 0												-> writes all the files
+# 1 (all computers) OR (-1 on NonWindows)		-> does not write the big files (x_Pos ...)
+# 2, or -2										-> does not write big files except x_Pos (useful for elastic runs with Martin)	
 low_disk_space
+-1
+
+# prints PPS2 outside the folder: Good for running many folders together and intending to have all the _PPS2's in the same place
+PPS2_outside
 1
+
+#	deleting main folder results
+# 0 does not delete, 1 deletes, 2 only deletes in low disk scenario, 3 similar to 2 but for nonWindows delete files
+delete_runFolders
+3
 
 #serialNumber_st
 #0

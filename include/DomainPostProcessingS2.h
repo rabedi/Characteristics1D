@@ -558,7 +558,7 @@ public:
 	vector<OneSubdomainPPS2Data> onesubdomainPPS2;
 
 	unsigned int sind_time;
-	unsigned int sind_phi, sind_K, sind_U, sind_EneInp, sind_EneL, sind_EneR, sind_EneBC, sind_phi0, sind_diss_tot, 
+	unsigned int sind_phi, sind_K, sind_U, sind_U2phi, sind_EneInp, sind_EneL, sind_EneR, sind_EneBC, sind_phi0, sind_diss_tot,
 		sind_diss_lost, sind_eneIDiss, sind_diss_interface_lost, sind_energy_phys_diss_2_input, 
 		sind_energy_phys_diss_lost_2_input, sind_energyIDiss_Recoverable_2_input,
 		sind_energy_numerical_diss_2_input, sind_diss_recov, sind_dissPower_interface_lost;

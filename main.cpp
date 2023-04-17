@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 			}
 			else if (strcmp(argv[i], "-ls") == 0)
 			{
-				solvePara.low_disk_space = true;
+				solvePara.low_disk_space = 1;
 			}
 			else if (strcmp(argv[i], "-cmg") == 0)
 			{
@@ -185,9 +185,17 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 		if (g_prefileName != "")
 		{
 			fileOperation(makeD, g_prefileName);
-			g_prefileNamePPS2 = "_PPS2_";
+			if (solvePara.PPS2_outside == true)
+			{
+				g_prefileNamePPS2 = "../_PPS2";
+				MakeDir(g_prefileNamePPS2);
+				g_prefileNamePPS2 += "/_PPS2_";
+			}
+			else
+				g_prefileNamePPS2 = "_PPS2_";
 			g_prefileNamePPS2 += g_prefileName;
-			fileOperation(makeD, g_prefileNamePPS2);
+			MakeDir(g_prefileNamePPS2);
+			g_prefileNameWOSlash = g_prefileName;
 			g_prefileName += "/";
 			g_prefileNamePPS2 += "/";
 		}
@@ -208,6 +216,8 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 		}
 		fstream out(fileName_log.c_str(), ios::out);
 		out << 1 << '\n';
+		if ((solvePara.delete_runFolders == 1) || ((solvePara.delete_runFolders == 2) && (solvePara.low_disk_space == 1)))
+			fileOperation(removeD, g_prefileNameWOSlash);
 		return true;
 	}
 	if (solvePara.sOpt == so_interface_s)

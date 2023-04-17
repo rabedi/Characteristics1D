@@ -10,8 +10,8 @@ config/Domain/PPS2Config_Elastic.txt
 output_modes
 {
 scalars
-scalars_vectors
-#vectors
+#scalars_vectors
+vectors
 }
 
 ##################################################################################################
@@ -995,6 +995,23 @@ dataPointers			pps3_stageStat				output
 		# used to say normalize w.r.t. time zero energy
 		normalizationMode
 		ene_PhiInitial		
+	}
+
+	# U:   U / normalized by phi at FIN state
+	{
+		isActive
+		1
+		
+		fldName
+		U2phi
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{(U/\phi)}
 	}
 
 # ###############	strain-stress response
@@ -2214,6 +2231,27 @@ dataPointers			pps3_stageStat				output
 		\sigma
 	}
 
+
+	# u field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		uL
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		u
+
+		name_Latex
+		u
+	}
 }
 
 

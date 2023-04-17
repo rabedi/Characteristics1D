@@ -7,12 +7,13 @@ int g_bulkFlags_IncImp[NUM_SIDES];
 vector<string> pINDs;
 vector<string> pINDcommas;
 string g_prefileName = "";
+string g_prefileNameWOSlash = "";
 string g_prefileNamePPS2 = "";
 double invalidNonnegativeNum = -1.0;
 double invalidNum = 1e40;
 int g_serialNumber = 0;
 double g_time = 0.0;
-bool g_low_disk_space = false;
+int g_low_disk_space = 0;
 
 bool b_db_p = false;
 fstream g_logout;

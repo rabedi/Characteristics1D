@@ -1,14 +1,14 @@
 function compare_space_spacetime_results_main(serialNums, versionNums, subdomainNo, compareTimeVals)
 if nargin < 1
     serialNums = [0, 1];
-    serialNums = [0];
+    serialNums = 0:5;
 %    serialNums = [0, 1, 2];
 end
 if nargin < 2
 %    versionNums = [11, 12, 13];
-    versionNums = 0:2;
+    versionNums = 0:1;
 %    versionNums = 0;
-    versionNums = 30000:30003;
+%    versionNums = 30000:30003;
 end
 if nargin < 3
     subdomainNo = 0;
