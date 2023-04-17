@@ -137,8 +137,11 @@ public:
 	bool PPS2_outside;
 	// 0 does not delete, 1 deletes, 2 only deletes in low disk scenario
 	int delete_runFolders;
+	// 0 inside run folder, 1 outside run folders, 2 only outside when versionNo >= 0
+	int vis_outside;
 };
 
+extern SolveParameters solvePara;
 // timeIndex < 0, does not print time position
 void GetSubdomainIndexed_TimeIndexed_FileName(string& fileName, int subdomainNo, int timeIndex, const string& specificName, string ext = "txt", bool addUnderline = false);
 // spaceIndex < 0, does not print space position

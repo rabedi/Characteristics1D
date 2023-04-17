@@ -212,6 +212,7 @@ private:
 	unsigned int visualization1D_numFlds;
 	// indexed by subdomain, then inteface number
 	vector< vector<OneVisContour_xInfo> > visualization1D_xInfo;
+	string preVisFolder;
 	double visualization_TimeStep;
 	void Delete_v1DFiles();
 	void Size_v1DFiles();

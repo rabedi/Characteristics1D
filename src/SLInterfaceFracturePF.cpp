@@ -344,8 +344,18 @@ void SLFractureGlobal_Configuration::Update_AdaptivityFlag_From_current_delT_max
 
 void SLFractureGlobal_Configuration::UpdateTimeScales(double min_domain_del_t, double max_domain_del_t)
 {
-	if (uniform_del_t < 0)
+	CFL_provided = (uniform_del_t < 0);
+	if (CFL_provided)
 		uniform_del_t *= -min_domain_del_t;
+	else
+	{
+		if (uniform_del_t > min_domain_del_t)
+		{
+			cout << "uniform_del_t\t" << uniform_del_t << '\n';
+			cout << "min_domain_del_t\t" << min_domain_del_t << '\n';
+			THROW("reduce uniform_del_t in the config file to at least min_domain_del_t for CFL = 1\n");
+		}
+	}
 	if (min_del_t < 0)
 		min_del_t *= -min_domain_del_t;
 	if (max_del_t < 0)

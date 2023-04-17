@@ -57,6 +57,7 @@ public:
 	//		false:	assumes convergence of iterations and goes to 
 	bool refine_after_max_num_iter;
 	double uniform_del_t;
+	bool CFL_provided;
 	double min_del_t;
 	double max_del_t;
 	// del_t reduction factor

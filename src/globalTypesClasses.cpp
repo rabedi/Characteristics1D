@@ -2,6 +2,8 @@
 #include "globalFunctions.h"
 #include "commonMacros.h"
 
+SolveParameters solvePara;
+
 string getName(BoundaryConditionT dat)
 {
 	if (dat == bct_Undecided)
@@ -390,7 +392,7 @@ SolveParameters::SolveParameters()
 	b_solveParametersConfigName = false;
 	PPS2_outside = true;
 	delete_runFolders = 2;
-
+	vis_outside = 2;
 #if VCPP
 	low_disk_space = 0;
 #else
@@ -485,6 +487,10 @@ void SolveParameters::Read_SolveParameters(string solveParametersConfigNameIn)
 		else if (buf == "PPS2_outside")
 		{
 			READ_NBOOL(in, buf, PPS2_outside);
+		}
+		else if (buf == "vis_outside")
+		{
+			READ_NINTEGER(in, buf, vis_outside);
 		}
 		else if (buf == "delete_runFolders")
 		{

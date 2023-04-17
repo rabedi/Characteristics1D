@@ -15,8 +15,8 @@
 #include "SLDescriptorData.h"
 
 // returns true if this particular serial number was ran
-bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int versionNumIn);
-void Solve_all_serialNumbers(SolveParameters& solvePara);
+bool Solve_1_serialNumber(unsigned int serNumIn, int versionNumIn);
+void Solve_all_serialNumbers();
 void Print_slscript(unsigned int numParallelRuns);
 
 int main(int argc, char *argv[])
@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
 //	return 0;
 
 	setGlobalMembers();
-	SolveParameters solvePara;
 
 	if (argc > 1)
 	{
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	Solve_all_serialNumbers(solvePara);
+	Solve_all_serialNumbers();
 #if VCPP
 	cout << "press Any key\n";
 	getchar();
@@ -139,7 +138,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int versionNumIn)
+bool Solve_1_serialNumber(unsigned int serNumIn, int versionNumIn)
 {
 	g_versionNumber = versionNumIn;
 	if (g_versionNumber >= 0)
@@ -185,7 +184,7 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 		if (g_prefileName != "")
 		{
 			fileOperation(makeD, g_prefileName);
-			if (solvePara.PPS2_outside == true)
+			if ((solvePara.PPS2_outside == true) && (g_versionNumber >= 0))
 			{
 				g_prefileNamePPS2 = "../_PPS2";
 				MakeDir(g_prefileNamePPS2);
@@ -256,7 +255,7 @@ bool Solve_1_serialNumber(SolveParameters& solvePara, unsigned int serNumIn, int
 	THROW("Invlaid option\n");
 }
 
-void Solve_all_serialNumbers(SolveParameters& solvePara)
+void Solve_all_serialNumbers()
 {
 	g_low_disk_space = solvePara.low_disk_space;
 	solvePara.InitializeAfterSetup();
@@ -271,7 +270,7 @@ void Solve_all_serialNumbers(SolveParameters& solvePara)
 					if (g_slf_conf != NULL)
 						delete g_slf_conf;
 					g_slf_conf = new SLFractureGlobal_Configuration;
-					Solve_1_serialNumber(solvePara, serNum, versionNumber);
+					Solve_1_serialNumber(serNum, versionNumber);
 				}
 			}
 		}
@@ -284,7 +283,7 @@ void Solve_all_serialNumbers(SolveParameters& solvePara)
 					if (g_slf_conf != NULL)
 						delete g_slf_conf;
 					g_slf_conf = new SLFractureGlobal_Configuration;
-					Solve_1_serialNumber(solvePara, serNum, versionNumber);
+					Solve_1_serialNumber(serNum, versionNumber);
 				}
 			}
 		}

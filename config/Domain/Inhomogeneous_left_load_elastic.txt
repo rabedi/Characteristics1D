@@ -713,15 +713,11 @@ between_steps_adaptivity
 # < 0, relative to domain min_del_t
 # CFL number
 uniform_del_t
--1
-#-0.1
-#-0.01
-#-1.0
-#-0.128
-#-0.0128
-################-0.0128
-#0.00000128
-#-0.001
+# resolution 256 - 0.002560000000000
+#####0.0025 
+# resolution 1
+1e-5
+#-1
 
 # minimum allowable time step, smaller than this the run terminates. We can get to such small sizes if successive refinements are needed
 # < 0, relative to domain min_del_t

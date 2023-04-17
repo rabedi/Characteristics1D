@@ -39,6 +39,10 @@ low_disk_space
 PPS2_outside
 1
 
+# 0 inside run folder, 1 outside run folders, 2 only outside when versionNo >= 0
+vis_outside
+0
+
 #	deleting main folder results
 # 0 does not delete, 1 deletes, 2 only deletes in low disk scenario, 3 similar to 2 but for nonWindows delete files
 delete_runFolders

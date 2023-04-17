@@ -146,6 +146,19 @@ timeStampOverwriters
 		post_name_Latex			_i
 		isActive	-1
 	}
+	
+	# change latex name
+	tFIN
+	{
+		timeStamp
+		{
+			timeStampType	f
+			lct				time
+		}
+		post_name_In_CSV_file	_tF
+		post_name_Latex			_{tf}
+		isActive	-1
+	}
 }
 
 ######################################################################################################
@@ -672,7 +685,7 @@ dataPointers			pps3_stageStat				output
 
 		name_Latex
 		\phi_d^{t_F}
-			}
+	}
 
 
 	# phiD:   Dissipated energy / normalized by initial energy at failed statefor eps/sig bulk criterion)
@@ -987,6 +1000,87 @@ dataPointers			pps3_stageStat				output
 		ene_PhiInitial		
 	}
 
+	# U:   U / normalized by phi at FIN state
+	{
+		isActive
+		1
+		
+		fldName
+		U2phi
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{(U/\phi)}
+	}
+
+
+
+##########
+	# K:   K / normalized by initial energy at tFinal
+	{
+		isActive
+		1
+		
+		fldName
+		K
+
+		overwriterName		tFIN
+	
+		name_In_CSV_file	
+		phi_K_norm
+
+		name_Latex
+		{(K/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+
+	# U:   U / normalized by initial energy at tFinal
+	{
+		isActive
+		1
+		
+		fldName
+		U
+
+		overwriterName		tFIN
+	
+		name_In_CSV_file	
+		phi_U_norm
+
+		name_Latex
+		{(U/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+
+	# U:   U / normalized by phi at tFinal
+	{
+		isActive
+		1
+		
+		fldName
+		U2phi
+
+		overwriterName		tFIN
+	
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{(U/\phi)}
+	}
+
+
 # ###############	strain-stress response
 # ### max stage
 
@@ -1009,6 +1103,7 @@ dataPointers			pps3_stageStat				output
 		normalizationMode
 		sigmaC		
 	}
+
 
 # ### final stage
 	# energy_final
@@ -1170,6 +1265,26 @@ dataPointers			pps3_stageStat				output
 
 
 ## Brittleness indicators
+# psi based energy ratio
+	{
+		isActive
+		1
+				
+		fldName
+		energy_eps_diss2total_bulk
+
+		timeStamp
+			{
+				timeStampType	m
+				lct				epssig_bulk
+			}
+	
+		name_In_CSV_file	
+		psid2psi_m
+
+		name_Latex
+		({L\psi_d/\psi})_m
+	}
 
 	# m/f - energy
 	{
@@ -1227,8 +1342,6 @@ dataPointers			pps3_stageStat				output
 		name_Latex
 		B_{i/m}^{\epsilon}
 	}
-
-
 
 # ###############	Damage values at various stages
 	# (max Damage) at max stage - strain stress response
@@ -1436,8 +1549,7 @@ dataPointers			pps3_stageStat				output
 		\mathrm{cov}({l}
 	}
 
-
-	########## final stage: use EneDiss_final stabilized
+	########## final time
 	# number of fragment size (length / meanFragment size)
 	{
 		isActive
@@ -1447,7 +1559,7 @@ dataPointers			pps3_stageStat				output
 
 		stat_sv_type	number
 
-		overwriterName		FIN
+		overwriterName		tFIN
 		
 		name_In_CSV_file	
 		Nl
@@ -1465,7 +1577,7 @@ dataPointers			pps3_stageStat				output
 
 		stat_sv_type	mean_arithmetic		
 
-		overwriterName		FIN
+		overwriterName		tFIN
 		
 		name_In_CSV_file	
 		lbar
@@ -1483,7 +1595,7 @@ dataPointers			pps3_stageStat				output
 
 		stat_sv_type	min
 
-		overwriterName		FIN
+		overwriterName		tFIN
 		
 		name_In_CSV_file	
 		lmin
@@ -1501,7 +1613,7 @@ dataPointers			pps3_stageStat				output
 
 		stat_sv_type	max
 
-		overwriterName		FIN
+		overwriterName		tFIN
 		
 		name_In_CSV_file	
 		lmax
@@ -1519,7 +1631,7 @@ dataPointers			pps3_stageStat				output
 
 		stat_sv_type	sdiv		
 
-		overwriterName		FIN
+		overwriterName		tFIN
 		
 		name_In_CSV_file	
 		sdiv_l
@@ -1532,6 +1644,116 @@ dataPointers			pps3_stageStat				output
 	{
 		isActive
 		1
+		
+		fragmentationCriterion			Max_DelU	
+
+		stat_sv_type	cov		
+
+		overwriterName		tFIN
+		
+		name_In_CSV_file	
+		cov_l
+
+		name_Latex
+		\mathrm{cov}(l)
+	}
+
+
+	########## final stage: use EneDiss_final stabilized
+	# number of fragment size (length / meanFragment size)
+	{
+		isActive
+		0000
+		
+		fragmentationCriterion			Max_DelU	
+
+		stat_sv_type	number
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		Nl
+
+		name_Latex
+		N(l)
+	}
+
+	# lbar (mean fragment size)
+	{
+		isActive
+		0000
+		
+		fragmentationCriterion			Max_DelU	
+
+		stat_sv_type	mean_arithmetic		
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		lbar
+
+		name_Latex
+		\bar{l}
+	}
+
+	# lmin (min fragment size)
+	{
+		isActive
+		0000
+		
+		fragmentationCriterion			Max_DelU	
+
+		stat_sv_type	min
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		lmin
+
+		name_Latex
+		\mathrm{min}(l)
+	}
+
+	# lmax (max fragment size)
+	{
+		isActive
+		0000
+		
+		fragmentationCriterion			Max_DelU	
+
+		stat_sv_type	max
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		lmax
+
+		name_Latex
+		\mathrm{max}(l)
+	}
+
+	#varsigma_l (standard deviation fragment size)
+	{
+		isActive
+		0000
+		
+		fragmentationCriterion			Max_DelU	
+
+		stat_sv_type	sdiv		
+
+		overwriterName		FIN
+		
+		name_In_CSV_file	
+		sdiv_l
+
+		name_Latex
+		\varsigma(l)
+	}
+
+	# cov_l (coefficient of variation = sdiv / mean)
+	{
+		isActive
+		0000
 		
 		fragmentationCriterion			Max_DelU	
 
@@ -1929,6 +2151,23 @@ dataPointers			pps3_stageStat				output
 	}
 
 # ###############	comparison of linear momentum (P) from diff criteria
+	# error	
+	# LinMomentum error
+	{
+		isActive
+		1
+		
+		fldName
+		numerical_linmom_error
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		LinMomentumErr
+
+		name_Latex
+		P_{err}
+	}
 
 	# LinMomentum of energy loss stabilized
 	{
@@ -1939,12 +2178,6 @@ dataPointers			pps3_stageStat				output
 		linMomentum
 
 		overwriterName		FIN
-	
-		name_In_CSV_file	
-		K
-
-		name_Latex
-		K
 	
 		name_In_CSV_file	
 		LinMomentum
@@ -2055,8 +2288,6 @@ dataPointers			pps3_stageStat				output
 	}
 
 # ####################	temporal fields (space/ spacetime integrals over time)
-	########## max stage: use sigma max stage
-
 	# lost dissipated energy
 	{
 		isActive
@@ -2074,6 +2305,64 @@ dataPointers			pps3_stageStat				output
 
 		name_Latex
 		\phi_d
+	}
+
+	# U
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		U
+
+		name_In_CSV_file	
+		U
+
+		name_Latex
+		U
+	}
+
+	# K
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		K
+
+		name_In_CSV_file	
+		K
+
+		name_Latex
+		K
+	}
+
+
+	# U2phi
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		U2phi
+
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{U/\phi}
 	}
 
 	# homogenized stress by BC
@@ -2211,7 +2500,7 @@ dataPointers			pps3_timeStep				input
 		iniSc
 
 		name_Latex
-		\sigma_c
+		fi
 	}
 }
 
@@ -2281,6 +2570,21 @@ dataPointers			pps3_timeStep				output
 		ene_PhiInitial		
 	}
 
+	# U:   U / phi
+	{
+		isActive
+		1
+		
+		fldName
+		U2phi
+
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{(U/\phi)}
+	}
+
 	# stress
 	{
 		isActive
@@ -2294,6 +2598,72 @@ dataPointers			pps3_timeStep				output
 
 		name_Latex
 		\bar{\sigma}_{bulk}
+	}
+
+	# LinMomentum
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+	
+		name_In_CSV_file	
+		linMomentum
+
+		name_Latex
+		P
+	}
+
+	# phiNumerical:   Dissipated numerical
+	{
+		isActive
+		1
+		
+		# lost, interfacial dissipation
+		fldName
+		numerial_energy_diss
+
+		name_In_CSV_file	
+		phi_N
+
+		name_Latex
+		\phi_N
+	}
+
+	# phiNumerical:   Dissipated numerical / normalized by initial energy at failed statefor eps/sig bulk criterion)
+	{
+		isActive
+		1
+		
+		# lost, interfacial dissipation
+		fldName
+		numerial_energy_diss
+
+		name_In_CSV_file	
+		phi_N_norm_phi0
+
+		name_Latex
+		{(\phi_N/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+	
+	# LinMomentum - error 
+	{
+		isActive
+		1
+		
+		fldName
+		numerical_linmom_error
+	
+		name_In_CSV_file	
+		linMomentumErr
+
+		name_Latex
+		P_{err}
 	}
 
 	# mean damage - over space

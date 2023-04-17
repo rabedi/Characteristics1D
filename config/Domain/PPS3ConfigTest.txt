@@ -1216,12 +1216,6 @@ dataPointers			pps3_stageStat				output
 		overwriterName		FIN
 	
 		name_In_CSV_file	
-		K
-
-		name_Latex
-		K
-	
-		name_In_CSV_file	
 		LinMomentum
 
 		name_Latex

@@ -116,7 +116,10 @@ void Domain_All_Interfaces_All_Times::Read_Initialize(string configNameIn, int s
 void Domain_All_Interfaces_All_Times::Initialize_TimeStepRelated()
 {
 	timeStep = g_slf_conf->uniform_del_t;
-	maxTime = ceil(g_slf_conf->terminate_run_target_time / timeStep) * timeStep;
+	if (g_slf_conf->CFL_provided)
+		maxTime = ceil(g_slf_conf->terminate_run_target_time / timeStep) * timeStep;
+	else
+		maxTime = g_slf_conf->terminate_run_target_time;
 
 	//	timeStep = maxTime / ceil(maxTime / timeStep);
 	//	g_slf_conf->uniform_del_t = timeStep;
@@ -1202,7 +1205,12 @@ void Domain_All_Interfaces_All_Times::Connect_Interfaces_Set_BC_Types__Form_PP()
 			max_domain_del_t = MAX(max_domain_del_t, interfacePtr->max_delT);
 			interfacePtr->sz_subDomainNos = GetInterfaceBulkSide_Subdomains_RelIndices(interfacePtr, interfacePtr->subDomainNos, interfacePtr->relPos_wrt_subDomainStartPoints);
 			if ((g_low_disk_space != 1) || (interfacePtr->interface_flag == g_interfaceFlags_IncImp[LI_INT]) || (interfacePtr->interface_flag == g_interfaceFlags_IncImp[RI_INT]))
-				interfacePtr->Open_fixed_x_files_SL_OneInterfaceAllTimes(io_type_InterfaceRawFinalSln_AllTime_Print_4PP, io_type_InterfaceRawScalars_AllTime_Print_4PP, interfacePtr->subDomainNos[0], interfacePtr->subDomainNos[0]);
+			{
+				int subdomainRight = interfacePtr->subDomainNos[0];
+				if (i == 1)
+					subdomainRight = num_subdomains;
+				interfacePtr->Open_fixed_x_files_SL_OneInterfaceAllTimes(io_type_InterfaceRawFinalSln_AllTime_Print_4PP, io_type_InterfaceRawScalars_AllTime_Print_4PP, interfacePtr->subDomainNos[0], subdomainRight);
+			}
 
 			if (g_SL_desc_data.tdLoadComputer != NULL)
 			{
@@ -2098,6 +2106,7 @@ void Domain_All_Interfaces_All_Times::Size_v1DFiles()
 				string fileName;
 				string specificName = "visualization_" + append_v1D[fi];
 				GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName, "txt", addUnderline);
+				fileName = preVisFolder + fileName;
 				fstream* outPtr = new fstream();
 				outPtr->open(fileName.c_str(), ios::out);
 				v1DOutPtr[si][fi] = outPtr;
@@ -2108,12 +2117,23 @@ void Domain_All_Interfaces_All_Times::Size_v1DFiles()
 	string fileName;
 	string specificName = "visualization_timesteps";
 	GetSubdomainIndexed_TimeIndexed_FileName(fileName, -1, -1, specificName, "txt", addUnderline);
+	fileName = preVisFolder + fileName;
 	v1Dtout.open(fileName.c_str(), ios::out);
 	v1Dtout << setprecision(22);
 }
 
 void Domain_All_Interfaces_All_Times::Initialize_v1D()
 {
+	bool vis_outside = ((solvePara.vis_outside == 1) || ((g_versionNumber >= 0) && (solvePara.vis_outside == 2)));
+	preVisFolder = "";
+	if (vis_outside)
+	{
+		preVisFolder = "../visFiles";
+		MakeDir(preVisFolder);
+		string folder = preVisFolder + "/" + g_prefileNameWOSlash;
+		MakeDir(folder);
+		preVisFolder += "/";
+	}
 	Size_v1DFiles();
 	if (!b_visualization1D)
 		return;
@@ -2208,7 +2228,9 @@ void Domain_All_Interfaces_All_Times::Initialize_v1D()
 		int num_x = visualization1D_xInfoPtr->size();
 		string fileName;
 		string specificName = "visualization_paras";
+
 		GetSubdomainIndexed_TimeIndexed_FileName(fileName, si, -1, specificName, "txt", addUnderline);
+		fileName = preVisFolder + fileName;
 		fstream out(fileName.c_str(), ios::out);
 		out << setprecision(22);
 		out << "a\t" << a << '\n';

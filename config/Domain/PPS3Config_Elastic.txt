@@ -88,22 +88,24 @@ spatialFieldResolutionCorrector
 # For temporal fields (e.g. energyDissipated, sigma_homogenized, etc.) there are two options:
 # TemporalFieldTimeStepValOrNumSteps 	> 0 -> TimeStepVal = temporalFieldTimeStepValOrNumSteps
 #									  	< 0 -> NumTimeSteps = -temporalFieldTimeStepValOrNumSteps (e.g. final time = 10, this value = -400 -> timeStep = 10/400)
+# the entry below DOES NOT WORK! use entry timeStep4_DSU_outputs
 temporalFieldTimeStepValOrNumSteps
 #-400
--100
+-2
 #-10
 
 # for time outputs, we can generate outputs for all DSU stems in each case timeStep4_DSU_outputs == 1, ever other of such time value for == 2, every third for this value == 3, ...
+# there are 10 DSU time steps, so to get output in the middle and final time use 5
 timeStep4_DSU_outputs
-1
+5
 
 outputTypeActive
 # pps3_stageStat: stage/stat (one line per run)
 1
 # -1 means data not printed on low disk systems
+#-1
 # pps3_timeStep: timeSteps (output at uniform times)
--1
-#1
+1
 
 
 ######################################################################################################
@@ -772,6 +774,7 @@ dataPointers			pps3_stageStat				output
 
 
 #### phiNumerical
+
 	# phiNumerical:   Dissipated numerical - FIN
 	{
 		isActive
@@ -1957,6 +1960,23 @@ dataPointers			pps3_stageStat				output
 	}
 
 # ###############	comparison of linear momentum (P) from diff criteria
+	# error	
+	# LinMomentum error
+	{
+		isActive
+		1
+		
+		fldName
+		numerical_linmom_error
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		LinMomentumErr
+
+		name_Latex
+		P_{err}
+	}
 
 	# LinMomentum of energy loss stabilized
 	{
@@ -1967,12 +1987,6 @@ dataPointers			pps3_stageStat				output
 		linMomentum
 
 		overwriterName		FIN
-	
-		name_In_CSV_file	
-		K
-
-		name_Latex
-		K
 	
 		name_In_CSV_file	
 		LinMomentum
@@ -2083,8 +2097,6 @@ dataPointers			pps3_stageStat				output
 	}
 
 # ####################	temporal fields (space/ spacetime integrals over time)
-	########## max stage: use sigma max stage
-
 	# U
 	{
 		isActive
@@ -2123,6 +2135,26 @@ dataPointers			pps3_stageStat				output
 		K
 	}
 
+
+	# U2phi
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a temporal field as opposed to a scalar
+		stat_sv_type
+		all_field_time_val
+		
+		fldName
+		U2phi
+
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{U/\phi}
+	}
+
 	# homogenized stress by BC
 	{
 		isActive
@@ -2141,6 +2173,7 @@ dataPointers			pps3_stageStat				output
 		name_Latex
 		\bar{\sigma}_{bulk}
 	}
+	
 
 # ####################	spatial solution fields
 	########## max stage: use sigma max stage
@@ -2210,10 +2243,11 @@ dataPointers			pps3_stageStat				output
 		{\Delta{u}}
 	}
 
+	# turned off as it's printed in time outputs
 	# stress field
 	{
 		isActive
-		1
+		0
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2231,11 +2265,11 @@ dataPointers			pps3_stageStat				output
 		\sigma
 	}
 
-
+	# turned off as it's printed in time outputs
 	# u field
 	{
 		isActive
-		1
+		0
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2310,10 +2344,10 @@ dataPointers			pps3_timeStep				output
 		ene_PhiInitial		
 	}
 
-	# K:   K / normalized by initial energy
+	# K:   K normalized by initial energy at failed state
 	{
 		isActive
-		000
+		1
 		
 		fldName
 		K
@@ -2330,10 +2364,10 @@ dataPointers			pps3_timeStep				output
 	}
 
 
-	# U:   U / normalized by initial energy at failed state
+	# U:   U normalized by initial energy at failed state
 	{
 		isActive
-		000
+		1
 		
 		fldName
 		U
@@ -2349,6 +2383,21 @@ dataPointers			pps3_timeStep				output
 		ene_PhiInitial		
 	}
 
+	# U:   U / phi
+	{
+		isActive
+		1
+		
+		fldName
+		U2phi
+
+		name_In_CSV_file	
+		U2phi
+
+		name_Latex
+		{(U/\phi)}
+	}
+
 	# stress
 	{
 		isActive
@@ -2362,6 +2411,72 @@ dataPointers			pps3_timeStep				output
 
 		name_Latex
 		\bar{\sigma}_{bulk}
+	}
+
+	# LinMomentum
+	{
+		isActive
+		1
+		
+		fldName
+		linMomentum
+	
+		name_In_CSV_file	
+		linMomentum
+
+		name_Latex
+		P
+	}
+
+	# phiNumerical:   Dissipated numerical
+	{
+		isActive
+		1
+		
+		# lost, interfacial dissipation
+		fldName
+		numerial_energy_diss
+
+		name_In_CSV_file	
+		phi_N
+
+		name_Latex
+		\phi_N
+	}
+
+	# phiNumerical:   Dissipated numerical / normalized by initial energy at failed statefor eps/sig bulk criterion)
+	{
+		isActive
+		1
+		
+		# lost, interfacial dissipation
+		fldName
+		numerial_energy_diss
+
+		name_In_CSV_file	
+		phi_N_norm_phi0
+
+		name_Latex
+		{(\phi_N/\phi_0)}
+		
+		# used to say normalize w.r.t. time zero energy
+		normalizationMode
+		ene_PhiInitial		
+	}
+	
+	# LinMomentum - error 
+	{
+		isActive
+		1
+		
+		fldName
+		numerical_linmom_error
+	
+		name_In_CSV_file	
+		linMomentumErr
+
+		name_Latex
+		P_{err}
 	}
 
 	# mean damage - over space
@@ -2435,7 +2550,7 @@ dataPointers			pps3_timeStep				output
 	# u field
 	{
 		isActive
-		000
+		1
 		
 		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
 		stat_sv_type
@@ -2450,9 +2565,6 @@ dataPointers			pps3_timeStep				output
 		name_Latex
 		u
 	}
-
-
-
 }
 
 
