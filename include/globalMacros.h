@@ -13,6 +13,8 @@
 //#define SIZE_PT_TIME_SEQUENCE	2002
 //#define SIZE_PT_TIME_SEQUENCE	50000
 
+// prints velocity fields in DSU files (useful for elstic problems)
+#define DSU_PRINT_VS	1
 // Ring problem is 1D ring fragmentation problem. It has a source terms from v_r
 #define RING_PROBLEM	0
 

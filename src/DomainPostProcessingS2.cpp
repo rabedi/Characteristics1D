@@ -1494,6 +1494,10 @@ void OneTimeInterfaceFlds_FragmentationPPS2::Read_OneTimeInterfaceFlds_Fragmenta
 		uL[di].resize(numInterfaces);
 		uR[di].resize(numInterfaces);
 		sigma[di].resize(numInterfaces);
+#if DSU_PRINT_VS
+		vL[di].resize(numInterfaces);
+		vR[di].resize(numInterfaces);
+#endif
 	}
 	for (unsigned int i = 0; i < numInterfaces; ++i)
 	{
@@ -1504,6 +1508,12 @@ void OneTimeInterfaceFlds_FragmentationPPS2::Read_OneTimeInterfaceFlds_Fragmenta
 			in >> uR[di][i];
 		for (unsigned int di = 0; di < DiM; ++di)
 			in >> sigma[di][i];
+#if DSU_PRINT_VS
+		for (unsigned int di = 0; di < DiM; ++di)
+			in >> vL[di][i];
+		for (unsigned int di = 0; di < DiM; ++di)
+			in >> vR[di][i];
+#endif
 	}
 }
 
@@ -1516,6 +1526,10 @@ void OneTimeInterfaceFlds_FragmentationPPS2::Empty_DUSigma(unsigned int numInter
 		uL[di].resize(numInterfaces);
 		uR[di].resize(numInterfaces);
 		sigma[di].resize(numInterfaces);
+#if DSU_PRINT_VS
+		vL[di].resize(numInterfaces);
+		vR[di].resize(numInterfaces);
+#endif
 	}
 	for (unsigned int i = 0; i < numInterfaces; ++i)
 	{
@@ -1527,6 +1541,12 @@ void OneTimeInterfaceFlds_FragmentationPPS2::Empty_DUSigma(unsigned int numInter
 			uR[di][i] = invalidNum;
 		for (unsigned int di = 0; di < DiM; ++di)
 			sigma[di][i] = invalidNum;
+#if DSU_PRINT_VS
+		for (unsigned int di = 0; di < DiM; ++di)
+			vL[di][i] = invalidNum;
+		for (unsigned int di = 0; di < DiM; ++di)
+			vR[di][i] = invalidNum;
+#endif
 	}
 }
 
@@ -1556,6 +1576,23 @@ bool OneTimeInterfaceFlds_FragmentationPPS2::Get_Vector_SolutionField(const OneS
 	}
 	if (fldName == "uR") { vecVal = uR[defaultDir];			return true; }
 	if (fldName == "uL") { vecVal = uL[defaultDir];			return true; }
+
+	if (fldName == "vR")
+#if DSU_PRINT_VS
+	{
+		vecVal = vR[defaultDir];			return true;
+	}
+#else
+		THROW("Turn on DSU_PRINT_VS in globalMacros.h\n");
+#endif
+	if (fldName == "vL")
+#if DSU_PRINT_VS
+	{
+		vecVal = vL[defaultDir];			return true;
+	}
+#else
+	THROW("Turn on DSU_PRINT_VS in globalMacros.h\n");
+#endif
 	cout << "fldName\t" << fldName << '\n';
 	THROW("Invalid field\n");
 }

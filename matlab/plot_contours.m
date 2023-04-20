@@ -47,6 +47,12 @@ end
 if nargin < 12
     plotFig = 0;
 end
+if nargin < 13
+    dataOutside = 1;
+end
+if (dataOutside == 1)
+    root = '../../visFiles/';
+end
 folderName = [root, 'run'];
 if (versionNum >= 0)
     folderName = [folderName, '_V_', num2str(versionNum)];

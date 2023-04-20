@@ -340,6 +340,9 @@ public:
 	vector<double> D;
 	vector<double> maxEffDelU;
 	vector<double> uL[DiM], uR[DiM], sigma[DiM];
+#if DSU_PRINT_VS
+	vector<double> vL[DiM], vR[DiM];
+#endif
 
 	OneTimeOneCriterionFragmentationRawData fragmentationDat[FragmentationCriterionT_SIZE];
 };

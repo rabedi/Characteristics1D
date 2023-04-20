@@ -1886,6 +1886,13 @@ void Subdomain_spacetime_pp_data::Print_Interface_DSU_Fragment_OneTimeStep()
 		outfrag << "\tuR" << di;
 	for (unsigned int di = 0; di < DiM; ++di)
 		outfrag << "\tsigma" << di;
+#if DSU_PRINT_VS
+	for (unsigned int di = 0; di < DiM; ++di)
+		outfrag << "\tvL" << di;
+	for (unsigned int di = 0; di < DiM; ++di)
+		outfrag << "\tvR" << di;
+#endif
+
 	outfrag << '\n';
 	unsigned int lastInterfaceNo = szInterface - 1;
 	unsigned int interface_starti = 0;
@@ -1933,6 +1940,29 @@ void Subdomain_spacetime_pp_data::Print_Interface_DSU_Fragment_OneTimeStep()
 			for (unsigned int di = 0; di < DiM; ++di)
 				outfrag << ptSlnPtr->sl_side_ptData[SDR].sigma_downstream_final[di] << '\t';
 		}
+#if DSU_PRINT_VS // velocity
+		if (!g_domain->b_ring_opened1D)
+		{
+			for (unsigned int di = 0; di < DiM; ++di)
+				outfrag << ptSlnPtr->sl_side_ptData[SDL].v_downstream_final[di] << '\t';
+			for (unsigned int di = 0; di < DiM; ++di)
+				outfrag << ptSlnPtr->sl_side_ptData[SDR].v_downstream_final[di] << '\t';
+		}
+		else
+		{
+			bool lastInterface = (interfacei == lastInterfaceNo);
+			unsigned int di = 0;
+			double vL = ptSlnPtr->sl_side_ptData[SDL].v_downstream_final[di];
+			double vR = ptSlnPtr->sl_side_ptData[SDR].v_downstream_final[di];
+			double ax = g_SL_desc_data.load_parameters[0] * x;
+			vL -= ax;
+			if (!lastInterface)
+				vR -= ax;
+			else
+				vR += ax;
+			outfrag << vL << '\t' << vR << '\t';
+		}
+#endif
 		outfrag << '\n';
 	}
 }

@@ -94,3 +94,7 @@ Isaac 2023/03/20
 ./solver -sp -mc config/MainConfig/mainConfig_elastic_x.txt -st 0 -en 10 -vst 0 -ven 1
 
 -sp -mc config/MainConfig/mainConfig_elastic_x.txt -st 0 -en 0 -vst 0 -ven 24
+
+
+
+seq 0 24 | parallel -j 5 './solver -sp -mc config/MainConfig/mainConfig_elastic_x.txt -st 0 -en 0 -vst {.} -ven {.}'

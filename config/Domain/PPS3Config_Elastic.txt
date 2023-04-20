@@ -2286,6 +2286,28 @@ dataPointers			pps3_stageStat				output
 		name_Latex
 		u
 	}
+	
+	# turned off as it's printed in time outputs
+	# v field
+	{
+		isActive
+		0
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		vL
+
+		overwriterName		FIN
+	
+		name_In_CSV_file	
+		v
+
+		name_Latex
+		v
+	}	
 }
 
 
@@ -2564,6 +2586,25 @@ dataPointers			pps3_timeStep				output
 
 		name_Latex
 		u
+	}
+
+	# v field
+	{
+		isActive
+		1
+		
+		# this entry specifies that we are dealing with a spatial field as opposed to a scalar
+		stat_sv_type
+		all_field_val
+		
+		fldName
+		vL
+
+		name_In_CSV_file	
+		v
+
+		name_Latex
+		v
 	}
 }
 

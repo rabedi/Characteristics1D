@@ -237,11 +237,13 @@ visualization_dir
 # < 0, -number of interfaces - 1 (e.g. # segments) used in each subdomain for its outputs
 # > 0, the step size for that given subdomain
 visualization_numSpaceStep
--512
+#-512
+-2048
 
 # again < 0, absolute number of steps, > 0 step size
 visualization_numTimeStep
--400
+#-400
+-1000
  
 # end visualization data
 ##################
@@ -714,7 +716,7 @@ between_steps_adaptivity
 # CFL number
 uniform_del_t
 # resolution 256 - 0.002560000000000
-#####0.0025 
+####0.0025 
 # resolution 1
 1e-5
 #-1
