@@ -11,7 +11,7 @@ output_modes
 {
 scalars
 scalars_vectors
-#vectors
+vectors
 }
 
 ##################################################################################################
@@ -90,7 +90,8 @@ spatialFieldResolutionCorrector
 #									  	< 0 -> NumTimeSteps = -temporalFieldTimeStepValOrNumSteps (e.g. final time = 10, this value = -400 -> timeStep = 10/400)
 temporalFieldTimeStepValOrNumSteps
 #-400
--100
+#-100
+-4
 
 # for time outputs, we can generate outputs for all DSU stems in each case timeStep4_DSU_outputs == 1, ever other of such time value for == 2, every third for this value == 3, ...
 timeStep4_DSU_outputs

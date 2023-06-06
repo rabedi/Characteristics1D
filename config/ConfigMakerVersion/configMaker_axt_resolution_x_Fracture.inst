@@ -13,13 +13,14 @@ configSpecificName	allopts
 #		valStart and valEnd take the very first and last value of the field
 #		e.g. defaults for E, rho, and sigmaC are mean_harmonic, mean_arithmetic, min in the code
 	{	ssoFS
-		valStart
 		min
+		mean_arithmetic
+		valStart
 	}
 
-	{	output_resolution
-		1024
-	}
+#	{	output_resolution
+#		1024
+#	}
 
 # final time If active, this cfl is used. if not, the value is set in Configure_sfcm_sfcm_gen()
 #	{	tF
@@ -43,7 +44,7 @@ configSpecificName	allopts
 	{	dt_resap
 		0
 #		0.5
-#		1
+		1
 	}
 
 	{	ldelc
@@ -93,11 +94,11 @@ configSpecificName	allopts
 	# del/2 (values are from 1 - del/2, 1 + del/2, e.g. del/2 = 0.2 -> 0.8 -> 0.2
 	{	dd2
 ##		0.001
-		0.1
+#		0.1
 ##		0.2
 #		0.3
 ##		0.4
-		0.5
+#		0.5
 ##		0.6
 #		0.7
 ##		0.8

@@ -98,3 +98,6 @@ Isaac 2023/03/20
 
 
 seq 0 24 | parallel -j 5 './solver -sp -mc config/MainConfig/mainConfig_elastic_x.txt -st 0 -en 0 -vst {.} -ven {.}'
+
+-sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 9 -vst 0 -ven 863 -np 48
+-sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 1 -vst 433 -ven 433

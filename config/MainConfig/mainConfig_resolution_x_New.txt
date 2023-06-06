@@ -1,0 +1,76 @@
+{
+
+# config for solution and PPS1
+configName
+#elastic
+#config/Domain/Inhomogeneous_left_load_elastic.txt
+#fracture
+config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt
+
+# config for PPS3 (and PPS2 inside that)
+configPPName
+#elastic
+#config/Domain/PPS3Config_Elastic.txt
+#fracture 
+config/Domain/PPS3Config_Coh.txt
+
+# config file for generating versions (delc, cor length, etc. combinations)
+version_configMakerGenName
+###########################################################
+#elastic
+#config/ConfigMakerVersion/configMaker_axt_resolution_x_Elastic.inst
+#fracture
+config/ConfigMakerVersion/configMaker_axt_resolution_x_Fracture_New.inst
+
+# if true, the instruction file will be regenerated regardless of if it already exists or not
+version_configMaker_forceRewrite
+#1
+0
+
+#  this ofset causes the versionStr used in output file names to be incremented by value below.
+# Use: We won't overwrite previous runs possibly from other instructions
+# add 10000 for any power of resolution (2 -> 10000, 4 -> 20000, 8 -> 30000, 16 -> 40000, 32 -> 50000, 64 -> 60000, 128 -> 70000, 256 -> 80000, 512 -> 90000
+# add 1000 for la = -2.0, 2000, la = -2.5, 3000, la = -3.0
+versionOffset
+#0
+40000
+#use this for no_random
+#10000
+
+# loop_version_first_serial_second: see the function void Solve_all_serialNumbers
+lv1s2
+0
+
+# saving disk space (e.g. on clusters) is activated by boolean below. It will only write essential data
+# 0												-> writes all the files
+# 1 (all computers) OR (-1 on NonWindows)		-> does not write the big files (x_Pos ...)
+# 2, or -2										-> does not write big files except x_Pos (useful for elastic runs with Martin)	
+low_disk_space
+-1
+
+# prints PPS2 outside the folder: Good for running many folders together and intending to have all the _PPS2's in the same place
+PPS2_outside
+1
+
+# 0 inside run folder, 1 outside run folders, 2 only outside when versionNo >= 0
+vis_outside
+0
+
+#	deleting main folder results
+# 0 does not delete, 1 deletes, 2 only deletes in low disk scenario, 3 similar to 2 but for nonWindows delete files
+delete_runFolders
+3
+
+#serialNumber_st
+#0
+
+#serialNumber_en
+#1
+
+#versionNumber_st
+#8
+
+#versionNumber_en
+#9
+
+}

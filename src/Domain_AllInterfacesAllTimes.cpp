@@ -1766,7 +1766,11 @@ void Configure_sfcm_sfcm_gen()
 	bool change_spatial_mesh_res = (sfcm_gen.specificProblemName == "axt_medium");
 
 	bool change_cfl_tF = ((sfcm_gen.specificProblemName == "axt") || (sfcm_gen.specificProblemName == "resolution_x_F") || change_spatial_mesh_res);
-	if (change_cfl_tF)
+	bool change_cfl_tF_new = (sfcm_gen.specificProblemName == "resolution_x_F_New");
+	int log_resolution = 14; // 1024
+	double tol = 1e-7;
+
+	if (change_cfl_tF || change_cfl_tF_new)
 	{
 		use_tSigma0Time = true;
 		key = "llc";
@@ -1780,9 +1784,7 @@ void Configure_sfcm_sfcm_gen()
 			ldelc = value;
 		sfcm.cfl_factor = 1.0;
 		sfcm.tFinal = 10.0;
-//		int log_resolution = 10; // 1024
-		int log_resolution = 14; // 1024
-		double tol = 1e-7;
+		//		int log_resolution = 10; // 1024
 		if (log_resolution == 14)
 		{
 			sfcm.number_of_elements = (int)pow(2, (int)log_resolution);
@@ -1795,6 +1797,61 @@ void Configure_sfcm_sfcm_gen()
 				cout << "llc\t" << llc << '\n';
 				THROW("generate appropriate input meshes, update the statements below\n");
 			}
+		}
+	}
+	if (change_cfl_tF_new)
+	{
+		sfcm.cfl_factor = 1.0;
+
+		if (fabs(la + 3.0) < tol)
+			sfcm.tFinal = 1100.0;
+		else if (fabs(la + 2.5) < tol)
+			sfcm.tFinal = 350;
+		else if (fabs(la + 2.0) < tol)
+			sfcm.tFinal = 110;
+		else if (fabs(la + 1.5) < tol)
+			sfcm.tFinal = 45;
+		else if (fabs(la + 1.0) < tol)
+			sfcm.tFinal = 20;
+		else if (fabs(la + 0.5) < tol)
+			sfcm.tFinal = 15;
+		else if (fabs(la) < tol)
+			sfcm.tFinal = 12;
+		else
+		{
+			sfcm.cfl_factor = 0.5;
+
+			if (fabs(la - 0.5) < tol)
+				sfcm.tFinal = 10;
+			else if (fabs(la - 1.0) < tol)
+				sfcm.tFinal = 8;
+			else if (fabs(la - 1.5) < tol)
+				sfcm.tFinal = 7;
+			else if (fabs(la - 2.0) < tol)
+				sfcm.tFinal = 5;
+			else if (fabs(la - 2.5) < tol)
+				sfcm.tFinal = 4;
+			else if (fabs(la - 3.0) < tol)
+				sfcm.tFinal = 2;
+			else if (fabs(la - 3.5) < tol)
+				sfcm.tFinal = 1.5;
+			else if (fabs(la - 4.0) < tol)
+			{
+				sfcm.tFinal = 0.7;
+				sfcm.cfl_factor = 0.25;
+			}
+		}
+		g_logout << "\talr\t" << alr << "\ttFactor4tSigma0\t" << tFactor4tSigma0;
+		g_logout << "\tllc\t" << llc << "\tla\t" << la << "\tldelc\t" << ldelc;
+		g_logout << "\tuse_tSigma0Time\t" << use_tSigma0Time << "\ttFinal\t" << sfcm.tFinal << "\tcfl\t" << sfcm.cfl_factor << "\tnEle\t" << sfcm.number_of_elements;
+		g_logout.flush();
+		return;
+	}
+
+	if (change_cfl_tF)
+	{
+		if (log_resolution == 14)
+		{
 			if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;

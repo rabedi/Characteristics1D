@@ -7,8 +7,34 @@
 
 // CFL
 // See the private class in SL_interfacePPtData_Time_Seq, the size - timeSeqPtrs
-#define SIZE_PT_TIME_SEQUENCE	7
+//#define SIZE_PT_TIME_SEQUENCE	7
+
 //////////////////////#define SIZE_PT_TIME_SEQUENCE	10000
+/// mainConfig_resolution_x_New.txt, configMaker_axt_resolution_x_Fracture_New.inst, resolutionFactors
+// resolutionFactor * 4 + 2
+// 1
+//#define SIZE_PT_TIME_SEQUENCE	6
+// 2
+//#define SIZE_PT_TIME_SEQUENCE	10
+// 4
+//#define SIZE_PT_TIME_SEQUENCE	18
+// 8
+//#define SIZE_PT_TIME_SEQUENCE	34
+// 16
+#define SIZE_PT_TIME_SEQUENCE	66
+// 32
+//#define SIZE_PT_TIME_SEQUENCE	130
+// 64
+//#define SIZE_PT_TIME_SEQUENCE	258
+// 128
+//#define SIZE_PT_TIME_SEQUENCE	514
+// 256
+//#define SIZE_PT_TIME_SEQUENCE	1026
+// 512
+//#define SIZE_PT_TIME_SEQUENCE	2050
+// 1024
+//#define SIZE_PT_TIME_SEQUENCE	4098
+
 //#define SIZE_PT_TIME_SEQUENCE	162
 //#define SIZE_PT_TIME_SEQUENCE	2002
 //#define SIZE_PT_TIME_SEQUENCE	50000

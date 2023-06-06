@@ -261,6 +261,8 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 	if (outputTypeActive[tot] == 1)
 	{
 		int time_outputIndex_sz = configPPS2.onesubdomainPPS2[configPPS2.mainSubdomainNo].segmentInfo.maxIndex_Interface_DSU_Fragment_Print / timeStep4_DSU_outputs;
+		bool notPrintField = false; // ((g_low_disk_space) && (time_outputIndex_sz > 8));
+
 		string fileNameLog = root + "/" + out_baseName + "_timeIndex_invalid_runs.txt";
 		for (time_outputIndex = 1; time_outputIndex <= time_outputIndex_sz; ++time_outputIndex)
 		{
@@ -268,6 +270,8 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 			bool runPrinted;
 			for (unsigned int j = 0; j < output_modes.size(); ++j)
 			{
+				if (notPrintField && (output_modes[j] != pss3_om_scalars))
+					continue;
 				runPrinted = ComputePrint_Data(tot, accebleOverAlVals, time_outputIndex, output_modes[j]);
 				if ((j == 0) && (!accebleOverAlVals))
 					outerr << g_versionNumber << sep << g_versionNumber_wOffset << sep << g_serialNumber << sep << accebleOverAlVals << sep << runPrinted << sep << time_outputIndex << '\n';
