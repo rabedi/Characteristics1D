@@ -4,6 +4,7 @@ subdomainNo		0
 bulkFlag		1
 interfaceFlag	1
 #name added for this set of runs
+configSpecificName	allopts
 {
 
 # original mesh is 2^14 resolution, factors below make it coarser by that factor	
