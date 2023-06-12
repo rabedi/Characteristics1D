@@ -538,7 +538,7 @@ void statParamHolder::Read(istream & in)
 			one_value = DoublesAreEqual(maxV, mode);
 		if (one_value)
 		{
-			maxV = maxV;
+			minV = maxV;
 			mean = maxV;
 			mode = maxV;
 		}
@@ -570,6 +570,11 @@ void statParamHolder::WriteData(ostream& out)
 	out << "}\n";
 }
 
+gRandVar::~gRandVar()
+{
+
+}
+
 void gRandVar::ReadParameters(istream& in)
 {
 	paras.Read(in);
@@ -595,6 +600,21 @@ double gRandVar::getRandomValue() const
 	double random_01 = slrand() / (double)RAND_MAX;
 	// cdf_random_01 = random_01
 	return getInverseCDF(random_01);
+}
+
+double gRandVar::getCDF(double x)  const
+{
+	THROW("Function should be implemented by subclass\n");
+}
+
+double gRandVar::getInverseCDF(double p) const
+{
+	THROW("Function should be implemented by subclass\n");
+}
+
+double gRandVar::getPDF(double x)  const
+{
+	THROW("Function should be implemented by subclass\n");
 }
 
 void gRandVar::Finalize_Read()

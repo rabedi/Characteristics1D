@@ -88,14 +88,15 @@ public:
 
 class gRandVar {
 public:
+	virtual ~gRandVar();
 	/*Accessors*/
 	void ReadParameters(istream& in);
 	// return value correspond to the given standard normal value for this random variable PDF
 	double TurnStandardNormalValue2ThisRandom(double standardNormalValue) const;
 	virtual double getRandomValue() const;
-	virtual double getCDF(double x)  const = 0;
-	virtual double getInverseCDF(double p) const = 0; //Quantile
-	virtual double getPDF(double x)  const = 0;
+	virtual double getCDF(double x)  const;
+	virtual double getInverseCDF(double p) const;
+	virtual double getPDF(double x)  const;
 
 	virtual void Finalize_Read();
 	gRandVar* CreateCopy();

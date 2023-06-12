@@ -765,7 +765,12 @@ void SL_Interface_Temp_PtData_OneSide::Read(istream& in)
 		}
 		else if (buf == "v_mode_Star_II")
 		{
+#if DiM2a3_F
 			ReadV(v_mode_Star[rmode_slip], in);
+#else
+			VEC tmp;
+			ReadV(tmp, in);
+#endif
 		}
 		else if (buf == "v_mode_Star_III")
 		{
@@ -777,7 +782,12 @@ void SL_Interface_Temp_PtData_OneSide::Read(istream& in)
 		}
 		else if (buf == "sigma_mode_Star_II")
 		{
+#if DiM2a3_F
 			ReadV(sigma_mode_Star[rmode_slip], in);
+#else
+			VEC tmp;
+			ReadV(tmp, in);
+#endif
 		}
 		else if (buf == "sigma_mode_Star_III")
 		{

@@ -139,14 +139,19 @@ double computeRatio(double numerator, double denominator)
 	static double max_ret = 1e40;
 	static double zr = 1e10 * DBL_MIN, zrn = 100 * DBL_MIN;
 	if (fabs(denominator) < zr)
+	{
 		if (fabs(numerator) < zr) //zrn)
+		{
 			return 0;
+		}
 		else
+		{
 			if (((numerator > 0) && (denominator > 0)) || ((numerator < 0) && (denominator < 0)))
 				return max_ret;
 			else
 				return -max_ret;
-
+		}
+	}
 	double ratio = numerator / denominator;
 
 	if (ratio > max_ret)

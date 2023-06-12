@@ -101,3 +101,28 @@ seq 0 24 | parallel -j 5 './solver -sp -mc config/MainConfig/mainConfig_elastic_
 
 -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 9 -vst 0 -ven 863 -np 48
 -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 1 -vst 433 -ven 433
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 4 -vst 0 -ven 863 -np 24
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 1 -vst 433 -ven 433
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 4 -vst 0 -ven 71 -np 48
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 4 -vst 0 -ven 71 -np 56
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 9 -vst 0 -ven 71 -np 48
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 5 -en 9 -vst 0 -ven 71 -np 48
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 1 -en 1 -vst 0 -ven 863 -np 24
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 9 -vst 0 -ven 863 -np 24
+
+
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 4 -en 4 -vst 0 -ven 863 -np 24
+
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 1 -vst 0 -ven 863 -np 48
+
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 4 -vst 0 -ven 863 -np 24
+
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 9 -vst 0 -ven 8 -np 9
