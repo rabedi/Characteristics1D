@@ -1767,6 +1767,16 @@ void Configure_sfcm_sfcm_gen()
 
 	bool change_cfl_tF = ((sfcm_gen.specificProblemName == "axt") || (sfcm_gen.specificProblemName == "resolution_x_F") || change_spatial_mesh_res);
 	bool change_cfl_tF_new = (sfcm_gen.specificProblemName == "resolution_x_F_New");
+	key = "resolutionFactor"; // see if the resolution factor is something other than 0 and 1
+	int resolutionFactor = 1;
+	if (Find_Version_Value(key, value, mpPtr) == true)
+		resolutionFactor = (int)(floor(value + 0.1));
+
+	bool has_delc_Tf_fact = false;
+	double delc_Tf_fact = 1.0;
+	key = "delc_Tf_fact";
+	has_delc_Tf_fact = Find_Version_Value(key, delc_Tf_fact, mpPtr);
+
 	int log_resolution = 14; // 1024
 	double tol = 1e-7;
 
@@ -1801,6 +1811,7 @@ void Configure_sfcm_sfcm_gen()
 	}
 	if (change_cfl_tF_new)
 	{
+		double max_delc_factor = -1.0;
 		sfcm.cfl_factor = 1.0;
 
 		if (fabs(la + 3.0) < tol)
@@ -1828,19 +1839,88 @@ void Configure_sfcm_sfcm_gen()
 			else if (fabs(la - 1.5) < tol)
 				sfcm.tFinal = 7;
 			else if (fabs(la - 2.0) < tol)
+			{ 
 				sfcm.tFinal = 5;
+				if (has_delc_Tf_fact)
+				{
+					if (resolutionFactor == 128)
+						max_delc_factor = 3.0;
+					else if (resolutionFactor == 64)
+						max_delc_factor = 3.0;
+				}
+			}
 			else if (fabs(la - 2.5) < tol)
+			{ 
 				sfcm.tFinal = 4;
+				if (has_delc_Tf_fact)
+				{
+					if (resolutionFactor == 128)
+						max_delc_factor = 8.0;
+					else if (resolutionFactor == 64)
+						max_delc_factor = 3.0;
+					else if (resolutionFactor == 32)
+						max_delc_factor = 3.0;
+					else if (resolutionFactor == 16)
+						max_delc_factor = 3.0;
+				}
+			}
 			else if (fabs(la - 3.0) < tol)
+			{
 				sfcm.tFinal = 2;
+				if (has_delc_Tf_fact)
+				{
+					if (resolutionFactor == 128)
+						max_delc_factor = 8.0;
+					else if (resolutionFactor == 64)
+						max_delc_factor = 4.0;
+					else if (resolutionFactor == 32)
+						max_delc_factor = 4.0;
+					else if (resolutionFactor == 16)
+						max_delc_factor = 4.0;
+				}
+			}
 			else if (fabs(la - 3.5) < tol)
+			{
 				sfcm.tFinal = 1.5;
+				if (has_delc_Tf_fact)
+				{
+					if (resolutionFactor == 128)
+						max_delc_factor = 80.0;
+					else if (resolutionFactor == 64)
+						max_delc_factor = 20.0;
+					else if (resolutionFactor == 32)
+						max_delc_factor = 6.0;
+					else if (resolutionFactor == 16)
+						max_delc_factor = 4.0;
+				}
+			}
 			else if (fabs(la - 4.0) < tol)
 			{
 				sfcm.tFinal = 0.7;
 				sfcm.cfl_factor = 0.25;
+				if (has_delc_Tf_fact)
+				{
+					if (resolutionFactor == 128)
+						max_delc_factor = 80.0;
+					else if (resolutionFactor == 64)
+						max_delc_factor = 80.0;
+					else if (resolutionFactor == 32)
+						max_delc_factor = 20.0;
+					else if (resolutionFactor == 16)
+						max_delc_factor = 6.0;
+					else if (resolutionFactor == 8)
+						max_delc_factor = 4.0;
+				}
 			}
 		}
+		if (has_delc_Tf_fact)
+		{
+			if (max_delc_factor < 0)
+				exit(0);
+			if (delc_Tf_fact - max_delc_factor > 1e-3)
+				exit(0);
+		}
+		sfcm.tFinal *= delc_Tf_fact;
 		g_logout << "\talr\t" << alr << "\ttFactor4tSigma0\t" << tFactor4tSigma0;
 		g_logout << "\tllc\t" << llc << "\tla\t" << la << "\tldelc\t" << ldelc;
 		g_logout << "\tuse_tSigma0Time\t" << use_tSigma0Time << "\ttFinal\t" << sfcm.tFinal << "\tcfl\t" << sfcm.cfl_factor << "\tnEle\t" << sfcm.number_of_elements;

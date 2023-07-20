@@ -252,6 +252,12 @@ void SLFractureGlobal_Configuration::Read(istream& in)
 			bool found = Find_Version_Value(key, value, mpPtr);
 			if (found)
 				terminate_run_target_time = value;
+
+			// Final time already adjusted in Domain_AllInterfacesAllTimes
+			//key = "delc_Tf_fact";
+			//if (Find_Version_Value(key, value, mpPtr) == true)
+			//	terminate_run_target_time *= value;
+
 			g_logout << "\tterminate_run_target_time\t" << terminate_run_target_time;
 		}
 		else if (buf == "terminate_run_target_max_damage")
@@ -634,7 +640,13 @@ void SL_Interface_Fracture_PF::Read_SL_Interface_Fracture_PF(istream& in, int in
 					if (Find_Version_Value(key, value, mpPtr) == true)
 						deltaC = value;
 				}
+				key = "delc_Tf_fact";
+				if (Find_Version_Value(key, value, mpPtr) == true)
+					deltaC *= value;
 			}
+			g_logout << "\tdeltaC\t" << deltaC;
+
+
 			g_logout << "\tdeltaC\t" << deltaC;
 		}
 		else if (buf == "has_in_situ")

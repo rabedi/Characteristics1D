@@ -13,8 +13,24 @@ from rmulti_index import SMIndex as SMIndex
 from input_field import StatOfVec as StatOfVec
 from input_field import InpF as InpF
 
+# mainOptions
+# 0, 1: effect of llc, dd2 ldelc, la
+#       0: coarse mesh for la = -3, ...
+#       1: 2^14 for all meshes
+
+# 2: resolution_x for fracture (SVE homogenization - Andy Tonge discussion)
+mo_frac_rate_cf = 0
+mo_frac_rate_f  = 1
+mo_frac_res_x = 2
+
+mainOption = mo_frac_res_x
+
+
 # Change
-sortingFields = ["llc", "dd2", "ldelc", "la"]
+if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+    sortingFields = ["llc", "dd2", "ldelc", "la"]
+elif (mainOption == mo_frac_res_x):
+    sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
 
 # spatial field data
 valsAtVert = True
@@ -37,9 +53,16 @@ dist_logs["psi_f"] = 10
 dist_logs["psi_f_norm_psiC"] = 10
 dist_logs["eps_f"] = 10
 dist_logs["eps_f_norm"] = 10
-dist_logs["lbar_F"] = 10
+#dist_logs["lbar_F"] = 10
+
 
 def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
+    if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+        return read_updata_csv_frac_rate(filename)
+    elif (mainOption == mo_frac_res_x):
+        return read_updata_csv_frac_res_x(filename)
+
+def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
     db = pd.read_csv(filename)
     db = db.apply(pd.to_numeric, errors='coerce')
     #change
@@ -134,6 +157,186 @@ def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3O
         ii += 1
     nRows = db.shape[0]
     return db
+
+
+def read_updata_csv_frac_res_x(filename = "../../data/resolution_x_fracture_scalars/pps3Out_resF_la2p0_004_0_9.csv"):
+    goodRun = "nresF"
+    zeroRes = "_001_"
+    badHarmonic = not ((goodRun in filename) or (zeroRes in filename))
+    db = pd.read_csv(filename)
+    c_ssoFS_ind = "indssoFS"
+    c_ssoFS_v = "inp_s_ssoFS"
+    i_ssoFS_ind = db.columns.get_loc(c_ssoFS_ind)
+    i_ssoFS_v = db.columns.get_loc(c_ssoFS_v)
+
+    colnames = db.columns
+    numCols = len(colnames)
+    nRows = db.shape[0]
+    pdOut = pd.DataFrame(columns=colnames)
+
+    db = db.apply(pd.to_numeric, errors='coerce')
+
+    ii = 0
+    for i, row in db.iterrows():
+        sso_v = row[i_ssoFS_v]
+#        sso_i = row[i_ssoFS_ind]
+        if (sso_v == 3): #"min"):
+            sso_i = 0
+        elif (sso_v == 6): #"mean_arithmetic"):
+            sso_i = 1
+        elif (sso_v == 10): #"mean_harmonic"):
+            sso_i = 2
+        elif (sso_v == 0): #"valStart"):
+            sso_i = 3
+
+        db.iloc[i, i_ssoFS_ind] = sso_i 
+        # db.iloc[i, i_ssoFS_v] = sso_i 
+
+ 
+    c_ver0 = "verNo"
+    c_ver1 = "verWOffsetNo"
+
+    c_dt_resap_ind = "inddt_resap"
+    c_dt_resap_v = "inp_s_dt_resap"
+
+    c_la_ind = "indla"
+    c_la_v = "inp_s_la"
+    c_llc_ind = "indllc"
+    c_llc_v = "inp_s_llc"
+
+    c_resolutionFactor_ind = "indresolutionFactor"
+    c_resolutionFactor_v = "inp_s_resolutionFactor"
+
+    i_ver0 = db.columns.get_loc(c_ver0)
+    i_ver1 = db.columns.get_loc(c_ver1)
+
+    i_dt_resap_ind = db.columns.get_loc(c_dt_resap_ind)
+    i_dt_resap_v = db.columns.get_loc(c_dt_resap_v)
+
+    i_la_ind = db.columns.get_loc(c_la_ind)
+    i_la_v = db.columns.get_loc(c_la_v)
+    i_llc_ind = db.columns.get_loc(c_llc_ind)
+    i_llc_v = db.columns.get_loc(c_llc_v)
+
+    i_resolutionFactor_ind = db.columns.get_loc(c_resolutionFactor_ind)
+    i_resolutionFactor_v = db.columns.get_loc(c_resolutionFactor_v)
+
+    i_col_phidtf = db.columns.get_loc("out_s_phi_d_tFin")
+    log10Inv = 1.0 / np.log(10)
+
+    n_resaps = 2
+    n_ssoFS = 4
+    n_llc = 9
+    n_la = 15
+    n_resolutionFactor = 10
+
+    nn_resolutionFactor = 1
+    fact = n_resolutionFactor
+    nn_llc = fact
+    fact *= n_llc
+    nn_la = fact
+    fact *= n_la
+    nn_ssoFS = fact
+    fact *= n_ssoFS
+    nn_resap = fact
+
+    nRows = db.shape[0]
+    #ii = 0
+    for ii, row in db.iterrows():
+        # ver0 = int(row[i_ver0])
+        # ver1 = int(row[i_ver1])
+        la_ind = int(row[i_la_ind])
+        la_v = row[i_la_v]
+
+        ldelc_v = -1
+        dd2_ind = 0
+        dd2_v = 0.9
+
+        llc_v = row[i_llc_v]
+
+        dt_resap_ind = int(row[i_dt_resap_ind])
+        dt_resap_v = row[i_dt_resap_v]
+        dt_resap_ind = dt_resap_v
+        db.iloc[ii, i_dt_resap_ind] = dt_resap_ind 
+        db.iloc[ii, i_dt_resap_v] = dt_resap_v 
+
+        dt_ssoFS_ind = int(row[i_ssoFS_ind])
+        dt_ssoFS_v = int(row[i_ssoFS_v])
+        if ((dt_ssoFS_v == 10) and badHarmonic):
+            continue 
+
+        resolutionFactor_ind = int(row[i_resolutionFactor_ind])
+        resolutionFactor_v = row[i_resolutionFactor_v]
+        resolutionFactor_ind = round(np.log(resolutionFactor_v) / np.log(2))
+        db.iloc[ii, i_resolutionFactor_v] = resolutionFactor_ind 
+        db.iloc[ii, i_resolutionFactor_ind] = resolutionFactor_ind 
+
+
+        phidtf = row[i_col_phidtf]
+        if (phidtf < 0):
+            # db = db.drop(i, axis=0)
+            continue
+        logphid = np.log(phidtf) * log10Inv
+        if (la_v > -1.1):
+            logphidMin = -0.45 + la_v * 0.6125
+        else:
+            logphidMin = -1.5
+        logphidMin = logphidMin + (ldelc_v + 1)
+        if (la_v < -1.1):
+            logphidMin -= (dd2_v - 0.1) 
+
+        # decrementing by 1 so to drop bad data
+        logphidMin = logphidMin - 2
+        if (logphid < logphidMin):
+            # db = db.drop(i, axis=0)
+            continue
+
+        la_ind = int(round(2 * la_v)) + 6
+
+        # db.iloc[ii, i_ver0] = ver0 
+        # db.iloc[ii, i_ver1] = ver1 
+
+        db.iloc[ii, i_la_ind] = la_ind
+        db.iloc[ii, i_la_v] = la_v
+         
+        llc_ind = int(-2 * llc_v) - 1
+        db.iloc[ii, i_llc_ind] = llc_ind
+
+        row = db.loc[ii]
+        if (resolutionFactor_ind == 0):
+            dt_resaps = [0, 1]
+            dt_ssoFS = [0, 1, 2, 3]
+            dt_ssoFSV = [3, 6, 10, 0]
+        else:
+            dt_resaps = [dt_resap_ind]
+            dt_ssoFS = [dt_ssoFS_ind]
+            dt_ssoFSV = [dt_ssoFS_v]
+        sz_dt_resaps = len(dt_resaps)
+        sz_dt_ssoFS = len(dt_ssoFS)
+
+        for resaps in dt_resaps:
+            for j, ssoFS in enumerate(dt_ssoFS):
+                rowNew = row.copy()
+                ssoV = dt_ssoFSV[j]
+                rowNew[i_ssoFS_ind] = ssoFS 
+                rowNew[i_ssoFS_v] = ssoV 
+                rowNew[i_dt_resap_ind] = resaps 
+                rowNew[i_dt_resap_v] = resaps
+
+                verN = nn_resolutionFactor * resolutionFactor_ind + \
+                nn_llc * llc_ind + \
+                nn_la * la_ind + \
+                nn_ssoFS * ssoFS + \
+                nn_resap + resaps
+                
+                rowNew[i_ver0] = verN
+                # rowNew[i_ver1] = verN
+#                pdOut = pdOut.append(rowNew, ignore_index=True)
+                new_df = pd.DataFrame([rowNew])
+                pdOut = pd.concat([pdOut, new_df], axis=0, join='outer', ignore_index=True)
+#        ii += 1
+    return pdOut
+
     #db.to_csv(filename, index=False,header=True)
     #db.to_csv("data/x.csv", index=False,header=True)
 
@@ -247,7 +450,13 @@ class Characteristics_data:
                 cnt = cnt +1
 
             self.pd_data = self.pd_data.apply(pd.to_numeric, errors='coerce')
-            self.pd_data = self.pd_data.sort_values(by=sf, ascending=[True, True, True, True, True])
+
+            trues = [True for _ in range(len(sf))]
+            self.pd_data = self.pd_data.sort_values(by=sf, ascending=trues)
+#            if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+#                    self.pd_data = self.pd_data.sort_values(by=sf, ascending=[True, True, True, True, True])
+#            elif (mainOption == mo_frac_res_x):            
+#                    self.pd_data = self.pd_data.sort_values(by=sf, ascending=[True, True, True, True, True, True])
 
             for key, logbase in dist_logs.items():
                 if (logbase <= 0):
@@ -355,35 +564,52 @@ class Characteristics_data:
                 self.pd_data_w_iniField.insert(fxsi, names[i], np.nan)
         
         # now looping over rows get the random field realization and process it:
-        iCol_llc = self.pos_inp_sortingFields[0]
-        iCol_dd2 = self.pos_inp_sortingFields[1]
-        iCol_la  = self.pos_inp_sortingFields[3]
+
+        if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+            iCol_llc = self.pos_inp_sortingFields[0]
+            iCol_dd2 = self.pos_inp_sortingFields[1]
+            iCol_la  = self.pos_inp_sortingFields[3]
+            iCol_resF = -1
+        elif (mainOption == mo_frac_res_x):
+            iCol_llc = self.pd_data.columns.get_loc("inp_s_llc")
+            iCol_dd2 = self.pd_data.columns.get_loc("inp_s_dd2")
+            iCol_la = self.pd_data.columns.get_loc("inp_s_la")
+            iCol_la = self.pd_data.columns.get_loc("inp_s_la")
+            iCol_resF = self.pd_data.columns.get_loc("inp_s_resolutionFactor")
+            iCol_sso = self.pd_data.columns.get_loc("inp_s_ssoFS")
+            
         for i in range(nRows):
             llc = self.pd_data.iloc[i, iCol_llc]
             dd2 = self.pd_data.iloc[i, iCol_dd2]
             la = self.pd_data.iloc[i, iCol_la]
             meshp2_4Simulation = -1
             # change:
-            if (la < 0.0): 
-                if (la < -2.4):
-                    # -3.0 -> 16
-                    # -2.5 -> 16
-                    meshp2_4Simulation = 10
-                elif (la < -1.9):
-                    # -2.0 -> 8
-                    meshp2_4Simulation = 11
-                elif (la < -1.4):
-                    # -1.5 -> 4
-                    meshp2_4Simulation = 12
-                else:
-                    # -1.0 -> 2
-                    # -0.5 -> 2
-                    meshp2_4Simulation = 13
+            sso = reduction_sso
+            if (mainOption == mo_frac_rate_cf):
+                if (la < 0.0): 
+                    if (la < -2.4):
+                        # -3.0 -> 16
+                        # -2.5 -> 16
+                        meshp2_4Simulation = 10
+                    elif (la < -1.9):
+                        # -2.0 -> 8
+                        meshp2_4Simulation = 11
+                    elif (la < -1.4):
+                        # -1.5 -> 4
+                        meshp2_4Simulation = 12
+                    else:
+                        # -1.0 -> 2
+                        # -0.5 -> 2
+                        meshp2_4Simulation = 13
+            elif (mainOption == mo_frac_res_x):
+                resF = self.pd_data.iloc[i, iCol_resF]
+                meshp2_4Simulation = 14 - resF
+                sso = self.pd_data.iloc[i, iCol_sso]
 
             serNo = self.pd_data.iloc[i, 0]
             pinp = InpF()
             pinp.Initialize_InpF(valsAtVert, meshp2, serNo, llc, dd2, \
-                                isPeriodic, reduction_sso, \
+                                isPeriodic, sso, \
                                 meshp2_4Simulation, meshp2_4Output)
             if (self.add_spatial_field_stat == True):
                 stat_vals = pinp.GetStatVecVals(addRawStat)

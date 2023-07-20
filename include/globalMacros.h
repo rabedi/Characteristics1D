@@ -13,7 +13,7 @@
 /// mainConfig_resolution_x_New.txt, configMaker_axt_resolution_x_Fracture_New.inst, resolutionFactors
 // resolutionFactor * 4 + 2
 // 1
-//#define SIZE_PT_TIME_SEQUENCE	6
+#define SIZE_PT_TIME_SEQUENCE	6
 // 2
 //#define SIZE_PT_TIME_SEQUENCE	10
 // 4
@@ -21,7 +21,7 @@
 // 8
 //#define SIZE_PT_TIME_SEQUENCE	34
 // 16
-#define SIZE_PT_TIME_SEQUENCE	66
+//#define SIZE_PT_TIME_SEQUENCE	66
 // 32
 //#define SIZE_PT_TIME_SEQUENCE	130
 // 64

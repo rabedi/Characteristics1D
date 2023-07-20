@@ -66,9 +66,11 @@ def valReduction(valsIn, meshp2In, valsAtVert, meshp2Out = -1, reduction_sso = 3
     if (meshp2Out < 0):
         return valsIn
     redP2 = meshp2In - meshp2Out
-    step = 2**redP2
-    resOut = 2**meshp2Out
-    szOut = resOut + (int)(valsAtVert)
+    if (redP2 == 0):
+        return valsIn
+    step = (int)(2**redP2)
+    resOut = (int)(2**meshp2Out)
+    szOut = (int)(resOut) + (int)(valsAtVert)
     bkVal = valsIn[-1]
     valsOut = np.zeros(szOut)
     for i in range(resOut):
@@ -78,7 +80,7 @@ def valReduction(valsIn, meshp2In, valsAtVert, meshp2Out = -1, reduction_sso = 3
             vec[j] = valsIn[st + j]
         if (reduction_sso == 3): # minimum val
             valsOut[i] = np.min(vec)
-        elif (reduction_sso == 1): # start value
+        elif (reduction_sso == 0): # start value
             valsOut[i] = vec[0]
         elif (reduction_sso == 1): # end value
             valsOut[i] = vec[-1]
@@ -97,11 +99,11 @@ def valReduction(valsIn, meshp2In, valsAtVert, meshp2Out = -1, reduction_sso = 3
     return valsOut
 
 class InpF:
-    rootIFFOlder = "../InhomogeneousFiles/"
+    rootIFFOlder = "../../InhomogeneousFiles/"
     def __init__(self):
         pass
     @staticmethod
-    def setInputMeshRootFolder(rootFolderIn = "../InhomogeneousFiles/"):
+    def setInputMeshRootFolder(rootFolderIn = "../../InhomogeneousFiles/"):
         rootIFFOlder = rootFolderIn
     # dd2 is the "span" parameter of pointwise PDF
     # sso_valStart = 0, sso_valEnd = 1, sso_min = 3, sso_max = 5, sso_mean_arithmetic = 6, sso_mean_harmonic = 10

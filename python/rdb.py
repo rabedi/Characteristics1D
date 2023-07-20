@@ -15,6 +15,9 @@ from input_field import InpF as InpF
 #from enum import Enum
 import rutil as rutil
 from characteristics_data import Characteristics_data as Characteristics_data 
+import characteristics_data as charDat 
+
+from rstats import StatOfVec as StatOfVec
 
 class plParameters:
     lineStyles = ["solid", "dashed", "dashdot", "dotted", (0, (1, 10)), (0, (1, 1)), \
@@ -25,10 +28,45 @@ class plParameters:
     #             "long dash with offset", "loosely dashed", "densely dashed", "loosely dashdotted", \
     #             "densely dashdotted", "dashdotdotted", "loosely dashdotdotted", "densely dashdotdotted", "dashdotted"]
     lineColors = ["black", "blue", "red", "darkgreen", "peru", "darkorchid", "gray", "pink", "violet", \
-                  "cyan", "firebrick", "royalblue", "lime", "darkslategrey", "orange"]
+                  "cyan", "firebrick", "royalblue", "lime", "darkslategrey", "orange", "purple", "brown", \
+                  "yellow", "green", "magenta",  \
+                  "aliceblue","antiquewhite", "aqua", "aquamarine", "azure", \
+                  "beige", "bisque", "blanchedalmond", \
+                  "blueviolet", "burlywood","cadetblue", \
+                  "chartreuse", "chocolate", "coral", "cornflowerblue", \
+                  "cornsilk", "crimson", "darkblue", "darkcyan", \
+                  "darkgoldenrod", "darkgray", \
+                  "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", \
+                  "darkorchid", "darkred", "darksalmon", "darkseagreen", \
+                  "darkslateblue", "darkslategray", "darkslategrey", \
+                  "darkturquoise", "darkviolet", "deeppink", "deepskyblue", \
+                  "dimgray", "dimgrey", "dodgerblue", "firebrick", \
+                  "floralwhite", "forestgreen", "fuchsia", "gainsboro", \
+                  "ghostwhite", "gold", "goldenrod", \
+                  "greenyellow", "honeydew", "hotpink", "indianred", "indigo", \
+                  "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", \
+                  "lemonchiffon", "lightblue", "lightcoral", "lightcyan", \
+                  "lightgoldenrodyellow", "lightgray", "lightgrey", \
+                  "lightgreen", "lightpink", "lightsalmon", "lightseagreen", \
+                  "lightskyblue", "lightslategray", "lightslategrey", \
+                  "lightsteelblue", "lightyellow", "lime", "limegreen", \
+                  "linen", "magenta", "maroon", "mediumaquamarine", \
+                  "mediumblue", "mediumorchid", "mediumpurple", \
+                  "mediumseagreen", "mediumslateblue", "mediumspringgreen", \
+                  "mediumturquoise", "mediumvioletred", "midnightblue", \
+                  "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", \
+                  "oldlace", "olive", "olivedrab", "orangered", \
+                  "orchid", "palegoldenrod", "palegreen", "paleturquoise", \
+                  "palevioletred", "papayawhip", "peachpuff", \
+                  "plum", "powderblue", "rosybrown", \
+                  "royalblue", "saddlebrown", "salmon", "sandybrown", \
+                  "seagreen", "seashell", "sienna", "silver", "skyblue", \
+                  "slateblue", "slategray", "slategrey", "snow", "springgreen", \
+                  "steelblue", "tan", "teal", "thistle", "tomato", "turquoise", \
+                  "wheat", "white", "whitesmoke", "yellowgreen"]
     markers = ["o", "s", "D", "p", "^", "<", ">", "P", "d", "X", "+", "x", "*", ".", "1", "2", "3", "4", "8"]
     filltyles = ["full", "top", "bottom", "left", "right", "full", "top", "bottom", "left", "right"] #"none"
-    linewidths = [1, 2, 3, 4, 5]
+    linewidths = [1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3]
     markersizes = [3, 5, 6, 7, 8, 9, 10, 11, 12]
     #markerfacecolors = ["none", "auto", ]
 
@@ -80,8 +118,13 @@ class DB_InputColumn:
     def Initialize_DB_InputColumn(self, nameBase = "la", lineprop = "none"):
         self.nameBase = nameBase
         self.lineprop = lineprop
-        self.nameIndex = "ind" + self.nameBase
-        self.nameValue = "inp_s_" + self.nameBase
+        if (self.nameBase != "runNo"):
+            self.nameIndex = "ind" + self.nameBase
+            self.nameValue = "inp_s_" + self.nameBase
+        else:
+            self.nameIndex = self.nameBase
+            self.nameValue = self.nameBase
+
         #self.nameValue = "inp_" + self.nameBase
 
         # computed from input data 
@@ -124,6 +167,7 @@ class PlotOMISplit_Instruction:
         self.out_db_col_inds = []
         self.mid_db_col_inds = []
         self.in_db_col_ind = -1
+        self.in_db_col_val = -1
 
         self.out_sz = 0
         self.mid_sz = 0
@@ -151,7 +195,6 @@ class PlotOMISplit_1Plot:
         self.plot_nameBaseFromVals = ""
         self.plot_curves = [] # vector of curves
         self.plot_title_base = "" 
-
 
 
 # this is the actual plot instructions that uses PlotOMISplit_Instruction and one DataBaseSplits to form plot informations
@@ -274,12 +317,17 @@ class DataBaseSplits:
         splitInstructions.has_in = False
         splitInstructions.in_col_ind = -1
         splitInstructions.in_db_col_ind = -1
+        splitInstructions.in_db_col_val = -1
         if (splitInstructions.in_col_nameBase != "none"):
             for j in range(totNumInputCols):
                 if (self.db_inp_cols[j].nameBase == splitInstructions.in_col_nameBase):
                     colFound[j] = True
                     splitInstructions.in_col_ind = j
                     splitInstructions.in_db_col_ind = self.db_inp_cols[j].dbColumnIndex
+                    if (self.db_inp_cols[j].nameBase != "runNo"):
+                        splitInstructions.in_db_col_val = splitInstructions.in_db_col_ind + 1
+                    else:
+                        splitInstructions.in_db_col_val = splitInstructions.in_db_col_ind
                     splitInstructions.has_in = True
                     sz_middle -= 1
                     break
@@ -492,7 +540,7 @@ class DataBaseSplits:
                             y = np.zeros(sz_ptrs, dtype=float)
                             colx = fi
                             if (not fiField):
-                                colx = splitInstructions.in_db_col_ind + 1
+                                colx = splitInstructions.in_db_col_val
                             for indri, ri in enumerate(curve.row_numbers4curve):
                                 x[indri] = self.db.iloc[ri, colx]
                             if (fpri == 0): # average - or no fill
@@ -626,7 +674,9 @@ class DataBaseSplits:
             shutil.copy(plotFullNameWOExt + ".svg", cpFWOExt + ".svg")
 
 def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
-    if (readMainLineMode == 0):
+    if (readMainLineMode == -1): # all raw data
+        summaryName = root + "/allData/all_wxs.csv"
+    elif (readMainLineMode == 0):
         summaryName = root + "/allData/stat_mean.csv"
     elif (readMainLineMode == 1):
         summaryName = root + "/allData/stat_cov.csv"
@@ -639,12 +689,22 @@ def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
     return pd_data
 
 def main_function():
+    sov = StatOfVec()
+    sov.Test_Gumbel2Weibull()
+    return
+
+    mo_frac_rate_cf = 0
+    mo_frac_rate_f  = 1
+    mo_frac_res_x = 2
+
+    mainOption = mo_frac_res_x
 
     #README:
     # 1. set the path to "InhomogeneousFiles" folder
     InpF.setInputMeshRootFolder("../InhomogeneousFiles")
     # 2. set path to "2023_03_24". I put it inside a "data" folder for myself. You can adjust this path
     folderSource = "../../data/2023_04_11"
+    folderSource = "../../data/resolution_x_fracture_scalars"
     # 3. If needed, adjust output path were the files are generated
     folderDest = "../../data/Characteristics_data"
     generatePlots = True
@@ -662,40 +722,71 @@ def main_function():
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
-    option = 0 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
-    readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std
+    option = 100 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    # options >= 100 are going to be used for plotting rawData (runNo is used)
+
+    readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
     plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
-    plotFill = True
+    plotFill = False
     if (plotFill):
         readMainLineMode = 0
-    pd_data = read_csv(folderDest, readMainLineMode)
-
 
     inpColDict = {}
 
-    if (not plotFill):
-        if (option == 0):
-            inpColDict["la"] = "fillstyle" #"c" # color
-            inpColDict["llc"] = "c" # line style
-            inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+    if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+        # sortingFields = ["llc", "dd2", "ldelc", "la"]
+        if (not plotFill):
+            if (option == 0):
+                inpColDict["la"] = "fillstyle" #"c" # color
+                inpColDict["llc"] = "c" # line style
+                inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+            #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
+                inpColDict["dd2"] = "marker" # marker fill color
+            elif (option == 1):
+                inpColDict["la"] = "marker" #"c" # color
+                inpColDict["llc"] = "fillstyle" # line style
+                inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+                inpColDict["dd2"] = "c" # marker fill color
+            elif (option == 2):
+                inpColDict["la"] = "c" #"c" # color
+                inpColDict["llc"] = "fillstyle" # line style
+                inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+                inpColDict["dd2"] = "marker" # marker fill color
+        else:
+            inpColDict["la"] = "ls" #"c" # color
+            inpColDict["llc"] = "fillstyle" # line style
+            inpColDict["ldelc"] = "c" #"fillstyle" # marker style
         #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
             inpColDict["dd2"] = "marker" # marker fill color
-        elif (option == 1):
-            inpColDict["la"] = "marker" #"c" # color
-            inpColDict["llc"] = "fillstyle" # line style
-            inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
-            inpColDict["dd2"] = "c" # marker fill color
-        elif (option == 2):
-            inpColDict["la"] = "c" #"c" # color
-            inpColDict["llc"] = "fillstyle" # line style
-            inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
-            inpColDict["dd2"] = "marker" # marker fill color
-    else:
-        inpColDict["la"] = "ls" #"c" # color
-        inpColDict["llc"] = "fillstyle" # line style
-        inpColDict["ldelc"] = "c" #"fillstyle" # marker style
-    #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
-        inpColDict["dd2"] = "marker" # marker fill color
+    elif (mainOption == mo_frac_res_x):
+        # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
+        if (option < 100): # stat files
+            if (option == 0):
+                inpColDict["dt_resap"] = "fillstyle"
+                inpColDict["resolutionFactor"] = "marker"
+                inpColDict["ssoFS"] = "c"
+                inpColDict["llc"] = "ls"
+                inpColDict["la"] = "marker"
+            elif (option == 1):
+                inpColDict["dt_resap"] = "fillstyle"
+                inpColDict["resolutionFactor"] = "c"
+                inpColDict["ssoFS"] = "ls"
+                inpColDict["llc"] = "marker" # marker fill color
+                inpColDict["la"] = "lw"
+        else: # raw data
+            inpColDict["runNo"] = "c"
+            inpColDict["dt_resap"] = "fillstyle"
+            inpColDict["resolutionFactor"] = "fillstyle"
+            inpColDict["ssoFS"] = "ls"
+            inpColDict["llc"] = "lw" # marker fill color
+            inpColDict["la"] = "marker"
+
+    # trying to see if "runNo" is one of the entries   -> dealing with raw data
+    if "runNo" in inpColDict:
+        readMainLineMode = -1
+        plotFill = False
+
+    pd_data = read_csv(folderDest, readMainLineMode)
 
     dist_logs = {}
     
@@ -714,28 +805,50 @@ def main_function():
 
     splitInstructions = PlotOMISplit_Instruction()
 #    splitInstructions.out_col_nameBases.append("ssoFS")
-    if (not plotFill):
-        # default option
-        if (option == 0):
+    if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+        # sortingFields = ["llc", "dd2", "ldelc", "la"]
+        if (not plotFill):
+            # default option
+            if (option == 0):
+                splitInstructions.out_col_nameBases.append("dd2")
+                splitInstructions.out_col_nameBases.append("ldelc")
+                #   splitInstructions.out_col_nameBases.append("la")
+                #   splitInstructions.out_col_nameBases.append("llc")
+                splitInstructions.in_col_nameBase = "la"
+            elif (option == 1):
+                splitInstructions.out_col_nameBases.append("la")
+                splitInstructions.out_col_nameBases.append("ldelc")
+                splitInstructions.in_col_nameBase = "llc"
+            elif (option == 2):
+                splitInstructions.out_col_nameBases.append("dd2")
+                splitInstructions.out_col_nameBases.append("ldelc")
+                splitInstructions.in_col_nameBase = "llc"
+        else:
             splitInstructions.out_col_nameBases.append("dd2")
-            splitInstructions.out_col_nameBases.append("ldelc")
+            #   splitInstructions.out_col_nameBases.append("ldelc")
             #   splitInstructions.out_col_nameBases.append("la")
-            #   splitInstructions.out_col_nameBases.append("llc")
+            splitInstructions.out_col_nameBases.append("llc")
             splitInstructions.in_col_nameBase = "la"
-        elif (option == 1):
+    elif (mainOption == mo_frac_res_x):
+        # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
+        if (option < 100): # stat files
+            if (option == 0):
+                # splitInstructions.out_col_nameBases.append("ssoFS")
+                # splitInstructions.out_col_nameBases.append("dt_resap")
+                splitInstructions.out_col_nameBases.append("llc")
+                splitInstructions.out_col_nameBases.append("la")
+                splitInstructions.in_col_nameBase = "resolutionFactor"
+            elif (option == 1):
+                splitInstructions.out_col_nameBases.append("ssoFS")
+                splitInstructions.out_col_nameBases.append("dt_resap")
+                splitInstructions.out_col_nameBases.append("llc")
+                splitInstructions.in_col_nameBase = "la"
+        else: # raw data
+            splitInstructions.out_col_nameBases.append("ssoFS")
+            splitInstructions.out_col_nameBases.append("dt_resap") # can comment this out
+            splitInstructions.out_col_nameBases.append("llc")
             splitInstructions.out_col_nameBases.append("la")
-            splitInstructions.out_col_nameBases.append("ldelc")
-            splitInstructions.in_col_nameBase = "llc"
-        elif (option == 2):
-            splitInstructions.out_col_nameBases.append("dd2")
-            splitInstructions.out_col_nameBases.append("ldelc")
-            splitInstructions.in_col_nameBase = "llc"
-    else:
-        splitInstructions.out_col_nameBases.append("dd2")
-        #   splitInstructions.out_col_nameBases.append("ldelc")
-        #   splitInstructions.out_col_nameBases.append("la")
-        splitInstructions.out_col_nameBases.append("llc")
-        splitInstructions.in_col_nameBase = "la"
+            splitInstructions.in_col_nameBase = "resolutionFactor" #"runNo"
 
 #    splitInstructions.in_col_nameBase = "resolutionFactor"
 

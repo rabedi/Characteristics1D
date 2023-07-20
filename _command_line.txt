@@ -126,3 +126,5 @@ seq 0 24 | parallel -j 5 './solver -sp -mc config/MainConfig/mainConfig_elastic_
 
 
 ./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 0 -en 9 -vst 0 -ven 8 -np 9
+
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New_delC_Tf_Factor.txt -st 0 -en 1 -vst 0 -ven 1343 -np 24
