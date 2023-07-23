@@ -278,11 +278,14 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 			}
 		}
 	}
+	for (unsigned int i = 0; i < sz_fileMovers; ++i)
+		fileMovers[i].SlnPP2FileMover_MoveFile();
 }
 
 
 bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in)
 {
+	sz_fileMovers = 0;
 	string key;
 	map<string, string>* mpPtr;
 	double value = -1;
@@ -445,7 +448,7 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 				READ_NSTRING(in, buf, buf);
 			PPS3_IOT iot;
 			name2Type(buf, iot);
-			vector<PPS2_dataPointer>* dataPointersPtr = &dataPointers[tot][iot];
+			vector<PPS2_dataPointerVec>* dataPointersPtr = &dataPointers[tot][iot];
 
 			READ_NSTRING(in, buf, buf);
 			if (buf != "{")
@@ -454,17 +457,40 @@ bool DomainPostProcessS3::DomainPostProcessS3_Read_WO_Initialization(istream& in
 			}
 			while (true)
 			{
-				PPS2_dataPointer datPtr;
-				if (datPtr.PPS2_dataPointer_Read(in) == false)
+				PPS2_dataPointerVec datPtr;
+				if (datPtr.PPS2_dataPointerVec_Read(in) == false)
 					break;
-				if (datPtr.overwriterName != "")
+
+				for (unsigned int j = 0; j < datPtr.sz_pointers; ++j)
 				{
-					map<string, PPS2_dataPointer_StageOverwritter>::iterator it = timeStampOverwriters.find(datPtr.overwriterName), ite = timeStampOverwriters.end();
-					if (it != ite)
-						it->second.Overwrite_PPS2_dataPointer(datPtr);
+					if (datPtr[j].overwriterName != "")
+					{
+						map<string, PPS2_dataPointer_StageOverwritter>::iterator it = timeStampOverwriters.find(datPtr[j].overwriterName), ite = timeStampOverwriters.end();
+						if (it != ite)
+							it->second.Overwrite_PPS2_dataPointer(datPtr[j]);
+					}
 				}
-				if (datPtr.isActive)
+				if (datPtr.isvActive)
 					dataPointersPtr->push_back(datPtr);
+			}
+		}
+		else if (buf == "fileMovers")
+		{
+			fileMovers.clear();
+			sz_fileMovers = 0;
+			READ_NSTRING(in, buf, buf);
+			while (buf != "}")
+			{
+				SlnPP2FileMover fileMover;
+				if (fileMover.SlnPP2FileMover_Read(in, buf) == true)
+				{
+					fileMovers.push_back(fileMover);
+					++sz_fileMovers;
+				}
+				else if (buf != "}")
+				{
+					THROW("Formatting error\n");
+				}
 			}
 		}
 		else
@@ -606,7 +632,7 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 	for (int iiot = 0; iiot < PPS3_IOT_SIZE; ++iiot)
 	{
 		PPS3_IOT iot = (PPS3_IOT)iiot;
-		vector<PPS2_dataPointer>* datPtrs = &dataPointers[tot][iot];
+		vector<PPS2_dataPointerVec>* datPtrs = &dataPointers[tot][iot];
 		unsigned int sz = datPtrs->size();
 		bool acceptableVals;
 		ScalarFieldOutputT sfot;
@@ -618,11 +644,12 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 		unsigned int fldSz;
 		for (unsigned int i = 0; i < sz; ++i)
 		{
-			PPS2_dataPointer* datPtr = &(*datPtrs)[i];
+			PPS2_dataPointerVec* datPtr = &(*datPtrs)[i];
+			PPS2_TimeStamp* timeStamp4FixedTimePtr = NULL;
 			if (tot == pps3_timeStep)
-				datPtr->timeStamp = timeStamp4FixedTime;
+				timeStamp4FixedTimePtr = &timeStamp4FixedTime;
 			vector<double> vecVal;
-			acceptableVals = configPPS2.Get_Scalar_Or_Vector_Output(*datPtr, scalarVal, vecVal, sfot, modifiableOneTimeSlns, temporalFieldTimeStepValOrNumSteps, spatialFieldResolutionCorrector);
+			acceptableVals = datPtr->Get_Scalar_Or_Vector_Output(&configPPS2, scalarVal, vecVal, sfot, &modifiableOneTimeSlns, timeStamp4FixedTimePtr, temporalFieldTimeStepValOrNumSteps, spatialFieldResolutionCorrector);
 			if (!acceptableVals)
 			{
 				accebleOverAlVals = false;

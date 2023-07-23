@@ -176,7 +176,11 @@ bool Solve_1_serialNumber(unsigned int serNumIn, int versionNumIn)
 		g_logout.open(fileName_logal.c_str(), ios::app);
 		g_logout << "v\t" << g_versionNumber << "\tser\t" << g_serialNumber;
 		if (g_versionNumber >= 0)
-			Configure_sfcm_sfcm_gen();
+		{
+			if (Configure_sfcm_sfcm_gen() == false)
+				return false;
+		}
+
 
 		cout << "=======================================================\n";
 		cout << "============ version " << versionNumIn << " serial number " << serNumIn << " ==========\n";

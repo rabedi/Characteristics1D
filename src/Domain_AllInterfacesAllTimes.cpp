@@ -1743,28 +1743,114 @@ int MAIN_Domain(string config1, int serialNumberIn, string configBC, string conf
 	return successMode;
 }
 
-void Configure_sfcm_sfcm_gen()
+bool Configure_sfcm_sfcm_gen()
 {
 	if (!sfcm.success)
-		return;
+		return false;
 
+	//vector<double> ldelc4_LowestRate = {-2, -1.5, -1};
+	vector<double> ldelc4_LowestRate = {-2, -1}; // -2, -1.5, -1
+	vector<double> shape4_LowestRate = { 1, 2, 4}; // 1, 1.5, 2, 3, 4
+	vector<double> llc4_LowestRate = {-4.5, -4.0, -3.0, -2.0, -1.0, -0.5}; // -4.5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5
+
+	// 0 run all
+	// 1 run only shorter ones (ft < 940 on bigmem)
+	// 2 run only longer ones (our computers)
+	int timeSplitScheme4_la3 = 1;
+	bool reduceFinalTimeLowestRate = true; // for loading rate of 10e-3 suggested final time is 1100 
+	double time_lam3 = 1100.0;
+
+	// but we can decrease it for large dd2 especially when cor length is small
 	double cfl_factorBK = sfcm.cfl_factor;
 	double tFinalBK = sfcm.tFinal;
 
 	double tSigma0 = 2.0;
-	bool alr = false; // accurate long run: these have small enough CFL and long time to ensure phid convergence. 
+	bool alr = true; // accurate long run: these have small enough CFL and long time to ensure phid convergence. 
 	// for mass runs, it's better to turn this off, especially for high spatial mesh resolutions
 	// it seems sigma_bar -> 0 and its corresponding energy (psi_f) is a pretty good indicator of phid (about 1.15 to 1.3 factor of it)
 	// it takes much shorter to get there. If this is one, much shorter solution times are obtained, but phid is not converged
 	bool use_tSigma0Time = false;
 	double tFactor4tSigma0 = 4; /// how much past max stress should go beyond stress ~ 0
 
-	double llc = -1, la = 0, ldelc = -1;
+	double llc = -1, la = 0, ldelc = -1, dd2 = -1, shape = -1;
 	string key;
 	double value;
 	map<string, string>* mpPtr;
 	bool change_spatial_mesh_res = (sfcm_gen.specificProblemName == "axt_medium");
-
+	if (change_spatial_mesh_res)
+		alr = false;
+	key = "ldelc";
+	if (Find_Version_Value(key, value, mpPtr))
+		ldelc = value;
+	key = "dd2";
+	if (Find_Version_Value(key, value, mpPtr))
+		dd2 = value;
+	key = "shape";
+	if (Find_Version_Value(key, value, mpPtr))
+		shape = value;
+	key = "llc";
+	if (Find_Version_Value(key, value, mpPtr))
+		llc = value;
+	key = "la";
+	if (Find_Version_Value(key, value, mpPtr))
+	{
+		la = value;
+		if (fabs(la + 3.0) < 1e-3)
+		{
+			if (reduceFinalTimeLowestRate)
+			{
+				if (dd2 > -0.1)
+					time_lam3 = 1100 - dd2 / 0.9 * 500; // from dd2 = 0 (homog) to max dd2 (of 0.9) gradually decrease ft to 600
+				if (fabs(llc + 0.5) < 1e-3)
+					time_lam3 += 100;
+				if (fabs(llc + 1.0) < 1e-3)
+					time_lam3 += 50;
+				time_lam3 = MIN(1100, time_lam3);
+				bool long4bigmem = (time_lam3 > 925.0);
+				if ((timeSplitScheme4_la3 == 1) && long4bigmem) // bigmem and long run
+					return false;
+				if ((timeSplitScheme4_la3 == 2) && !long4bigmem) // our office computers only run very long ones
+					return false;
+			}
+			// finally see if delc is included
+			bool found = false;
+			for (unsigned int i = 0; i < ldelc4_LowestRate.size(); ++i)
+			{
+				if (fabs(ldelc - ldelc4_LowestRate[i]) < 1e-3)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				return false;
+			if (shape > 0)
+			{
+				found = false;
+				for (unsigned int i = 0; i < shape4_LowestRate.size(); ++i)
+				{
+					if (fabs(shape - shape4_LowestRate[i]) < 1e-3)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					return false;
+			}
+			found = false;
+			for (unsigned int i = 0; i < llc4_LowestRate.size(); ++i)
+			{
+				if (fabs(llc - llc4_LowestRate[i]) < 1e-3)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				return false;
+		}
+	}
 	bool change_cfl_tF = ((sfcm_gen.specificProblemName == "axt") || (sfcm_gen.specificProblemName == "resolution_x_F") || change_spatial_mesh_res);
 	bool change_cfl_tF_new = (sfcm_gen.specificProblemName == "resolution_x_F_New");
 	key = "resolutionFactor"; // see if the resolution factor is something other than 0 and 1
@@ -1782,16 +1868,8 @@ void Configure_sfcm_sfcm_gen()
 
 	if (change_cfl_tF || change_cfl_tF_new)
 	{
-		use_tSigma0Time = true;
-		key = "llc";
-		if (Find_Version_Value(key, value, mpPtr))
-			llc = value;
-		key = "la";
-		if (Find_Version_Value(key, value, mpPtr))
-			la = value;
-		key = "ldelc";
-		if (Find_Version_Value(key, value, mpPtr))
-			ldelc = value;
+		if (change_spatial_mesh_res)
+			use_tSigma0Time = true;
 		sfcm.cfl_factor = 1.0;
 		sfcm.tFinal = 10.0;
 		//		int log_resolution = 10; // 1024
@@ -1815,7 +1893,7 @@ void Configure_sfcm_sfcm_gen()
 		sfcm.cfl_factor = 1.0;
 
 		if (fabs(la + 3.0) < tol)
-			sfcm.tFinal = 1100.0;
+			sfcm.tFinal = time_lam3;
 		else if (fabs(la + 2.5) < tol)
 			sfcm.tFinal = 350;
 		else if (fabs(la + 2.0) < tol)
@@ -1916,16 +1994,16 @@ void Configure_sfcm_sfcm_gen()
 		if (has_delc_Tf_fact)
 		{
 			if (max_delc_factor < 0)
-				exit(0);
+				return false;
 			if (delc_Tf_fact - max_delc_factor > 1e-3)
-				exit(0);
+				return false;
 		}
 		sfcm.tFinal *= delc_Tf_fact;
 		g_logout << "\talr\t" << alr << "\ttFactor4tSigma0\t" << tFactor4tSigma0;
 		g_logout << "\tllc\t" << llc << "\tla\t" << la << "\tldelc\t" << ldelc;
 		g_logout << "\tuse_tSigma0Time\t" << use_tSigma0Time << "\ttFinal\t" << sfcm.tFinal << "\tcfl\t" << sfcm.cfl_factor << "\tnEle\t" << sfcm.number_of_elements;
 		g_logout.flush();
-		return;
+		return true;
 	}
 
 	if (change_cfl_tF)
@@ -1935,8 +2013,8 @@ void Configure_sfcm_sfcm_gen()
 			if (((-3.0 - tol) <= la) && (la < (-2.5 - tol)))
 			{
 				sfcm.cfl_factor = 1.0;
-				sfcm.tFinal = 1100.0;
-				tSigma0 = 1100.0;
+				sfcm.tFinal = time_lam3;
+				tSigma0 = time_lam3;
 				tFactor4tSigma0 = 1.0;
 
 				if (change_spatial_mesh_res)
@@ -2017,7 +2095,7 @@ void Configure_sfcm_sfcm_gen()
 				else
 				{
 					sfcm.cfl_factor = 0.5;
-					sfcm.tFinal = 7.0;
+					sfcm.tFinal = 8.0;
 				}
 				tSigma0 = 0.40;
 			}
@@ -2031,7 +2109,7 @@ void Configure_sfcm_sfcm_gen()
 				else
 				{
 					sfcm.cfl_factor = 0.5;
-					sfcm.tFinal = 4.0;
+					sfcm.tFinal = 7.0;
 				}
 				tSigma0 = 0.3097;
 			}
@@ -2045,7 +2123,7 @@ void Configure_sfcm_sfcm_gen()
 				else
 				{ 
 					sfcm.cfl_factor = 0.5;
-					sfcm.tFinal = 4.0;
+					sfcm.tFinal = 5.0;
 				}
 				tSigma0 = 0.112144;
 			}
@@ -2060,7 +2138,7 @@ void Configure_sfcm_sfcm_gen()
 					if (!alr)
 						sfcm.tFinal = 0.5;
 					else
-						sfcm.tFinal = 1.0;
+						sfcm.tFinal = 1.5;
 				}
 				else
 				{
@@ -2085,7 +2163,7 @@ void Configure_sfcm_sfcm_gen()
 					if (!alr)
 						sfcm.tFinal = 0.35;
 					else
-						sfcm.tFinal = 1.0;
+						sfcm.tFinal = 1.5;
 				}
 				else
 				{
@@ -2196,6 +2274,7 @@ void Configure_sfcm_sfcm_gen()
 	g_logout << "\tllc\t" << llc << "\tla\t" << la << "\tldelc\t" << ldelc;
 	g_logout << "\tuse_tSigma0Time\t" << use_tSigma0Time << "\ttFinal\t" << sfcm.tFinal << "\tcfl\t" << sfcm.cfl_factor << "\tnEle\t" << sfcm.number_of_elements;
 	g_logout.flush();
+	return true;
 }
 
 void Domain_All_Interfaces_All_Times::Delete_v1DFiles()

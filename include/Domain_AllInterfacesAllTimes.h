@@ -239,6 +239,6 @@ extern Domain_All_Interfaces_All_Times* g_domain;
 //		config1 -> Domain;	configBC -> BC;		config_TS_Adapt		-> Time step and adaptivity
 int MAIN_Domain(string config1 = "config/Domain/MM8_Left_N_Right_N_Square_pulse_main.txt", int serialNumberIn = -1, string configBC = "none", string config_TS_Adapt = "none");
 
-void Configure_sfcm_sfcm_gen();
+bool Configure_sfcm_sfcm_gen();
 
 #endif

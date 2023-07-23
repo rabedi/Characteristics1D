@@ -42,7 +42,10 @@ istream& operator>>(istream& in, loadingStagesT& dat);
 // ct_interfaceDissEnee:		energy dissipation is used
 // ct_Damage:					damage field is used
 // ct_U:						Internal energy is used
-typedef enum { lstClassificationT_none = -1, ct_time, ct_epssig_bulk, ct_epssig_bc, ct_interfaceDissEne, ct_Damage, ct_U, lstClassificationT_SIZE } lstClassificationT;
+typedef enum { lstClassificationT_none = -1, ct_time, ct_epssig_bulk, ct_epssig_bc, ct_interfaceDissEne, ct_Damage, ct_U, 
+ct_frag_Damage, ct_frag_maxEffDelU, ct_frag_DelU, lstClassificationT_SIZE } lstClassificationT;
+#define lstClassificationT_no_frag_SIZE	ct_frag_Damage
+
 string getName(lstClassificationT dat);
 void name2Type(string& name, lstClassificationT& typeVal);
 ostream& operator<<(ostream& out, lstClassificationT dat);
@@ -128,6 +131,8 @@ istream& operator>>(istream& in, timeIndexType& dat);
 
 // this is the class that stores what time we are referring to in the post-process stage (or actually no time through loadingStagesT_none  options
 class OneSubdomainPPS2Data_runInfo;
+class DomainPostProcessS2;
+class OneTimeValuePPS2Data;
 
 class PPS2_TimeStamp
 {
@@ -160,7 +165,7 @@ public:
 	PPS2_dataPointer();
 	void MakeVoid_PPS2_dataPointer();
 	// returns false if have reached the end of the list
-	bool PPS2_dataPointer_Read(istream& in);
+	bool PPS2_dataPointer_Read(istream& in, string& buf);
 
 	// if this name matches the key of the map
 	//	DomainPostProcessS3::timeStampOverwriters 
@@ -208,6 +213,25 @@ public:
 	RunNormalizationQuantT normalizationMode;
 	// step 2. log, .... of the value obtained from above may be taken
 	valPOperT oprType;
+};
+
+class PPS2_dataPointerVec
+{
+public:
+	PPS2_dataPointerVec();
+	bool PPS2_dataPointerVec_Read(istream& in);
+	inline PPS2_dataPointer& operator[](unsigned int i) { return pointers[i]; };
+	inline const PPS2_dataPointer& operator[](unsigned int i) const { return pointers[i]; };
+	bool Get_Scalar_Or_Vector_Output(DomainPostProcessS2* configPPS2Ptr, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data* modifiableOneTimeSlnsPtr, PPS2_TimeStamp* timeStamp4FixedTimePtr = NULL, double temporalFieldTimeStepValOrNumSteps = -400, int spatialFieldResolutionCorrector = 0);
+
+	bool isvActive;
+	unsigned int sz_pointers;
+	vector<PPS2_dataPointer> pointers;
+	vector<string> twoOperands;
+
+	// temporary members
+	string name_In_CSV_file;
+	string name_Latex;
 };
 
 ///////////////
@@ -474,6 +498,8 @@ private:
 		void Set_Damage_Stage_Indices_Times();
 		void Set_PhysInterfaceDiss_Stage_Indices_Times();
 		void Set_U_Stage_Indices_Times();
+		void Set_lin_max_final_generic_data(lstClassificationT ci, int time_index_lin, int time_index_max, int time_index_final);
+		void Finalize_OneStage(lstClassificationT ci);
 
 		void Compute_BrittlenessIndices(lstClassificationT ci, int fldStrn = -1, int fldEne = -1);
 	/////////////////// 
@@ -587,8 +613,21 @@ private:
 	void Compute_AllSubdomain_PPS2();
 };
 
+class SlnPP2FileMover
+{
+public:
+	SlnPP2FileMover();
+	bool SlnPP2FileMover_Read(istream& in, string& buf);
+	bool SlnPP2FileMover_MoveFile();
+	bool isActive;
+	bool isPPS2;	// false file taken from solution file, otherwise from PPS2 file
+	string fileName;
+	string ext;
+};
+
 void GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(string& fileName, unsigned int subdomainNo, int timeIndex, const string& specificName,
 	loadingStagesT lsi = loadingStagesT_none, lstClassificationT ci = lstClassificationT_none, FragmentationCriterionT fc = FragmentationCriterionT_none, string ext = "txt", bool addUnderline = false);
 
 void MAIN_DomainPostProcessS2(string fileName = "config/Domain/PPS2ConfigTest.txt");
+
 #endif

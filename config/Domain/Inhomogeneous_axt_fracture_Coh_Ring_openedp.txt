@@ -131,7 +131,8 @@ numTimeStep_BulkInterfacePoints_Print_4PP
 numTimeStep_Interface_DSU_Fragment_Print_4PP
 #-200
 #-20
--100
+#-100
+-1000
 
 # for spatial segments (interval between interfaces) how many segment(s) is/are used.
 #			1 -> only the two end points at the side interfaces that already exist are used.

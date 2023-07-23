@@ -1,6 +1,7 @@
 #include "DomainPostProcessingS2.h"
 #include "globalFunctions.h"
 #include "SLDescriptorData.h"
+#include "globalMacros.h"
 
 /////////////////
 string getName(loadingStagesT dat)
@@ -77,6 +78,12 @@ string getName(lstClassificationT dat)
 		return "Damage";
 	if (dat == ct_U)
 		return "U";
+	if (dat == ct_frag_Damage)
+		return "frag_Damage";
+	if (dat == ct_frag_maxEffDelU)
+		return "frag_maxEffDelU";
+	if (dat == ct_frag_DelU)
+		return "frag_DelU";
 	cout << (int)dat << '\n';
 	THROW("invalid dat");
 }
@@ -683,6 +690,169 @@ void PPS2_TimeStamp::PPS2_TimeStamp_Read(istream& in)
 	}
 }
 
+PPS2_dataPointerVec::PPS2_dataPointerVec()
+{
+	isvActive = false;
+	sz_pointers = 0;
+}
+
+bool PPS2_dataPointerVec::PPS2_dataPointerVec_Read(istream& in)
+{
+	isvActive = true;
+	twoOperands.clear();
+	string buf;
+	sz_pointers = 1;
+	pointers.resize(1);
+	if (pointers[0].PPS2_dataPointer_Read(in, buf) == true)
+	{
+		if (!pointers[0].isActive)
+		{
+			pointers.clear();
+			sz_pointers = 0;
+			isvActive = false;
+		}
+		return true;
+	}
+	if (buf == "}")
+		return false;
+	if (buf == "[")
+	{
+		pointers.clear();
+		sz_pointers = 0;
+		unsigned int cntr = 0;
+		while ((buf != "]") && (cntr < 100))
+		{
+			PPS2_dataPointer pointer;
+			if (pointer.PPS2_dataPointer_Read(in, buf) == true)
+			{
+				if (pointer.isActive == false)
+					isvActive = false;
+				else
+				{
+					pointers.push_back(pointer);
+					++sz_pointers;
+				}
+			}
+			else if (buf != "]")
+				twoOperands.push_back(buf);
+			++cntr;
+		}
+		if (cntr == 100)
+		{
+			THROW("multiple-operand not finishing with ]\n");
+		}
+		if (isvActive == false)
+		{
+			sz_pointers = 0;
+			twoOperands.clear();
+			pointers.clear();
+		}
+		return true;
+	}
+	THROW("Should not get to this point of the function\n");
+}
+
+bool PPS2_dataPointerVec::Get_Scalar_Or_Vector_Output(DomainPostProcessS2* configPPS2Ptr, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data* modifiableOneTimeSlnsPtr, PPS2_TimeStamp* timeStamp4FixedTimePtr, double temporalFieldTimeStepValOrNumSteps, int spatialFieldResolutionCorrector)
+{
+	if (timeStamp4FixedTimePtr != NULL)
+		for (unsigned int i = 0; i < sz_pointers; ++i)
+			pointers[i].timeStamp = *timeStamp4FixedTimePtr;
+
+	name_In_CSV_file = pointers[0].name_In_CSV_file;
+	name_Latex = pointers[0].name_Latex;
+	if (configPPS2Ptr->Get_Scalar_Or_Vector_Output(pointers[0], scalarVal, vecVal, sfot, *modifiableOneTimeSlnsPtr, temporalFieldTimeStepValOrNumSteps, spatialFieldResolutionCorrector) == false)
+		return false;
+
+	if (sz_pointers == 1)
+		return true;
+	unsigned int szVec = vecVal.size();
+	for (unsigned int i = 1; i < sz_pointers; ++i)
+	{
+		string name_In_CSV_fileTmp = pointers[i].name_In_CSV_file;
+		string name_LatexTmp = pointers[i].name_Latex;
+		string op = twoOperands[i - 1];
+		std::size_t found = name_In_CSV_fileTmp.find("none");
+		if (found == std::string::npos)
+		{
+			name_In_CSV_file += op;
+			name_Latex += op;
+			name_In_CSV_file += name_In_CSV_fileTmp;
+			name_Latex += name_LatexTmp;
+		}
+		double scalarValTmp;
+		vector<double> vecValTmp;
+		ScalarFieldOutputT sfotTmp;
+		if (configPPS2Ptr->Get_Scalar_Or_Vector_Output(pointers[i], scalarValTmp, vecValTmp, sfotTmp, *modifiableOneTimeSlnsPtr, temporalFieldTimeStepValOrNumSteps, spatialFieldResolutionCorrector) == false)
+			return false;
+		if (sfot == sfo_scalar)
+		{
+			if (sfotTmp == sfo_scalar)
+			{
+				if (op == "+")
+					scalarVal += scalarValTmp;
+				else if (op == "-")
+					scalarVal -= scalarValTmp;
+				else if (op == "/")
+					scalarVal /= scalarValTmp;
+				else if (op == "*")
+					scalarVal *= scalarValTmp;
+			}
+			else
+			{
+				THROW("first value is scalar, subsequent values cannot be scalars");
+			}
+		}
+		else
+		{
+			if (sfotTmp == sfo_scalar)
+			{
+				if (op == "+")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] += scalarValTmp;
+				}
+				else if (op == "-")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] -= scalarValTmp;
+				}
+				else if (op == "/")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] /= scalarValTmp;
+				}
+				else if (op == "*")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] *= scalarValTmp;
+				}
+			}
+			else
+			{
+				if (vecValTmp.size() != szVec)
+				{
+					cout << "szVec\t" << szVec << '\n';
+					cout << "szVecTmp\t" << vecValTmp.size() << '\n';
+					THROW("sizes don't match\n");
+				}
+				if (op == "+")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] += vecValTmp[j];
+				}
+				else if (op == "-")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] -= vecValTmp[j];
+				}
+				else if (op == "/")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] /= vecValTmp[j];
+				}
+				else if (op == "*")
+				{
+					for (unsigned int j = 0; j < szVec; ++j)	vecVal[j] *= vecValTmp[j];
+				}
+			}
+		}
+	}
+	return true;
+}
+
 PPS2_dataPointer::PPS2_dataPointer()
 {
 	MakeVoid_PPS2_dataPointer();
@@ -707,20 +877,12 @@ void PPS2_dataPointer::MakeVoid_PPS2_dataPointer()
 	oprType = vpo_none;
 }
 
-bool PPS2_dataPointer::PPS2_dataPointer_Read(istream& in)
+bool PPS2_dataPointer::PPS2_dataPointer_Read(istream& in, string& buf)
 {
 	MakeVoid_PPS2_dataPointer();
-	string buf;
 	READ_NSTRING(in, buf, buf);
 	if (buf != "{")
-	{
-		if (buf == "}")
-			return false;
-		else
-		{
-			THROW("istream should start with {");
-		}
-	}
+		return false;
 	READ_NSTRING(in, buf, buf);
 	while (buf != "}")
 	{
@@ -2081,6 +2243,7 @@ bool OneSubdomainPPS2Data::StageRelatedData_PPS2_Read(int subdomainNoIn, DomainP
 	}
 	return true;
 }
+
 bool OneSubdomainPPS2Data::Compute_OneTimeValuePPS2Data_4ActualTime(PPS2_TimeStamp timeStamp, OneTimeValuePPS2Data &oneTimeSlns, bool extract_space_spacetimeIntegrals, bool extract_DSUFields, bool compute_FragmentationStats)
 {
 	//! A. Calculating the time value and various indices
@@ -2295,6 +2458,56 @@ bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPoin
 	return true;
 }
 
+void OneSubdomainPPS2Data::Set_lin_max_final_generic_data(lstClassificationT ci, int time_index_lin, int time_index_max, int time_index_final)
+{
+	loadingStagesT lsi = lst_lin;
+	diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage = time_index_lin;
+	if (time_index_lin >= 0)
+		diffClassifications[ci].data4Stages[lsi].timeValue_4Stage = timeSequenceSummary.data_vals[time_index_lin][configPPS2->sind_time];
+	else
+		diffClassifications[ci].data4Stages[lsi].timeValue_4Stage = -1.0;
+	lsi = lst_max;
+	diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage = time_index_max;
+	if (time_index_max >= 0)
+		diffClassifications[ci].data4Stages[lsi].timeValue_4Stage = timeSequenceSummary.data_vals[time_index_max][configPPS2->sind_time];
+	else
+		diffClassifications[ci].data4Stages[lsi].timeValue_4Stage = -1.0;
+	lsi = lst_final;
+	diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage = time_index_final;
+	if (time_index_max >= 0)
+		diffClassifications[ci].data4Stages[lsi].timeValue_4Stage = timeSequenceSummary.data_vals[time_index_final][configPPS2->sind_time];
+	else
+		diffClassifications[ci].data4Stages[lsi].timeValue_4Stage = -1.0;
+	Compute_BrittlenessIndices(ci);
+}
+
+void OneSubdomainPPS2Data::Finalize_OneStage(lstClassificationT ci)
+{
+	unsigned int ct = (int)ci;
+	OneClassificationPPS2Data* diffClassificationPtr = &diffClassifications[ct];
+#if 0
+	diffClassificationPtr->subdomainNo = subdomainNo;
+	diffClassificationPtr->ct = (lstClassificationT)ct;
+#endif
+	for (int lst = 0; lst < loadingStagesT_SIZE; ++lst)
+	{
+#if 0
+		diffClassificationPtr->data4Stages[lst].subdomainNo = subdomainNo;
+		diffClassificationPtr->data4Stages[lst].ct = (lstClassificationT)ct;
+		diffClassificationPtr->data4Stages[lst].lst = (loadingStagesT)lst;
+#endif
+		diffClassificationPtr->data4Stages[lst].SetAllTimeValsIndices_FromActualTime(segmentInfo);
+		int timeIndex = diffClassificationPtr->data4Stages[lst].timeIndex_4Stage;
+		if (timeIndex >= 0)
+			diffClassificationPtr->data4Stages[lst].space_spacetime_integrals = timeSequenceSummary.data_vals[timeIndex];
+		else
+		{
+			diffClassificationPtr->data4Stages[lst].space_spacetime_integrals.resize(timeSequenceSummary.numFlds);
+			fill(diffClassificationPtr->data4Stages[lst].space_spacetime_integrals.begin(), diffClassificationPtr->data4Stages[lst].space_spacetime_integrals.end(), invalidNum);
+		}
+	}
+}
+
 void OneSubdomainPPS2Data::Set_All_Stage_Indices_Times()
 {
 	/// strain, stresses
@@ -2305,31 +2518,8 @@ void OneSubdomainPPS2Data::Set_All_Stage_Indices_Times()
 	Set_PhysInterfaceDiss_Stage_Indices_Times();
 	Set_U_Stage_Indices_Times();
 
-	for (int ct = 0; ct < lstClassificationT_SIZE; ++ct)
-	{
-		OneClassificationPPS2Data* diffClassificationPtr = &diffClassifications[ct];
-#if 0
-		diffClassificationPtr->subdomainNo = subdomainNo;
-		diffClassificationPtr->ct = (lstClassificationT)ct;
-#endif
-		for (int lst = 0; lst < loadingStagesT_SIZE; ++lst)
-		{
-#if 0
-			diffClassificationPtr->data4Stages[lst].subdomainNo = subdomainNo;
-			diffClassificationPtr->data4Stages[lst].ct = (lstClassificationT)ct;
-			diffClassificationPtr->data4Stages[lst].lst = (loadingStagesT)lst;
-#endif
-			diffClassificationPtr->data4Stages[lst].SetAllTimeValsIndices_FromActualTime(segmentInfo);
-			int timeIndex = diffClassificationPtr->data4Stages[lst].timeIndex_4Stage;
-			if (timeIndex >= 0)
-				diffClassificationPtr->data4Stages[lst].space_spacetime_integrals = timeSequenceSummary.data_vals[timeIndex];
-			else
-			{
-				diffClassificationPtr->data4Stages[lst].space_spacetime_integrals.resize(timeSequenceSummary.numFlds);
-				fill(diffClassificationPtr->data4Stages[lst].space_spacetime_integrals.begin(), diffClassificationPtr->data4Stages[lst].space_spacetime_integrals.end(), invalidNum);
-			}
-		}
-	}
+	for (int ct = 0; ct < lstClassificationT_no_frag_SIZE; ++ct)
+		Finalize_OneStage(lstClassificationT(ct));
 }
 
 void OneSubdomainPPS2Data::Compute_BrittlenessIndices(lstClassificationT ci, int fldStrn, int fldEne)
@@ -2714,25 +2904,17 @@ void OneSubdomainPPS2Data::Set_U_Stage_Indices_Times()
 void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 {
 	bool readFromRunOutputFolder = true, copyRunOutputFile2PPS2Folder = true;
-	if (configPPS2->doFragmentation_DSigmaFieldExtraction_4_Stages)
+	int timeIndices_fragmodel_stage[FragmentationCriterionT_SIZE][loadingStagesT_SIZE];
+	double timeValues_fragmodel_stage[FragmentationCriterionT_SIZE][loadingStagesT_SIZE];
+	for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
 	{
-		for (unsigned int ci = 0; ci < lstClassificationT_SIZE; ++ci)
+		for (unsigned int lsi = 0; lsi < loadingStagesT_SIZE; ++lsi)
 		{
-			if (configPPS2->classification_Active[ci] == false)
-				continue;
-			OneClassificationPPS2Data* diffClassification = &diffClassifications[ci];
-			for (unsigned int lsi = 0; lsi < loadingStagesT_SIZE; ++lsi)
-			{
-				int timeIndex = diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage;
-				if (timeIndex < 0)
-					continue;
-				double timeValue = diffClassifications[ci].data4Stages[lsi].timeValue_4Stage;
-				OneTimeInterfaceFlds_FragmentationPPS2* fieldFragInfoPtr = &diffClassification->data4Stages[lsi].fragmentation4Stages;
-				segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, *fieldFragInfoPtr, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, (loadingStagesT)lsi, (lstClassificationT)ci);
-				Do_AllFragmentationAnalysis(*fieldFragInfoPtr);
-			}
+			timeIndices_fragmodel_stage[fc][lsi] = -1;
+			timeValues_fragmodel_stage[fc][lsi] = -1.0;
 		}
 	}
+
 	if (configPPS2->doFragmentation_DSigmaFieldExtraction_4_AllTimes)
 	{
 		readFromRunOutputFolder = true, copyRunOutputFile2PPS2Folder = false;
@@ -2765,8 +2947,28 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 				}
 			}
 		}
-		/// now the printing time
-		for (unsigned int ti = 0; ti < segmentInfo.numTimeStep_Interface_DSU_Fragment_Print_4PP; ++ti)
+		/// This part is added to to compute initiation (linear), max, and final stages based on fragment count
+		int numFinalFragments[FragmentationCriterionT_SIZE];
+		int prevStepFragments[FragmentationCriterionT_SIZE];
+		int maxChangeFragments[FragmentationCriterionT_SIZE];
+		unsigned int ti = MAX(0, segmentInfo.maxIndex_Interface_DSU_Fragment_Print - 1);
+		double timeValue = ti * segmentInfo.timeStep_Interface_DSU_Fragment_Print;
+		OneTimeInterfaceFlds_FragmentationPPS2 fieldFragInfo;
+		segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, fieldFragInfo, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, loadingStagesT_none, lstClassificationT_none);
+		Do_AllFragmentationAnalysis(fieldFragInfo);
+
+		for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+		{
+			numFinalFragments[fc] = -1;
+			prevStepFragments[fc] = 0;
+			maxChangeFragments[fc] = 0;
+
+			if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
+				continue;
+			numFinalFragments[fc] = fieldFragInfo.fragmentationDat[fc].numFragments;
+		}
+
+		for (unsigned int ti = 0; ti < segmentInfo.maxIndex_Interface_DSU_Fragment_Print; ++ti)
 		{
 			double timeValue = ti * segmentInfo.timeStep_Interface_DSU_Fragment_Print;
 			unsigned int timeIndex = (unsigned int)floor(timeValue / segmentInfo.timeStep + 1e-7);
@@ -2775,10 +2977,37 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 			Do_AllFragmentationAnalysis(fieldFragInfo);
 			for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
 			{
+				if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
+					continue;
+
 				if (outPtrs[fc] != NULL)
 					fieldFragInfo.fragmentationDat[fc].OneTimeOneCriterionFragmentationRawData_Write_Data(*(outPtrs[fc]), timeIndex, timeValue);
 				if (outFragSizesPtrs[fc] != NULL)
 					fieldFragInfo.fragmentationDat[fc].Fragmentation_Sizes_Write(*(outFragSizesPtrs[fc]), timeIndex, timeValue);
+
+				unsigned int numFrag = fieldFragInfo.fragmentationDat[fc].numFragments;
+				if (numFinalFragments[fc] > 1)
+				{
+					unsigned int prevFrag = prevStepFragments[fc];
+					if ((numFrag == numFinalFragments[fc]) && (prevFrag < (unsigned int)numFinalFragments[fc]) && (timeIndices_fragmodel_stage[fc][lst_final] < 0))
+					{
+						timeIndices_fragmodel_stage[fc][lst_final] = timeIndex;
+						timeValues_fragmodel_stage[fc][lst_final] = timeValue;
+					}
+					int diff = numFrag - prevFrag;
+					if (diff > maxChangeFragments[fc])
+					{
+						maxChangeFragments[fc] = diff;
+						timeIndices_fragmodel_stage[fc][lst_max] = timeIndex;
+						timeValues_fragmodel_stage[fc][lst_max] = timeValue;
+					}
+					if ((numFrag > 1) && (timeIndices_fragmodel_stage[fc][lst_lin] < 0))
+					{
+						timeIndices_fragmodel_stage[fc][lst_lin] = timeIndex;
+						timeValues_fragmodel_stage[fc][lst_lin] = timeValue;
+					}
+					prevStepFragments[fc] = numFrag;
+				}
 			}
 		}
 		for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
@@ -2787,6 +3016,35 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 				delete outPtrs[fc];
 			if (outFragSizesPtrs[fc] != NULL)
 				delete outFragSizesPtrs[fc];
+		}
+		// forming stage based on fragmentation
+		for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+		{
+			if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
+				continue;
+			lstClassificationT ci = (lstClassificationT)(lstClassificationT_no_frag_SIZE + fc);
+			Set_lin_max_final_generic_data(ci, timeIndices_fragmodel_stage[fc][lst_lin], timeIndices_fragmodel_stage[fc][lst_max], timeIndices_fragmodel_stage[fc][lst_final]);
+			Finalize_OneStage(ci);
+		}
+	}
+	/// now setting up fragment info for stages
+	if (configPPS2->doFragmentation_DSigmaFieldExtraction_4_Stages)
+	{
+		for (unsigned int ci = 0; ci < lstClassificationT_SIZE; ++ci)
+		{
+			if (configPPS2->classification_Active[ci] == false)
+				continue;
+			OneClassificationPPS2Data* diffClassification = &diffClassifications[ci];
+			for (unsigned int lsi = 0; lsi < loadingStagesT_SIZE; ++lsi)
+			{
+				int timeIndex = diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage;
+				if (timeIndex < 0)
+					continue;
+				double timeValue = diffClassifications[ci].data4Stages[lsi].timeValue_4Stage;
+				OneTimeInterfaceFlds_FragmentationPPS2* fieldFragInfoPtr = &diffClassification->data4Stages[lsi].fragmentation4Stages;
+				segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, *fieldFragInfoPtr, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, (loadingStagesT)lsi, (lstClassificationT)ci);
+				Do_AllFragmentationAnalysis(*fieldFragInfoPtr);
+			}
 		}
 	}
 }
@@ -3014,6 +3272,10 @@ void DomainPostProcessS2::DomainPostProcessS2_Read_WO_Initialization(istream& in
 		}
 	}
 	READ_NSTRING(in, buf, buf);
+	int i_classification_Active[lstClassificationT_SIZE];
+	for (unsigned int i = 0; i < lstClassificationT_SIZE; ++i)
+		i_classification_Active[i] = -1;
+
 	while (buf != "}")
 	{
 		if (buf == "doCalculateStages")
@@ -3116,6 +3378,7 @@ void DomainPostProcessS2::DomainPostProcessS2_Read_WO_Initialization(istream& in
 				if (buf == "Active")
 				{
 					READ_NBOOL(in, buf, classification_Active[lct]);
+					i_classification_Active[lct] = (int)classification_Active[lct];
 				}
 				else if (buf == "tol4LinValChecks")
 				{
@@ -3142,6 +3405,13 @@ void DomainPostProcessS2::DomainPostProcessS2_Read_WO_Initialization(istream& in
 			}
 		}
 		READ_NSTRING(in, buf, buf);
+	}
+	for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+	{
+		unsigned int lct = lstClassificationT_no_frag_SIZE + fc;
+		if (i_classification_Active[lct] != -1)
+			continue;
+		classification_Active[lct] = ((factors2DecideFragmented[fc] > 0.0));
 	}
 }
 
@@ -3786,4 +4056,79 @@ void MAIN_DomainPostProcessS2(string fileName)
 	DomainPostProcessS2 dpps2;
 	dpps2.DomainPostProcessS2_Read_WO_Initialization(in);
 	dpps2.Main_DomainPostProcessS2();
+}
+
+SlnPP2FileMover::SlnPP2FileMover()
+{
+	isPPS2 = true;
+	isActive = true;
+	fileName = "sd_0__tAll__FragCrn_1_Max_DelU_SizeFragmentation";
+	ext = "txt";
+}
+
+bool SlnPP2FileMover::SlnPP2FileMover_MoveFile()
+{
+	if (g_versionNumber < 0)
+		return false;
+	if (isActive == false)
+		return false;
+	string source = "";
+	if (isPPS2)
+		source = g_prefileNamePPS2;
+	else
+		source = g_prefileName;
+	source += fileName;
+	source += ".";
+	source += ext;
+	fstream in(source.c_str(), ios::in);
+	if (!in.is_open())
+		return false;
+	in.close();
+
+
+	string target = "../_z_";
+	target += fileName;
+	string destFolder = target;
+	//MakeDir(target);
+	target += "/";
+	string buf = g_prefileName.substr(0, g_prefileName.size() - 1);
+	target += buf;
+	target += ".";
+	target += ext;
+	moveFile(source, target);
+}
+
+bool SlnPP2FileMover::SlnPP2FileMover_Read(istream& in, string& buf)
+{
+	READ_NSTRING(in, buf, buf);
+	if (buf != "{")
+		return false;
+	READ_NSTRING(in, buf, buf);
+	while (buf != "}")
+	{
+		if (buf == "isActive")
+		{
+			READ_NBOOL(in, buf, isActive);
+		}
+		else if (buf == "isPPS2")
+		{
+			READ_NBOOL(in, buf, isPPS2);
+		}
+		else if (buf == "fileName")
+		{
+			READ_NSTRING(in, buf, fileName);
+		}
+		else if (buf == "ext")
+		{
+			READ_NSTRING(in, buf, ext);
+		}
+		else
+		{
+			cout << "buf:\t" << buf << '\n';
+			THROW("invalid option\n");
+		}
+		READ_NSTRING(in, buf, buf);
+	}
+	buf = "none";
+	return true;
 }

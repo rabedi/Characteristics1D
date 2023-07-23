@@ -34,7 +34,7 @@
 #define PI 3.1415926535897932384626433832795
 #endif
 
-typedef enum {pUniform, pTriangle, pNormal, pLogNormal, pWeibull,	pEmpirical, prob_distrib_type_SIZE} prob_distrib_type;
+typedef enum {pUniform, pTriangle, pGenSymTriangle, pNormal, pLogNormal, pWeibull,	pEmpirical, prob_distrib_type_SIZE} prob_distrib_type;
 
 string getName(prob_distrib_type dat);
 void name2Type(string& name, prob_distrib_type& typeVal);
@@ -127,6 +127,18 @@ public:
 	// md_m = mode - m, M_md = Max - md, p_md = probablity of mode point = 2 span^-1, CCD_md = (mode - m) / (M - m) 
 	double span, inv_span, md_m, inv_md_m, M_md, inv_M_md, p_md, cdf_md;
 
+};
+
+class GenSymTriangle_RandVar : public gRandVar {
+public:
+	virtual double getCDF(double x) const;
+	virtual double getInverseCDF(double p) const;
+	virtual double getPDF(double x) const;
+
+	virtual void Finalize_Read();
+	// distribution = mean * [1 - delta, 1 + delta], alpha = 1 -> uniform, alpha = 2 -> triangular, ...
+	double delta, alpha, inv_2_delta_pow_alpha, inv_alpha;
+	bool isUniform;
 };
 
 class Normal_RandVar : public gRandVar {

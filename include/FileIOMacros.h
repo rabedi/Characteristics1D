@@ -343,6 +343,36 @@ inline bool copyFile(char* source, char* destination)
 	return (bool)rval;
 }
 
+inline bool moveFile(const string& src, const string& dest) 
+{
+	vector<string> parts = getFileParts(dest);
+	string destFolder = "";
+	if (parts.size() > 0)
+		destFolder = parts[0];
+
+	if (destFolder != "")
+		MakeDir(destFolder);
+#if defined(_MSC_VER) //implemented in case future implementation can be optimized
+	if (CopyFileA(src.c_str(), dest.c_str(), false))
+	{
+		delete_path_tree(src.c_str());
+		return true;
+	}
+	else
+		return false;
+#else
+	//	cout << "Moving:\n" << src << endl << newDest << endl;
+	string command = "mv " + src + " " + dest;
+	if (CMD(command.c_str()))
+	{
+		return true;
+	}
+	else
+		return false;
+#endif
+}
+
+
 inline bool moveFile(char* source, char* destination) //NB: destination should be destination directory path
 {
 	string src = (string)source;

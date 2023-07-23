@@ -14,6 +14,8 @@ string getName(prob_distrib_type dat)
 		return "Weibull";
 	if (dat == pTriangle)
 		return "Triangle";
+	if (dat == pGenSymTriangle)
+		return "GenSymTriangle";
 	if (dat == pEmpirical)
 		return "Empirical";
 	cout << (int)dat << '\n';
@@ -514,6 +516,13 @@ void statParamHolder::Read(istream & in)
 			g_logout << "\tdd2\t" << value << "\tmin\t" << minV << "\tmax\t" << maxV;
 		}
 		minMax_read = true;
+
+		key = "shape";
+		if (Find_Version_Value(key, value, mpPtr))
+		{
+			shape = value;
+			g_logout << "\tshape\t" << shape;
+		}
 	}
 	if (minRead)
 	{
@@ -636,6 +645,12 @@ gRandVar* gRandVar::CreateCopy()
 		*retVal = *(Triangle_RandVar*)(this);
 		return retVal;
 	}
+	if (dist_type == pGenSymTriangle)
+	{
+		retVal = new GenSymTriangle_RandVar();
+		*retVal = *(GenSymTriangle_RandVar*)(this);
+		return retVal;
+	}
 	if (dist_type == pNormal)
 	{
 		retVal = new Normal_RandVar();
@@ -747,6 +762,48 @@ void Triangle_RandVar::Finalize_Read()
 	inv_M_md = 1.0 / M_md;
 	p_md = 2.0 * inv_span;
 	cdf_md = md_m * inv_span;
+}
+
+double GenSymTriangle_RandVar::getCDF(double x) const
+{
+	x /= paras.mean;
+	if (x < 1.0 - delta)
+		return 0.0;
+	if (x > 1.0 + delta)
+		return 1.0;
+	if (x < 1.0)
+		return inv_2_delta_pow_alpha * pow(x - (1.0 - delta), alpha);
+	return inv_2_delta_pow_alpha * pow((1.0 + delta) - x, alpha);
+}
+
+double GenSymTriangle_RandVar::getInverseCDF(double p) const
+{
+	if (p < 0.5)
+		return paras.mean * ((1.0 - delta) + delta * pow(2.0 * p, inv_alpha));
+	return paras.mean * ((1.0 + delta) - delta * pow(2.0 * (1.0 - p), inv_alpha));
+}
+
+double GenSymTriangle_RandVar::getPDF(double x) const
+{
+	x /= paras.mean;
+	if (x < 1.0 - delta)
+		return 0.0;
+	if (x > 1.0 + delta)
+		return 0.0;
+	if (isUniform)
+		return inv_2_delta_pow_alpha;
+	if (x < 1.0)
+		return alpha * inv_2_delta_pow_alpha * pow(x - (1.0 - delta), alpha - 1.0);
+	return alpha * inv_2_delta_pow_alpha * pow((1.0 + delta) - x, alpha - 1.0);
+}
+
+void GenSymTriangle_RandVar::Finalize_Read()
+{
+	alpha = paras.shape;
+	delta = 1.0 - paras.minV / paras.mean;
+	inv_2_delta_pow_alpha = 0.5 / pow(delta, alpha);
+	inv_alpha = 1.0 / alpha;
+	isUniform = (fabs(alpha - 1.0) < 1e-3);
 }
 
 double Normal_RandVar::getCDF(double x) const
@@ -889,6 +946,10 @@ gRandVar * gRandVar_Factory(prob_distrib_type dist_type)
 	else if (dist_type == pTriangle)
 	{
 		retVal = new Triangle_RandVar();
+	}
+	else if (dist_type == pGenSymTriangle)
+	{
+		retVal = new GenSymTriangle_RandVar();
 	}
 	else if (dist_type == pNormal)
 	{

@@ -84,7 +84,7 @@ public:
 	string out_ext; // generally it will be csv for csv files, but xlsx and txt are some other options
 	// 0 or 1 clear, -1 is an active only in large memory access case
 	int outputTypeActive[PPS3_TimeOT_SIZE];
-	vector<PPS2_dataPointer> dataPointers[PPS3_TimeOT_SIZE][PPS3_IOT_SIZE];
+	vector<PPS2_dataPointerVec> dataPointers[PPS3_TimeOT_SIZE][PPS3_IOT_SIZE];
 	// for spatial fields over x, we may want to change the resolution. For example, if values given at 1001 points (resolution 1000), but we want the new resolution of 100 (101 points)
 	// spatialFieldResolutionCorrector = 100 or spatialFieldResolutionCorrector = -10 (i.e. 10 fold reduction)
 	// note that the solution can only decrease (from a fine mesh to a coarser representation)
@@ -103,6 +103,11 @@ public:
 	int	 timeStep4_DSU_outputs;
 
 	map<string, PPS2_dataPointer_StageOverwritter> timeStampOverwriters;
+
+	// moving files to specific folders after the simulation
+	vector<SlnPP2FileMover> fileMovers;
+	unsigned int sz_fileMovers;
+
 private:
 	bool DomainPostProcessS3_Read_WO_Initialization(istream& in);
 	void Get_Version_Header_Names(vector<string>& names, vector<string>& namesLatex);
