@@ -4,6 +4,7 @@
 
 #include "DomainPostProcessing.h"
 #include "RandomVariable.h"
+#include "globalTypesClasses.h"
 
 //////////////////////////////////////////
 // This file is Level 2
@@ -91,7 +92,6 @@ bool name2Type(string& name, ScalarFieldOutputT& typeVal);
 ostream& operator<<(ostream& out, ScalarFieldOutputT dat);
 istream& operator>>(istream& in, ScalarFieldOutputT& dat);
 
-
 // There are multiple outputs of the code output at different resolutions (each certain number of time steps).
 // The corresponding time steps are given in the main config files and set values are printed in _sd_[subdomainNo]_keyParameters.txt
 // These time steps are listed below
@@ -129,10 +129,87 @@ void name2Type(string& name, timeIndexType& typeVal);
 ostream& operator<<(ostream& out, timeIndexType dat);
 istream& operator>>(istream& in, timeIndexType& dat);
 
+
+// the enumeration RMode_IOT is similar to RiemannMode_StorageTbut mainly for input / output purposes
+#if DiM2a3_F
+typedef enum { rm_allcs, rm_sp, rm_cst, rm_csl, RMode_IOT_SIZE } RMode_IOT;
+#else
+typedef enum { rm_allcs, rm_sp, rm_cst, RMode_IOT_SIZE } RMode_IOT;
+#endif
+
+string getLatexName(RMode_IOT dat);
+string getName(RMode_IOT dat);
+bool name2Type(string& name, RMode_IOT& typeVal);
+ostream& operator<<(ostream& out, RMode_IOT dat);
+istream& operator>>(istream& in, RMode_IOT& dat);
+
+// DamageState_IOT is similar to SLFF_InterfacialDamageModeType but for I/O purposes
+//				Hijacked for other uses
+//		ds_inactive				->			not referring to statistics of fragmented points ...
+//									OR
+//											for denominator it means no denominator exists
+//					alpha and beta from Contact_Damage_State_Config::Finalize_OneFragmentOneClassificationStatSet
+//		ds_alpha
+//		ds_beta 
+//		ds_tz					->	dealing with things at time zero (e.g. min, max, ...) of the initial strength field
+////			Real physical meanings
+// nz	: nonzero
+// z	: zero
+// gzn1 : greater than zero less than 1
+// 1	: equal to 1
+typedef enum {ds_inactive = -4, ds_alpha = -3, ds_beta = -2, ds_t0 = -1, ds_Dall, ds_Dnz, ds_Dz, ds_Dgzn1, ds_D1, DamageState_IOT_SIZE} DamageState_IOT;
+
+string getLatexName(RMode_IOT dat);
+string getName(RMode_IOT dat);
+bool name2Type(string& name, RMode_IOT& typeVal);
+ostream& operator<<(ostream& out, RMode_IOT dat);
+istream& operator>>(istream& in, RMode_IOT& dat);
+
+typedef enum {fio_strength, fio_stress, Field_IOT_SIZE} Field_IOT;
+
+string getLatexName(Field_IOT dat);
+string getName(Field_IOT dat);
+bool name2Type(string& name, Field_IOT& typeVal);
+ostream& operator<<(ostream& out, Field_IOT dat);
+istream& operator>>(istream& in, Field_IOT& dat);
+
+// this is a class that goes with things stored in Contact_Damage_State_Config
+class FragmentationPtsStamp
+{
+public:
+	FragmentationPtsStamp();
+	void MakeVoid();
+	// these 4 values refer to what we get from Contact_Damage_State_Config storage
+	//	d_numerator_or_flag ==
+	//1.	inactive					nothing is obtained from Contact_Damage_State_Config): A trick to turn this off
+	//2.	alpha, beta					alpha and beta values computed in Contact_Damage_Stat_Process_All_Interfaces are returned
+	//3.	t0							values of the initial mesh are returned
+	//4.	Dall, Dnz, Dz, Dgzn1, D1	choosing numerator interface point damage state (allD, 0<D, D=0,0<D<0,D=1)
+
+	// ONLY for case 4 above other entries will have a meaning
+	//i.		cs_numerator	STS, ST, S		choosing numerator interface point contact/separation state 
+	//											STS=stick + separaton (all points in terms of contact / separation mode)
+	//											ST=stick (zero displacement jump)
+	//											S=separation (> 0 displacement jump)
+
+	//ii. d_denominator_or_flag:
+	//ii.a)						inactive: no denominator exists
+	//ii.b)						Dall, Dnz, Dz, Dgzn1, D1 : denominator exists AND cs_denominator is meaningful
+
+	//iii. cs_denominator		ONLY meaningful under ii.b) same values of STS, ST, S
+
+	DamageState_IOT	d_numerator_or_flag;
+	DamageState_IOT	d_denominator_or_flag;
+	RMode_IOT		cs_numerator;
+	RMode_IOT		cs_denominator;
+};
+
 // this is the class that stores what time we are referring to in the post-process stage (or actually no time through loadingStagesT_none  options
 class OneSubdomainPPS2Data_runInfo;
 class DomainPostProcessS2;
 class OneTimeValuePPS2Data;
+class OneTimeInterfaceFlds_FragmentationPPS2;
+class Contact_Damage_State_Config;
 
 class PPS2_TimeStamp
 {
@@ -213,6 +290,10 @@ public:
 	RunNormalizationQuantT normalizationMode;
 	// step 2. log, .... of the value obtained from above may be taken
 	valPOperT oprType;
+
+	///////////////////////////////////////////////////////
+	// accessing values pertained to Contact_Damage_State_Config
+	FragmentationPtsStamp	fragPtStat;
 };
 
 class PPS2_dataPointerVec
@@ -251,8 +332,107 @@ public:
 	PPS2_TimeStamp timeStamp;
 };
 
-
 class DomainPostProcessS2;
+
+class Contact_Damage_State_IO_Stat_1Field
+{
+public:
+	void SetFieldName(const string& field_name, const string& field_nameLatex);
+	// rt \in {rm_sp, rm_cst}, dt \in {ds_Dz, ds_Dgzn1, ds_D1}
+	void UpdateValue(double value, double xPos, RMode_IOT rt, DamageState_IOT dt);
+	// level 0: stat group, level 1: stat subgroup, level 2: name, level 3, name latex, level 4 values
+	// for levels 0 to 3 prints, it prints time index and value, alpha, beta heading
+	// for level 4 only prints alpha and beta
+	void PrintLineLevel(ostream& out, unsigned int nodeCount, unsigned int level, bool print_sdiv, bool print_min_max, bool print_min_max_loc);
+
+	string name_fld_fragT, nameLatex_fld_fragT;
+	statHolder stats1Field[RMode_IOT_SIZE][DamageState_IOT_SIZE];
+	// Levy_Molinari_2010_Dynamic fragmentation of ceramics, signature of defect sand scaling.pdf
+	double alpha; // eqn (21), Nbroken/NodeCount
+	double beta; // eqn (23) broken@time_t(mean - min)/@time_zero(mean - min) - division only occurs for strength values
+	// I take a brute-force approach and do not merge the stats later, rather compute union ones directly
+	// static members
+	static unsigned int sz_r_ind_to_appl[RMode_IOT_SIZE];
+	static vector<RMode_IOT> r_ind_to_appl[RMode_IOT_SIZE];
+
+	static unsigned int sz_d_ind_to_appl[DamageState_IOT_SIZE];
+	static vector<DamageState_IOT> d_ind_to_appl[DamageState_IOT_SIZE];
+	static void SetStatics_Contact_Damage_State_IO_Stat_1Field();
+};
+
+class Contact_Damage_State_IO_Stat_AllsField
+{
+public:
+	void Read_Contact_Damage_OneLineData(istream& in, Field_IOT fit, Contact_Damage_State_Config* contact_damage_confPtr);
+	loadingStagesT lsi;
+	double time;
+	int timeIndex;
+
+	Contact_Damage_State_IO_Stat_1Field stat_fields[Field_IOT_SIZE];
+	vector<double> vals_strengthOfD1Bonds;
+	vector<unsigned int> inds_strengthOfD1Bonds;
+};
+
+// for all fields and all times/stages
+class Contact_Damage_State_IO_Stat_AllsField_Times
+{
+public:
+	FragmentationCriterionT fc;
+	lstClassificationT ct;
+	Contact_Damage_State_IO_Stat_AllsField_Times();
+	~Contact_Damage_State_IO_Stat_AllsField_Times();
+
+	vector<Contact_Damage_State_IO_Stat_AllsField*> statsPtr;
+	unsigned int statsPtr_curIndex;
+	fstream* stat_outPtr[Field_IOT_SIZE];
+	fstream strength_out;
+};
+
+class Contact_Damage_State_Config
+{
+public:
+	Contact_Damage_State_Config();
+
+	///////////////////// computation functions
+	void Initialize_Config_ForWholeSubdomain(OneSubdomainPPS2Data_runInfo& segmentInfo, unsigned int subdomainNoIn);
+	void Initialize_OneFragmentOneClassificationStatSet(Contact_Damage_State_IO_Stat_AllsField_Times& stats, FragmentationCriterionT fc, lstClassificationT ct);
+	void Contact_Damage_Stat_Process_All_Interfaces(Contact_Damage_State_IO_Stat_AllsField_Times& stats, OneTimeInterfaceFlds_FragmentationPPS2* fragDatPtr, loadingStagesT lsi, double time, unsigned int timeIndex);
+
+	///////////////////// retrieve value function
+	// returns true if successful
+	double GetValue(PPS2_dataPointer& datPointer, bool& success);
+	///////////////////// reading data
+	void Read_Contact_Damage_State_Config(DomainPostProcessS2* configPPS2);
+
+
+	// configuration paras
+	bool isActive;
+	bool processField[Field_IOT_SIZE];
+	bool process_ciriticalPoints, process_all_times;
+	bool printStrengthD1_ciritcalPoints, printStrengthD1_all_times;
+	bool print_sdiv, print_min_max, print_min_max_loc;
+	
+	/////////////////////////////////// set based on each individual run
+	unsigned int nodeCount;
+	/// calculated from initial strength stats
+	// is: initial strength
+	// min, max, mean, and sdiv are calculated from initial strength field
+	// is_beta_denom = 1.0 / (is_mean - is_min); cf. eq (23) of Levy_Molinari_2010_Dynamic fragmentation of ceramics, signature of defect sand scaling.pdf
+	double is_min, is_min_x, is_max, is_max_x, is_mean, is_sdiv, is_cov, is_beta_denom;
+	unsigned int subdomainNo;
+	// data computed
+	Contact_Damage_State_IO_Stat_AllsField_Times stats_frag_class[FragmentationCriterionT_SIZE][lstClassificationT_SIZE];
+	Contact_Damage_State_IO_Stat_AllsField_Times stats_frag_allTimes[FragmentationCriterionT_SIZE];
+
+private:
+	OneSubdomainPPS2Data_runInfo* segmentInfoPtr;
+	// rt \in {rm_sp, rm_cst}, dt \in {ds_Dz, ds_Dgzn1, ds_D1}
+	void UpdateValues(Contact_Damage_State_IO_Stat_AllsField_Times& stats, double strength, double stress, unsigned int xIndex, double xPos, RMode_IOT rt, DamageState_IOT dt);
+	void StartOneTime_or_Stage_Computation(Contact_Damage_State_IO_Stat_AllsField_Times& stats, loadingStagesT lsi, double time, int timeIndex);
+	void Update_Actual_Fragment_points(Contact_Damage_State_IO_Stat_AllsField_Times& stats, OneTimeInterfaceFlds_FragmentationPPS2* fragDatPtr);
+	void Finalize_OneFragmentOneClassificationStatSet(Contact_Damage_State_IO_Stat_AllsField_Times& stats);
+};
+
 
 // this class can read files with 4 header lines from file nameWOExtIn.txt (e.g. _sd_0_summary.txt) and write 
 // (min, max, mean, sdt, cov, var) 
@@ -566,7 +746,8 @@ public:
 	bool doFragmentation_DSigmaFieldExtraction_4_AllTimes_IncludedDetailedFragmentSizes;
 	// values < 0 mean that such options are invalid
 	double factors2DecideFragmented[FragmentationCriterionT_SIZE];
-	
+
+	Contact_Damage_State_Config contact_damage_conf;
 #if 0 // removed as they are not really necessary
 	double tol4FinalValCheck_energyInput; // this is used for lin stage of classification time if actualTimesProvided_4TimeStage[lin] < 0
 

@@ -630,6 +630,244 @@ istream& operator>>(istream& in, PPS2_TimeStamp& dat)
 	return in;
 }
 
+////
+string getLatexName(RMode_IOT dat)
+{
+	if (dat == rm_allcs)
+		return "\\mathrm{CS}";
+	if (dat == rm_cst)
+		return "\\mathrm{ST}";
+	if (dat == rm_sp)
+		return "\\mathrm{S}";
+#if DiM2a3_F
+	if (dat == rm_csl)
+		return "\\mathrm{SL}";
+#endif
+	if (dat == ds_inactive)
+		return "inactive";
+	if (dat == ds_alpha)
+		return "\\alpha";
+	if (dat == ds_beta)
+		return "\\beta";
+	if (dat == ds_t0)
+		return "t_0";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+string getName(RMode_IOT dat)
+{
+	if (dat == rm_allcs)
+		return "STS";
+	if (dat == rm_cst)
+		return "ST";
+	if (dat == rm_sp)
+		return "S";
+#if DiM2a3_F
+	if (dat == rm_csl)
+		return "SL";
+#endif
+	if (dat == ds_inactive)
+		return "inactive";
+	if (dat == ds_alpha)
+		return "\\alpha";
+	if (dat == ds_beta)
+		return "\\beta";
+	if (dat == ds_t0)
+		return "t_0";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+bool name2Type(string& name, RMode_IOT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= RMode_IOT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (RMode_IOT)num;
+		return true;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < RMode_IOT_SIZE; ++i)
+	{
+		typeVal = (RMode_IOT)i; // casting integer to RMode_IOT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return true;
+	}
+	cout << "name\t" << name << '\n';
+	return false;
+	//	THROW("wrong name reading RMode_IOT\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, RMode_IOT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+istream& operator>>(istream& in, RMode_IOT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+
+////
+string getLatexName(DamageState_IOT dat)
+{
+	if (dat == ds_Dall)
+		return "D";
+	if (dat == ds_Dnz)
+		return "D>0";
+	if (dat == ds_Dz)
+		return "D=0";
+	if (dat == ds_Dgzn1)
+		return "0<D<1";
+	if (dat == ds_D1)
+		return "D=1";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+string getName(DamageState_IOT dat)
+{
+	if (dat == ds_Dall)
+		return "Dall";
+	if (dat == ds_Dnz)
+		return "Dnz";
+	if (dat == ds_Dz)
+		return "Dz";
+	if (dat == ds_Dgzn1)
+		return "Dgzn1";
+	if (dat == ds_D1)
+		return "D1";
+	THROW("invalid dat");
+}
+
+bool name2Type(string& name, DamageState_IOT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= DamageState_IOT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (DamageState_IOT)num;
+		return true;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < DamageState_IOT_SIZE; ++i)
+	{
+		typeVal = (DamageState_IOT)i; // casting integer to DamageState_IOT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return true;
+	}
+	cout << "name\t" << name << '\n';
+	return false;
+	//	THROW("wrong name reading DamageState_IOT\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, DamageState_IOT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+istream& operator>>(istream& in, DamageState_IOT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+
+////
+string getLatexName(Field_IOT dat)
+{
+	if (dat == fio_strength)
+		return "\\tilde{\\sigma}";
+	if (dat == fio_stress)
+		return "s";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+string getName(Field_IOT dat)
+{
+	if (dat == fio_strength)
+		return "strength";
+	if (dat == fio_stress)
+		return "stress";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+bool name2Type(string& name, Field_IOT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= Field_IOT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (Field_IOT)num;
+		return true;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < Field_IOT_SIZE; ++i)
+	{
+		typeVal = (Field_IOT)i; // casting integer to Field_IOT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return true;
+	}
+	cout << "name\t" << name << '\n';
+	return false;
+	//	THROW("wrong name reading Field_IOT\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, Field_IOT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+istream& operator>>(istream& in, Field_IOT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+///
+FragmentationPtsStamp::FragmentationPtsStamp()
+{
+	MakeVoid();
+}
+
+void FragmentationPtsStamp::MakeVoid()
+{
+	d_numerator_or_flag = ds_inactive;
+	d_denominator_or_flag = ds_inactive;
+	cs_numerator = rm_allcs;
+	cs_denominator = rm_allcs;
+}
+
 PPS2_TimeStamp::PPS2_TimeStamp()
 {
 	MakeVoid_PPS2_TimeStamp();
@@ -873,8 +1111,8 @@ void PPS2_dataPointer::MakeVoid_PPS2_dataPointer()
 	brittlenessRatioT = BrittlenessIndicatorRatioType_none;
 	brittlenessFieldT = BrittlnessIndicatorFieldType_none;
 	normalizationMode = RunNormalizationQuantT_none;
-	normalizationMode = RunNormalizationQuantT_none;
 	oprType = vpo_none;
+	fragPtStat.MakeVoid();
 }
 
 bool PPS2_dataPointer::PPS2_dataPointer_Read(istream& in, string& buf)
@@ -1006,6 +1244,634 @@ void PPS2_dataPointer_StageOverwritter::Overwrite_PPS2_dataPointer(PPS2_dataPoin
 	datPointer.timeStamp = timeStamp;
 	datPointer.name_In_CSV_file += post_name_In_CSV_file;
 	datPointer.name_Latex += post_name_Latex;
+}
+
+//////////////////////////////////////////////////////////////
+
+void Contact_Damage_State_IO_Stat_1Field::SetFieldName(const string& field_name, const string& field_nameLatex)
+{
+	string name, nameLatex, rname, rnameLatex, dname, dnameLatex;
+	for (unsigned int ri = 0; ri < RMode_IOT_SIZE; ++ri)
+	{
+		rname = getName((RMode_IOT)ri);
+		rnameLatex = getLatexName((RMode_IOT)ri);
+		for (unsigned int di = 0; di < DamageState_IOT_SIZE; ++di)
+		{
+			dname = getName((DamageState_IOT)di);
+			dnameLatex = getLatexName((DamageState_IOT)di);
+			name = field_name + "_" + rname + "_" + dname;
+			nameLatex = field_nameLatex + "\\:" + rnameLatex + "\\:" + dnameLatex;
+			stats1Field[ri][di].setName(name, nameLatex);
+			stats1Field[ri][di].set_useMeasure(false);
+		}
+	}
+}
+
+void Contact_Damage_State_IO_Stat_1Field::UpdateValue(double value, double xPos, RMode_IOT rt, DamageState_IOT dt)
+{
+	for (unsigned int rii = 0; rii < sz_r_ind_to_appl[rt]; ++rii)
+	{
+		RMode_IOT rt2use = r_ind_to_appl[rt][rii];
+		for (unsigned int dii = 0; dii < sz_d_ind_to_appl[dt]; ++dii)
+		{
+			DamageState_IOT dt2use = d_ind_to_appl[dt][dii];
+			stats1Field[rt2use][dt2use].update(value, xPos);
+		}
+	}
+}
+
+void Contact_Damage_State_IO_Stat_1Field::PrintLineLevel(ostream& out, unsigned int nodeCount, unsigned int level, bool print_sdiv, bool print_min_max, bool print_min_max_loc)
+{
+	static string sep = ",";
+	if (level == 4) // values
+	{
+		for (unsigned int ri = 0; ri < RMode_IOT_SIZE; ++ri)
+		{
+			for (unsigned int di = 0; di < DamageState_IOT_SIZE; ++di)
+			{
+				statHolder* statPtr = &stats1Field[ri][di];
+				int cnt = statPtr->getCount();
+				double rN = ((double)cnt / nodeCount);
+				statPtr->set_rN(rN);
+				out << sep << cnt << sep << rN; 
+				double meanV = statPtr->getAverage();
+				out << sep << meanV;
+				if (print_sdiv)
+				{
+					double sdiv = statPtr->getStandardDeviation();
+					statPtr->setStandardDeviation(sdiv);
+					double cov = statPtr->getCOV();
+					out << sep << sdiv << sep << cov;
+				}
+				if (print_min_max)
+				{
+					out << sep << statPtr->getMin();
+					out << sep << statPtr->getMax();
+					if (print_min_max_loc)
+					{
+						out << sep << statPtr->getMinLoc();
+						out << sep << statPtr->getMaxLoc();
+					}
+				}
+			}
+		}
+		return;
+	}
+	if (level == 0)
+		out << "index" << sep << "index" << sep << "stat" << sep << "stat";
+	else if (level == 1)
+		out << "time" << sep << "time" << sep << "alpha" << sep << "beta";
+	else if (level == 2)
+		out << "timeIndex" << sep << "time" << sep << "alpha" << name_fld_fragT << sep << "beta" << name_fld_fragT;
+	else if (level == 3)
+		out << "timeIndex" << sep << "time" << sep << "\\alpha(" << name_fld_fragT << ")" << sep << "\\beta(" << name_fld_fragT << ")";
+
+	for (unsigned int ri = 0; ri < RMode_IOT_SIZE; ++ri)
+	{
+		for (unsigned int di = 0; di < DamageState_IOT_SIZE; ++di)
+		{
+			statHolder* statPtr = &stats1Field[ri][di];
+			string name = statPtr->name, nameLatex = statPtr->nameLatex;
+			if (level == 0)
+			{
+				out << sep << "count" << sep << "rcount";
+				out << sep << "stat";
+			}
+			else if (level == 1)
+			{
+				out << sep << "count" << sep << "rel_count";
+				out << sep << "average";
+			}
+			else if (level == 2)
+			{
+				out << sep << "N_" << name << sep << "rN_" << name;
+				out << sep << "mu_" << name;
+			}
+			else if (level == 3)
+			{
+				out << sep << "N(" << name << ")" << sep << "N_r(" << name << ")";
+				out << sep << "\\mu(" << nameLatex << ")";
+			}
+			if (print_sdiv)
+			{
+				if (level == 0)
+					out << sep << "stat" << sep << "stat";
+				else if (level == 1)
+					out << sep << "sdiv" << sep << "cov";
+				else if (level == 2)
+					out << sep << "sdiv_" << name << sep << "cov_" << name;
+				else if (level == 3)
+					out << sep << "\\varsigma(" << nameLatex << ")" << sep << "\\mathrm{cov}(" << nameLatex << ")";
+			}
+			if (print_min_max)
+			{
+				if (level == 0)
+					out << sep << "stat" << sep << "stat";
+				else if (level == 1)
+					out << sep << "min" << sep << "max";
+				else if (level == 2)
+					out << sep << "min_" << name << sep << "max_" << name;
+				else if (level == 3)
+				{
+					out << sep << "\\mathrm{min}(" << nameLatex << ")";
+					out << sep << "\\mathrm{max}(" << nameLatex << ")";
+				}
+				if (print_min_max_loc)
+				{
+					if (level == 0)
+						out << sep << "stat" << sep << "stat";
+					else if (level == 1)
+						out << sep << "loc_min" << sep << "loc_max";
+					else if (level == 2)
+						out << sep << "x_min_" << name << sep << "x_max_" << name;
+					else if (level == 3)
+					{
+						out << sep << "x_{\\mathrm{min}}(" << nameLatex << ")";
+						out << sep << "x_{\\mathrm{max}}(" << nameLatex << ")";
+					}
+				}
+			}
+		}
+	}
+}
+
+unsigned int Contact_Damage_State_IO_Stat_1Field::sz_r_ind_to_appl[RMode_IOT_SIZE];
+vector<RMode_IOT> Contact_Damage_State_IO_Stat_1Field::r_ind_to_appl[RMode_IOT_SIZE];
+
+unsigned int Contact_Damage_State_IO_Stat_1Field::sz_d_ind_to_appl[DamageState_IOT_SIZE];
+vector<DamageState_IOT> Contact_Damage_State_IO_Stat_1Field::d_ind_to_appl[DamageState_IOT_SIZE];
+
+void Contact_Damage_State_IO_Stat_1Field::SetStatics_Contact_Damage_State_IO_Stat_1Field()
+{
+	sz_r_ind_to_appl[rm_allcs] = 0;
+	for (int ri = rm_sp; ri < RMode_IOT_SIZE; ++ri)
+	{
+		RMode_IOT rt = (RMode_IOT)ri;
+		sz_r_ind_to_appl[ri] = 2;
+		r_ind_to_appl[ri].resize(2);	r_ind_to_appl[ri][0] = rt; r_ind_to_appl[ri][1] = rm_allcs;
+	}
+	//
+	DamageState_IOT dt = ds_Dall;	sz_d_ind_to_appl[dt] = 0;
+	dt = ds_Dnz;					sz_d_ind_to_appl[dt] = 0;
+	dt = ds_Dz;						sz_d_ind_to_appl[dt] = 2;	
+	d_ind_to_appl[dt].resize(2);		 d_ind_to_appl[dt][0] = dt;	d_ind_to_appl[dt][1] = ds_Dall;
+	dt = ds_Dgzn1;						sz_d_ind_to_appl[dt] = 3;
+	d_ind_to_appl[dt].resize(3);		 d_ind_to_appl[dt][0] = dt;	d_ind_to_appl[dt][1] = ds_Dall;	d_ind_to_appl[dt][2] = ds_Dnz;
+	dt = ds_D1;							sz_d_ind_to_appl[dt] = 3;
+	d_ind_to_appl[dt].resize(3);		 d_ind_to_appl[dt][0] = dt;	d_ind_to_appl[dt][1] = ds_Dall;	d_ind_to_appl[dt][2] = ds_Dnz;
+}
+
+//////////////////////////////////////////////////////////////
+void Contact_Damage_State_IO_Stat_AllsField::Read_Contact_Damage_OneLineData(istream& in, Field_IOT fit, Contact_Damage_State_Config* contact_damage_confPtr)
+{
+	string buf;
+	vector <string> strs;
+	getline(in, buf);
+	unsigned int numFlds = BreakString(buf, strs);
+	Contact_Damage_State_IO_Stat_1Field* stat_field = &stat_fields[fit];
+	unsigned int pos = 0;
+	fromString(strs[pos++], timeIndex);
+	fromString(strs[pos++], time);
+	fromString(strs[pos++], stat_field->alpha);
+	fromString(strs[pos++], stat_field->beta);
+
+	double N = 0.0, rN = 0.0, mu = 0.0, sdiv = 0.0, cov = 0.0, minV = 0.0, maxV = 0.0, min_loc = 0.0, max_loc = 0.0;
+	for (unsigned int ri = 0; ri < RMode_IOT_SIZE; ++ri)
+	{
+		for (unsigned int di = 0; di < DamageState_IOT_SIZE; ++di)
+		{
+			statHolder* stat1Field = &stat_field->stats1Field[ri][di];
+			fromString(strs[pos++], N);
+			fromString(strs[pos++], rN);
+			fromString(strs[pos++], mu);
+			if (contact_damage_confPtr->print_sdiv)
+			{
+				fromString(strs[pos++], sdiv);
+				fromString(strs[pos++], cov);
+			}
+			if (contact_damage_confPtr->print_min_max)
+			{
+				fromString(strs[pos++], minV);
+				fromString(strs[pos++], maxV);
+				if (contact_damage_confPtr->print_min_max_loc)
+				{
+					fromString(strs[pos++], min_loc);
+					fromString(strs[pos++], max_loc);
+				}
+			}
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////
+
+Contact_Damage_State_IO_Stat_AllsField_Times::Contact_Damage_State_IO_Stat_AllsField_Times()
+{
+	for (unsigned int i = 0; i < Field_IOT_SIZE; ++i)
+	{
+		stat_outPtr[i] = NULL;
+	}
+	statsPtr_curIndex = -1;
+}
+
+Contact_Damage_State_IO_Stat_AllsField_Times::~Contact_Damage_State_IO_Stat_AllsField_Times()
+{
+	for (unsigned int i = 0; i < Field_IOT_SIZE; ++i)
+	{
+		if (stat_outPtr[i] != NULL)
+			delete stat_outPtr[i];
+	}
+	for (unsigned int i = 0; i < statsPtr.size(); ++i)
+		if (statsPtr[i] != NULL)
+			delete statsPtr[i];
+}
+
+Contact_Damage_State_Config::Contact_Damage_State_Config()
+{
+	isActive = true;
+	for (unsigned int fi = 0; fi < Field_IOT_SIZE; ++fi)
+		processField[fi] = true;
+	print_sdiv = true, print_min_max = true, print_min_max_loc = true;
+	printStrengthD1_ciritcalPoints = true;
+	printStrengthD1_all_times = true;
+	process_ciriticalPoints = true, 
+	process_all_times = true;
+}
+
+void Contact_Damage_State_Config::Initialize_Config_ForWholeSubdomain(OneSubdomainPPS2Data_runInfo& segmentInfo, unsigned int subdomainNoIn)
+{
+	if (isActive == false)
+	{
+		process_ciriticalPoints = false,
+		process_all_times = false;
+		printStrengthD1_ciritcalPoints = false;
+		printStrengthD1_all_times = false;
+		return;
+	}
+	if (process_ciriticalPoints == false)
+		printStrengthD1_ciritcalPoints = false;
+	if (process_all_times == false)
+		printStrengthD1_all_times = false;
+
+	segmentInfoPtr = &segmentInfo;
+	nodeCount = 0;
+	is_min = segmentInfo.sigmaCs[0];
+	is_max = is_min;
+	is_mean = is_min;
+	is_sdiv = 0.0;
+	is_min_x = segmentInfo.xs[0];
+	is_max_x = is_min_x;
+	double tmp;
+	for (unsigned int segi = 0; segi < segmentInfo.numInterfaces; ++segi)
+	{
+		if (segmentInfo.deltaCs[segi] < 0.0)
+			continue;
+		tmp = segmentInfo.sigmaCs[segi];
+		if (tmp < is_min)
+		{
+			is_min = tmp;
+			is_min_x = segmentInfo.xs[segi];
+		}
+		if (tmp > is_max)
+		{
+			is_max = tmp;
+			is_max_x = segmentInfo.xs[segi];
+		}
+		is_mean += tmp;
+		++nodeCount;
+	}
+	is_mean /= (double)nodeCount;
+	for (unsigned int segi = 0; segi < nodeCount; ++segi)
+	{
+		tmp = segmentInfo.sigmaCs[segi] - is_mean;
+		is_sdiv += tmp * tmp;
+	}
+	is_sdiv /= MAX(1.0, (double)nodeCount - 1.0);
+	is_sdiv = sqrt(is_sdiv);
+	is_cov = computeRatio(is_sdiv, is_mean);
+	if (is_cov > 1e-6)
+		is_beta_denom = 1.0 / (is_mean - is_min);
+	else
+		is_beta_denom = 1.0;
+	subdomainNo = subdomainNoIn;
+}
+
+void Contact_Damage_State_Config::Initialize_OneFragmentOneClassificationStatSet(Contact_Damage_State_IO_Stat_AllsField_Times& stats, FragmentationCriterionT fc, lstClassificationT ct)
+{
+	stats.fc = fc;
+	stats.ct = ct;
+	string specificName, fileName;
+	for (unsigned int fi = 0; fi < Field_IOT_SIZE; ++fi)
+	{
+		if (processField[fi] == false)
+			continue;
+		Field_IOT fit = (Field_IOT)fi;
+		specificName = "Stat" + getName(fit);
+		GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, subdomainNo, -1, specificName,
+			loadingStagesT_none, ct, fc, "csv");
+		if (stats.stat_outPtr[fi] != NULL)
+			delete stats.stat_outPtr[fi];
+		stats.stat_outPtr[fi] = new fstream(fileName.c_str(), ios::out);
+	}
+	specificName = "ValuesStrength";
+	if (ct == lstClassificationT_none)
+		specificName = "IndicesStrength";
+	GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, subdomainNo, -1, specificName,
+		loadingStagesT_none, ct, fc);
+	stats.strength_out.open(fileName.c_str(), ios::out);
+}
+
+void Contact_Damage_State_Config::Update_Actual_Fragment_points(Contact_Damage_State_IO_Stat_AllsField_Times& stats, OneTimeInterfaceFlds_FragmentationPPS2* fragDatPtr)
+{
+	OneTimeOneCriterionFragmentationRawData* fDatPtr = &fragDatPtr->fragmentationDat[stats.fc];
+	unsigned int numPts = fragDatPtr->D.size();
+	vector<DamageState_IOT> dts(numPts);
+	fill(dts.begin(), dts.end(), ds_Dz);
+	unsigned int intIndex;
+	unsigned int numFragmentPts = fDatPtr->fragmented_interface_indices.size();
+	for (unsigned int i = 0; i < numFragmentPts; ++i)
+	{
+		intIndex = fDatPtr->fragmented_interface_indices[i];
+		dts[intIndex] = ds_D1;
+	}
+	static double toldelCz = 1e-4, tolDnz = 1e-3;
+	double strength, stress, xPos, delu, delC;
+//	bool deluComputed;
+	RMode_IOT rt;
+	DamageState_IOT dt;
+	for (unsigned int intIndex = 0; intIndex < numPts; ++intIndex)
+	{
+		delC = segmentInfoPtr->deltaCs[intIndex];
+		if (delC < 0.0)
+			continue;
+		strength = segmentInfoPtr->sigmaCs[intIndex];
+		stress = fragDatPtr->sigma[0][intIndex];
+		xPos = segmentInfoPtr->xs[intIndex];
+		dt = dts[intIndex];
+		rt = rm_sp;
+//		if (stress < 0)
+		{
+			delu = fragDatPtr->uR[0][intIndex] - fragDatPtr->uL[0][intIndex];
+//			deluComputed = true;
+			if (delu < toldelCz * delC)
+				rt = rm_cst;
+		}
+//		else
+//			deluComputed = false;
+		if (dt != ds_D1) // decideing if it has a damage between 0, 1
+		{
+			if (stats.fc == fct_Damage)
+			{
+				if (fragDatPtr->D[intIndex] > tolDnz)
+					dt = ds_Dgzn1;
+			}
+			else
+			{
+				if (stats.fc == fct_maxEffDelU)
+				{
+					if (fragDatPtr->maxEffDelU[intIndex] > delC * tolDnz)
+						dt = ds_Dgzn1;
+				}
+				else if (stats.fc == fct_DelU)
+				{
+					//			if (!deluComputed)
+					delu = fragDatPtr->uR[0][intIndex] - fragDatPtr->uL[0][intIndex];
+					if (delu > delC * tolDnz)
+						dt = ds_Dgzn1;
+				}
+				if (dt == ds_Dz)
+					rt = rm_cst;
+			}
+		}
+		UpdateValues(stats, strength, stress, intIndex, xPos, rt, dt);
+	}
+}
+
+void Contact_Damage_State_Config::StartOneTime_or_Stage_Computation(Contact_Damage_State_IO_Stat_AllsField_Times& stats, loadingStagesT lsi, double time, int timeIndex)
+{
+	bool is_classification = (stats.ct != lstClassificationT_none);
+	Contact_Damage_State_IO_Stat_AllsField* statPtr;
+	if (is_classification)
+	{
+		stats.statsPtr_curIndex = stats.statsPtr.size();
+		statPtr = new Contact_Damage_State_IO_Stat_AllsField();
+		stats.statsPtr.push_back(statPtr);
+	}
+	else
+	{
+		stats.statsPtr_curIndex = stats.statsPtr.size();
+		if (stats.statsPtr_curIndex == 0)
+		{
+			statPtr = new Contact_Damage_State_IO_Stat_AllsField();
+			stats.statsPtr.push_back(statPtr);
+		}
+		else
+		{
+			stats.statsPtr_curIndex = 0;
+			delete stats.statsPtr[0];
+			statPtr = new Contact_Damage_State_IO_Stat_AllsField();
+			stats.statsPtr[0] = statPtr;
+		}
+	}
+	string fcName = getName(stats.fc), fcNameLatex = getLatexName(stats.fc);
+	bool isFirstStep = ((is_classification && (lsi == lst_lin)) || (timeIndex == 0));
+	for (unsigned int fi = 0; fi < Field_IOT_SIZE; ++fi)
+	{
+		if (processField[fi] == false)
+			continue;
+		Field_IOT fit = (Field_IOT)fi;
+		string fitName = getName(fit), fitNameLatex = getLatexName(fit);
+		statPtr->lsi = lsi;
+		statPtr->time = time;
+		statPtr->timeIndex = timeIndex;
+		Contact_Damage_State_IO_Stat_1Field* ofPtr = &statPtr->stat_fields[fi];
+		ofPtr->SetFieldName(fitName, fitNameLatex);
+		ofPtr->name_fld_fragT = fitName + "_" + fcName;
+		ofPtr->nameLatex_fld_fragT = fitNameLatex + "\\:" + fcNameLatex;
+		if (isFirstStep)
+		{
+			for (unsigned int level = 0; level < 4; ++level)
+			{
+				ofPtr->PrintLineLevel((*(stats.stat_outPtr[fi])), nodeCount, level, print_sdiv, print_min_max, print_min_max_loc);
+				(*(stats.stat_outPtr[fi])) << '\n';
+			}
+		}
+	}
+}
+
+void Contact_Damage_State_Config::UpdateValues(Contact_Damage_State_IO_Stat_AllsField_Times& stats, double strength, double stress, unsigned int xIndex, double xPos, RMode_IOT rt, DamageState_IOT dt)
+{
+	Contact_Damage_State_IO_Stat_AllsField* statPtr = stats.statsPtr[stats.statsPtr_curIndex];
+	if (processField[fio_strength])
+		statPtr->stat_fields[fio_strength].UpdateValue(strength, xPos, rt, dt);
+	if (processField[fio_stress])
+		statPtr->stat_fields[fio_stress].UpdateValue(stress, xPos, rt, dt);
+	if (dt != ds_D1)
+		return;
+	if ((stats.ct != lstClassificationT_none) && printStrengthD1_ciritcalPoints)
+		statPtr->vals_strengthOfD1Bonds.push_back(strength);
+	if ((stats.ct == lstClassificationT_none) && printStrengthD1_all_times)
+		statPtr->inds_strengthOfD1Bonds.push_back(xIndex);
+}
+
+void Contact_Damage_State_Config::Contact_Damage_Stat_Process_All_Interfaces(Contact_Damage_State_IO_Stat_AllsField_Times& stats, OneTimeInterfaceFlds_FragmentationPPS2* fragDatPtr, loadingStagesT lsi, double time, unsigned int timeIndex)
+{
+	StartOneTime_or_Stage_Computation(stats, lsi, time, timeIndex);
+	if (fragDatPtr != NULL)
+		Update_Actual_Fragment_points(stats, fragDatPtr);
+	Finalize_OneFragmentOneClassificationStatSet(stats);
+}
+
+double Contact_Damage_State_Config::GetValue(PPS2_dataPointer& datPointer, bool& success)
+{
+	DamageState_IOT dt = datPointer.fragPtStat.d_numerator_or_flag;
+	success = true;
+	if (dt == ds_t0)
+	{
+		if ((datPointer.fldName == "inp_sfx_sim_mean") || (datPointer.stat_sv_type == sso_mean_arithmetic))
+			return is_mean;
+		if ((datPointer.fldName == "inp_sfx_sim_mn") || (datPointer.stat_sv_type == sso_min))
+			return is_min;
+		if ((datPointer.fldName == "inp_sfx_sim_mx") || (datPointer.stat_sv_type == sso_max))
+			return is_max;
+		if ((datPointer.fldName == "inp_sfx_sim_cov") || (datPointer.stat_sv_type == sso_cov))
+			return is_cov;
+		if ((datPointer.fldName == "inp_sfx_sim_std") || (datPointer.stat_sv_type == sso_sdiv))
+			return is_sdiv;
+		if (datPointer.fldName == "inp_sfx_sim_span")
+			return is_max - is_min;
+		THROW("Invalid fldName or stat_sv_type");
+	}
+	// now this refers to a particular time stamp value:
+	Contact_Damage_State_IO_Stat_AllsField* statPtr;
+	loadingStagesT lst = datPointer.timeStamp.timeStampType;
+	Contact_Damage_State_IO_Stat_AllsField_Times* stat_frag_class;
+	if (lst != loadingStagesT_none)
+	{
+		stat_frag_class = &stats_frag_class[datPointer.fragmentationCriterion][datPointer.timeStamp.lct];
+		statPtr = stat_frag_class->statsPtr[datPointer.timeStamp.timeStampType];
+	}
+	else
+	{
+		stat_frag_class = &stats_frag_allTimes[datPointer.fragmentationCriterion];
+		statPtr = stat_frag_class->statsPtr[stat_frag_class->statsPtr.size() - 1];
+	}
+	Field_IOT fit;
+	if (name2Type(datPointer.fldName, fit) == false)
+		THROW("Cannot turn fldName to a valid field name such as strength or stress\n");
+	Contact_Damage_State_IO_Stat_1Field* stat_field = &statPtr->stat_fields[(int)fit];
+	double numerator = 0.0;
+	if (dt == ds_alpha)
+		numerator = stat_field->alpha;
+	if (dt == ds_beta)
+		numerator = stat_field->beta;
+	else
+	{
+		RMode_IOT rt = datPointer.fragPtStat.cs_numerator;
+		numerator = stat_field->stats1Field[rt][dt].getValue((int)datPointer.stat_sv_type);
+	}
+	DamageState_IOT dt_denom = datPointer.fragPtStat.d_denominator_or_flag;
+	if ((int)dt_denom < (int)ds_Dall)
+		return numerator;
+	RMode_IOT rt = datPointer.fragPtStat.cs_denominator;
+	double denominator = stat_field->stats1Field[rt][dt_denom].getValue((int)datPointer.stat_sv_type);
+	return computeRatio(numerator, denominator);
+}
+
+void Contact_Damage_State_Config::Read_Contact_Damage_State_Config(DomainPostProcessS2* configPPS2)
+{
+	if ((!isActive) || (!process_ciriticalPoints))
+		return;
+
+	string specificName, fileName, buf;
+	for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+	{
+		if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
+			continue;
+		for (unsigned int ct = 0; ct < lstClassificationT_SIZE; ++ct)
+		{
+			Contact_Damage_State_IO_Stat_AllsField_Times* stat_frag_class = &stats_frag_class[fc][ct];
+			if (stat_frag_class->statsPtr.size() != loadingStagesT_SIZE)
+				stat_frag_class->statsPtr.resize(loadingStagesT_SIZE);
+			for (unsigned int fi = 0; fi < Field_IOT_SIZE; ++fi)
+			{
+				if (processField[fi] == false)
+					continue;
+				Field_IOT fit = (Field_IOT)fi;
+
+				specificName = "Stat" + getName(fit);
+				GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, subdomainNo, -1, specificName,
+					loadingStagesT_none, (lstClassificationT)ct, (FragmentationCriterionT)fc, "csv");
+				fstream in(fileName.c_str(), ios::in);
+				for (unsigned int level = 0; level < 4; ++level)
+					getline(in, buf);
+				for (unsigned int lsi = 0; lsi < loadingStagesT_SIZE; ++lsi)
+				{
+					stat_frag_class->statsPtr[lsi]->lsi = (loadingStagesT)lsi;
+					stat_frag_class->statsPtr[lsi]->Read_Contact_Damage_OneLineData(in, fit, this);
+				}
+			}
+		}
+	}
+}
+
+void Contact_Damage_State_Config::Finalize_OneFragmentOneClassificationStatSet(Contact_Damage_State_IO_Stat_AllsField_Times& stats)
+{
+	Contact_Damage_State_IO_Stat_AllsField* statPtr = stats.statsPtr[stats.statsPtr_curIndex];
+	static unsigned int level = 4;
+	static string sep = ",";
+	for (unsigned int fi = 0; fi < Field_IOT_SIZE; ++fi)
+	{
+		if (processField[fi] == false)
+			continue;
+		Field_IOT fit = (Field_IOT)fi;
+		Contact_Damage_State_IO_Stat_1Field* ofPtr = &statPtr->stat_fields[fi];
+		statHolder* shPtr = &ofPtr->stats1Field[rm_allcs][ds_D1];
+		ofPtr->alpha = 0.0;
+		ofPtr->beta = 0.0;
+		if (shPtr->getCount() > 0)
+		{
+			if (fit == fio_strength)
+			{
+				ofPtr->alpha = (double)shPtr->getCount() / nodeCount;
+				ofPtr->beta = is_beta_denom * (shPtr->getAverage() - shPtr->getMin());
+			}
+			else
+			{
+				ofPtr->alpha = shPtr->getMin();
+				ofPtr->beta = shPtr->getAverage();
+			}
+		}
+		(*(stats.stat_outPtr[fi])) << statPtr->timeIndex << sep << statPtr->time;
+		(*(stats.stat_outPtr[fi])) << sep << ofPtr->alpha << sep << ofPtr->beta;
+		ofPtr->PrintLineLevel((*(stats.stat_outPtr[fi])), nodeCount, level, print_sdiv, print_min_max, print_min_max_loc);
+		(*(stats.stat_outPtr[fi])) << '\n';
+	}
+	if (stats.ct != lstClassificationT_none)
+	{
+		if (printStrengthD1_ciritcalPoints)
+		{
+			vector <double> *vals_strengthOfD1BondsPtr = &statPtr->vals_strengthOfD1Bonds;
+			unsigned int sz = vals_strengthOfD1BondsPtr->size();
+			stats.strength_out << statPtr->timeIndex << sep << statPtr->time;
+			stats.strength_out << '\t' << sz;
+			for (unsigned int i = 0; i < sz; ++i)
+				stats.strength_out << '\t' << (*vals_strengthOfD1BondsPtr)[i];
+			stats.strength_out << endl;
+			return;
+		}
+	}
+	else if (printStrengthD1_all_times)
+	{
+		vector<unsigned int>* inds_strengthOfD1BondsPtr = &statPtr->inds_strengthOfD1Bonds;
+		unsigned int sz = inds_strengthOfD1BondsPtr->size();
+		stats.strength_out << statPtr->timeIndex << sep << statPtr->time;
+		stats.strength_out << '\t' << sz;
+		for (unsigned int i = 0; i < sz; ++i)
+			stats.strength_out << '\t' << (*inds_strengthOfD1BondsPtr)[i];
+		stats.strength_out << endl;
+		return;
+	}
 }
 
 //////////////////////////////////////////////////////////////
@@ -2301,6 +3167,12 @@ bool OneSubdomainPPS2Data::Compute_OneTimeValuePPS2Data_4ActualTime(PPS2_TimeSta
 bool OneSubdomainPPS2Data::Get_Scalar_Or_Vector_Output(PPS2_dataPointer& datPointer, double& scalarVal, vector<double>& vecVal, ScalarFieldOutputT& sfot, OneTimeValuePPS2Data& modifiableOneTimeSlns, double temporalFieldTimeStepValOrNumSteps)
 {
 	sfot = sfo_scalar;
+	if (datPointer.fragPtStat.d_numerator_or_flag != ds_inactive)
+	{
+		bool success;
+		scalarVal = configPPS2->contact_damage_conf.GetValue(datPointer, success);
+		return (success && (fabs(scalarVal) < 1e39));
+	}
 	/// first check if brittleness indicators are needed
 	if (datPointer.brittlenessRatioT != BrittlenessIndicatorRatioType_none)
 	{
@@ -2925,26 +3797,28 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 		{
 			outPtrs[fc] = NULL;
 			outFragSizesPtrs[fc] = NULL;
-			if (configPPS2->factors2DecideFragmented[fc] > 0.0)
+			if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
+				continue;
+			FragmentationCriterionT fct = (FragmentationCriterionT)fc;
+			if (configPPS2->contact_damage_conf.process_all_times)
+				configPPS2->contact_damage_conf.Initialize_OneFragmentOneClassificationStatSet(configPPS2->contact_damage_conf.stats_frag_allTimes[fc], fct, lstClassificationT_none);
+
+			string fileName;
+			string specificName = "StatFragmentation";
+			GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, subdomainNo, -1, specificName,
+				loadingStagesT_none, lstClassificationT_none, fct, "txt");
+
+			outPtrs[fc] = new fstream();
+			outPtrs[fc]->open(fileName.c_str(), ios::out);
+			OneTimeOneCriterionFragmentationRawData::OneTimeOneCriterionFragmentationRawData_Write_Header(*(outPtrs[fc]));
+
+			if (configPPS2->doFragmentation_DSigmaFieldExtraction_4_AllTimes_IncludedDetailedFragmentSizes)
 			{
-				FragmentationCriterionT fct = (FragmentationCriterionT)fc;
-				string fileName;
-				string specificName = "StatFragmentation";
+				string specificName = "SizeFragmentation";
 				GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, subdomainNo, -1, specificName,
 					loadingStagesT_none, lstClassificationT_none, fct, "txt");
-
-				outPtrs[fc] = new fstream();
-				outPtrs[fc]->open(fileName.c_str(), ios::out);
-				OneTimeOneCriterionFragmentationRawData::OneTimeOneCriterionFragmentationRawData_Write_Header(*(outPtrs[fc]));
-
-				if (configPPS2->doFragmentation_DSigmaFieldExtraction_4_AllTimes_IncludedDetailedFragmentSizes)
-				{
-					string specificName = "SizeFragmentation";
-					GetSubdomainIndexed_TimeIndexed_PostProcess_FileName(fileName, subdomainNo, -1, specificName,
-						loadingStagesT_none, lstClassificationT_none, fct, "txt");
-					outFragSizesPtrs[fc] = new fstream();
-					outFragSizesPtrs[fc]->open(fileName.c_str(), ios::out);
-				}
+				outFragSizesPtrs[fc] = new fstream();
+				outFragSizesPtrs[fc]->open(fileName.c_str(), ios::out);
 			}
 		}
 		/// This part is added to to compute initiation (linear), max, and final stages based on fragment count
@@ -2954,9 +3828,10 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 		unsigned int ti = MAX(0, segmentInfo.maxIndex_Interface_DSU_Fragment_Print - 1);
 		double timeValue = ti * segmentInfo.timeStep_Interface_DSU_Fragment_Print;
 		OneTimeInterfaceFlds_FragmentationPPS2 fieldFragInfo;
-		segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, fieldFragInfo, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, loadingStagesT_none, lstClassificationT_none);
+			segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, fieldFragInfo, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, loadingStagesT_none, lstClassificationT_none);
 		Do_AllFragmentationAnalysis(fieldFragInfo);
 
+		unsigned int max_fc_2_check = 0;
 		for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
 		{
 			numFinalFragments[fc] = -1;
@@ -2966,19 +3841,26 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 			if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
 				continue;
 			numFinalFragments[fc] = fieldFragInfo.fragmentationDat[fc].numFragments;
+			++max_fc_2_check;
 		}
 
 		for (unsigned int ti = 0; ti < segmentInfo.maxIndex_Interface_DSU_Fragment_Print; ++ti)
 		{
+			if (max_fc_2_check == 0)
+				break;
 			double timeValue = ti * segmentInfo.timeStep_Interface_DSU_Fragment_Print;
 			unsigned int timeIndex = (unsigned int)floor(timeValue / segmentInfo.timeStep + 1e-7);
 			OneTimeInterfaceFlds_FragmentationPPS2 fieldFragInfo;
 			segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, fieldFragInfo, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, loadingStagesT_none, lstClassificationT_none);
 			Do_AllFragmentationAnalysis(fieldFragInfo);
+
 			for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
 			{
 				if (configPPS2->factors2DecideFragmented[fc] <= 0.0)
 					continue;
+				FragmentationCriterionT fcc = (FragmentationCriterionT)fc;
+				if (configPPS2->contact_damage_conf.process_all_times)
+					configPPS2->contact_damage_conf.Contact_Damage_Stat_Process_All_Interfaces(configPPS2->contact_damage_conf.stats_frag_allTimes[fc], &fieldFragInfo, loadingStagesT_none, timeValue, timeIndex);
 
 				if (outPtrs[fc] != NULL)
 					fieldFragInfo.fragmentationDat[fc].OneTimeOneCriterionFragmentationRawData_Write_Data(*(outPtrs[fc]), timeIndex, timeValue);
@@ -2993,6 +3875,7 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 					{
 						timeIndices_fragmodel_stage[fc][lst_final] = timeIndex;
 						timeValues_fragmodel_stage[fc][lst_final] = timeValue;
+						--max_fc_2_check;
 					}
 					int diff = numFrag - prevFrag;
 					if (diff > maxChangeFragments[fc])
@@ -3034,16 +3917,32 @@ void OneSubdomainPPS2Data::ComputeAllFramentationAlaysis()
 		{
 			if (configPPS2->classification_Active[ci] == false)
 				continue;
+			lstClassificationT ct = (lstClassificationT)ci;
 			OneClassificationPPS2Data* diffClassification = &diffClassifications[ci];
+
+			if (configPPS2->contact_damage_conf.process_ciriticalPoints)
+				for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+				{
+					FragmentationCriterionT fcc = (FragmentationCriterionT)fc;
+					if (configPPS2->factors2DecideFragmented[fc] > 0.0)
+						configPPS2->contact_damage_conf.Initialize_OneFragmentOneClassificationStatSet(configPPS2->contact_damage_conf.stats_frag_class[fc][ci], fcc, ct);
+				}
 			for (unsigned int lsi = 0; lsi < loadingStagesT_SIZE; ++lsi)
 			{
+				double timeValue = -1.0;
 				int timeIndex = diffClassifications[ci].data4Stages[lsi].timeIndex_4Stage;
-				if (timeIndex < 0)
-					continue;
-				double timeValue = diffClassifications[ci].data4Stages[lsi].timeValue_4Stage;
-				OneTimeInterfaceFlds_FragmentationPPS2* fieldFragInfoPtr = &diffClassification->data4Stages[lsi].fragmentation4Stages;
-				segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, *fieldFragInfoPtr, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, (loadingStagesT)lsi, (lstClassificationT)ci);
-				Do_AllFragmentationAnalysis(*fieldFragInfoPtr);
+				OneTimeInterfaceFlds_FragmentationPPS2* fieldFragInfoPtr = NULL;
+				if (timeIndex > 0)
+				{
+					timeValue = diffClassifications[ci].data4Stages[lsi].timeValue_4Stage;
+					fieldFragInfoPtr = &diffClassification->data4Stages[lsi].fragmentation4Stages;
+					segmentInfo.Read_OneTime_Interface_DSU_Fragment(subdomainNo, timeValue, *fieldFragInfoPtr, readFromRunOutputFolder, copyRunOutputFile2PPS2Folder, (loadingStagesT)lsi, (lstClassificationT)ci);
+					Do_AllFragmentationAnalysis(*fieldFragInfoPtr);
+				}
+				if (configPPS2->contact_damage_conf.process_ciriticalPoints)
+					for (unsigned int fc = 0; fc < FragmentationCriterionT_SIZE; ++fc)
+						if (configPPS2->factors2DecideFragmented[fc] > 0.0)
+							configPPS2->contact_damage_conf.Contact_Damage_Stat_Process_All_Interfaces(configPPS2->contact_damage_conf.stats_frag_class[fc][ci], fieldFragInfoPtr, (loadingStagesT)lsi, timeValue, timeIndex);
 			}
 		}
 	}
@@ -3808,6 +4707,13 @@ bool DomainPostProcessS2::Read_SummaryData()
 	if (mainSubdomainNo < 0)
 		return false;
 
+	if (contact_damage_conf.isActive)
+	{
+		contact_damage_conf.Initialize_Config_ForWholeSubdomain(onesubdomainPPS2[mainSubdomainNo].segmentInfo, mainSubdomainNo);
+		if (stageSolutionsExist)
+			contact_damage_conf.Read_Contact_Damage_State_Config(this);
+	}
+
 	default_ClassificationType = lstClassificationT_none;
 	for (unsigned int ct = (int)ct_epssig_bulk; ct < lstClassificationT_SIZE; ++ct)
 	{
@@ -4096,6 +5002,7 @@ bool SlnPP2FileMover::SlnPP2FileMover_MoveFile()
 	target += ".";
 	target += ext;
 	moveFile(source, target);
+	return true;
 }
 
 bool SlnPP2FileMover::SlnPP2FileMover_Read(istream& in, string& buf)

@@ -132,9 +132,15 @@ seq 0 24 | parallel -j 5 './solver -sp -mc config/MainConfig/mainConfig_elastic_
 
 # new axt with generalized triangle distribution
 # dd2 = 0.9 - la = 4 to -1.5
-./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 0 -en 9 -vst 0 -ven 1619 -np 24
+./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 1000 -en 1039 -vst 0 -ven 1619 -np 24
 # dd2 = 0.9 for la = -3, -2.5, -2 (for la = -3 only 36 will remain)
-./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 0 -en 9 -vst 0 -ven 134 -np 24
+# isaac: 2
+./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 1000 -en 1039 -vst 0 -ven 134 -np 48
+# isaac: 2.5
+./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 1000 -en 1039 -vst 0 -ven 134 -np 56
+# isaac: 3
+./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 1000 -en 1039 -vst 0 -ven 134 -np 55
+
 Windows a single run:
 -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 0 -en 0 -vst 133 -ven 133
 # all 5 dd2
@@ -143,3 +149,4 @@ Windows a single run:
 
 ./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New_delC_Tf_Factor.txt -st 0 -en 1 -vst 1343 -ven 1343
 -sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp_gen_Tri.txt -cp config/Domain/PPS3Config_Coh.txt
+-sp -mc config/MainConfig/mainConfig_resolution_x_New.txt -st 10 -en 10 -vst 0 -ven 0

@@ -1,5 +1,6 @@
 #include "globalMacros.h"
 #include "SLInterfaceFracturePF.h"
+#include "DomainPostProcessingS2.h"
 
 int g_interfaceFlags_IncImp[4];
 int g_bulkFlags_IncImp[NUM_SIDES];
@@ -62,6 +63,8 @@ void setGlobalMembers()
 
 	g_bulkFlags_IncImp[SDL] = 1001;
 	g_bulkFlags_IncImp[SDR] = 1003;
+
+	Contact_Damage_State_IO_Stat_1Field::SetStatics_Contact_Damage_State_IO_Stat_1Field();
 }
 
 void CopyFile2OutputDirectory(const string& baseFileName)

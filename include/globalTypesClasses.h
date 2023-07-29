@@ -148,5 +148,72 @@ void GetSubdomainIndexed_TimeIndexed_FileName(string& fileName, int subdomainNo,
 void GetSubdomainIndexed_SpaceIndexed_FileName(string& fileName, int spaceIndexOr_domainIndexLeft, const string& specificName, string ext = "txt", int domainIndexRight = -1);
 
 
+class extermumhold
+{
+	friend 	ostream& operator<<(ostream &output, extermumhold &exter);
+	friend 	istream& operator>>(istream &input, extermumhold &exter);
+
+public:
+	extermumhold();
+	double value;
+	double x_loc;
+	bool e_initialized;
+
+	bool updateMin(double value_in, double x_loc_in);
+	bool updateMax(double value_in, double x_loc_in);
+
+	void MergeMin(const extermumhold& exte_in);
+	void MergeMax(const extermumhold& exte_in);
+};
+
+class statHolder
+{
+	friend 	ostream& operator<<(ostream &output, const statHolder &stat);
+	friend 	istream& operator>>(istream &input, statHolder &stat);
+
+private:
+	extermumhold max;
+	extermumhold min;
+	long counter;
+	double sum;
+	double sumSquares;
+	double sumMeasure;
+	bool useMeasure;
+
+public:
+	string name;
+	string nameLatex;
+
+	statHolder(bool useMeasureIn = false);
+	statHolder(string& nameIn, string& nameLatexIn, bool useMeasureIn = false);
+	inline void set_useMeasure(bool useMeasureIn = true) { useMeasure = useMeasureIn; };
+
+	//	void printBrief(ostream& output);	
+	void setName(const string& nameIn, const string& nameLatexIn);
+	int getCount()const { return counter; }
+	inline double getSum() const { return sum; };
+	double getAverage()const;
+	double getStandardDeviation() const;
+	void setStandardDeviation(double sdiv) { sdiv_saved = sdiv; b_sdiv_saved = true;	};
+	double getCOV() const;
+	inline void set_rN(double rNIn) { rN = rNIn; }
+	inline double get_rN() { return rN; }
+	void update(double value_in, double x_loc_in, double weightIn = 1.0);
+	void MergeStatHolder(statHolder& stat);
+	inline double getMin() const { if (counter > 0) return min.value;  return 1e40; };
+	inline double getMax() const { if (counter > 0) return max.value;  return 1e40; };
+	inline double getMinLoc() const { if (counter > 0) return min.x_loc; return 1e40; };
+	inline double getMaxLoc() const { if (counter > 0) return max.x_loc; return 1e40; };
+	inline double get_measure() const { if (!useMeasure) return (double)get_counter(); if (counter > 0) return sumMeasure; return 1; }
+	double getValue(int setStatOp_type_i);
+
+private:
+	void setSquareSumFromStandardDeviation(double sDeviation);
+	inline long get_counter() const { if (counter > 0) return counter; return 1; }
+	double rN; // normalized count
+	double sdiv_saved;
+	bool b_sdiv_saved;
+};
+
 
 #endif

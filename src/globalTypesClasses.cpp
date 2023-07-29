@@ -1,6 +1,7 @@
 #include "globalTypesClasses.h"
 #include "globalFunctions.h"
 #include "commonMacros.h"
+#include "RandomVariable.h"
 
 SolveParameters solvePara;
 
@@ -554,4 +555,276 @@ void SolveParameters::InitializeAfterSetup()
 		configName = removeExtension(configName);
 	if (serialNumber_en < 0)
 		serialNumber_en = serialNumber_st;
+}
+
+
+///
+ostream& operator<<(ostream &output, extermumhold &exter)
+{
+	output << setprecision(22);
+	output << "val\t";
+	output << exter.value,
+	output << "loc\t";
+	output << exter.x_loc;
+	return output;
+}
+
+istream& operator>>(istream &input, extermumhold &exter)
+{
+	char buff[25];
+	input >> buff;
+	input >> exter.value;
+	input >> buff;
+	input >> exter.x_loc;
+	exter.e_initialized = true;
+	return input;
+}
+
+extermumhold::extermumhold()
+{
+	value = 0.0;
+	x_loc = 0.0;
+	e_initialized = false;
+}
+
+bool extermumhold::updateMin(double value_in, double x_loc_in)
+{
+	if (e_initialized == false)
+	{
+		value = value_in;
+		x_loc = x_loc_in;
+		e_initialized = true;
+		return true;
+	}
+	if (value_in < value)
+	{
+		value = value_in;
+		x_loc = x_loc_in;
+		return true;
+	}
+	return false;
+}
+
+bool extermumhold::updateMax(double value_in, double x_loc_in)
+{
+	if (e_initialized == false)
+	{
+		value = value_in;
+		x_loc = x_loc_in;
+		e_initialized = true;
+		return true;
+	}
+	if (value_in > value)
+	{
+		value = value_in;
+		x_loc = x_loc_in;
+		return true;
+	}
+	return false;
+}
+
+void extermumhold::MergeMin(const extermumhold& exte_in)
+{
+	if (exte_in.e_initialized == false)
+		return;
+	if ((e_initialized == false) || (exte_in.value < value))
+	{
+		*this = exte_in; 
+		return;
+	}
+}
+
+void extermumhold::MergeMax(const extermumhold& exte_in)
+{
+	if (exte_in.e_initialized == false)
+		return;
+	if ((e_initialized == false) || (exte_in.value > value))
+	{
+		*this = exte_in;
+		return;
+	}
+}
+
+///////////////////////
+ostream& operator<<(ostream &output, const statHolder &stat)
+{
+	output << "useMeasure" << stat.useMeasure << "\tmeasuresum\t" << stat.sumMeasure << '\n';
+	output << setprecision(22);
+	output << stat.name << '\t' << stat.nameLatex << '\t' << "count\t";
+	output << stat.counter << '\n';
+	if (stat.counter == 0)
+		return output;
+
+	output << "sum\t" << stat.sum << "\tAve\t" << stat.getAverage();
+	output << "\tmax\t" << stat.max.value << "\tx_loc\t" << stat.max.x_loc;
+	output << "\tmin\t" << stat.min.value << "\tx_loc\t" << stat.min.x_loc;
+	output << "\tSndrdDvt\t" << stat.getStandardDeviation() << endl;
+	return output;
+}
+
+istream& operator>>(istream &input, statHolder &stat)
+{
+	char buff[255];
+	input >> buff;
+	stat.useMeasure = false;
+	stat.sumMeasure = 0.0;
+	if (strcmp(buff, "useMeasure0") == 0)
+	{
+		stat.useMeasure = false;
+		input >> stat.sumMeasure;
+		input >> stat.name;
+		input >> stat.nameLatex;
+
+	}
+	else if (strcmp(buff, "useMeasure1") == 0)
+	{
+		stat.useMeasure = true;
+		input >> stat.sumMeasure;
+		input >> stat.name;
+		input >> stat.nameLatex;
+	}
+	else
+	{
+		stat.name = buff;
+		stat.nameLatex = buff;
+	}
+	input >> buff;
+	input >> stat.counter;
+	if (stat.counter == 0)
+		return input;
+
+	double average, sdiv;
+	input >> buff >> stat.sum >> buff >> average;
+	input >> buff >> stat.max.value >> buff >> stat.max.x_loc;
+	stat.max.e_initialized = true;
+	input >> buff >> stat.min.value >> buff >> stat.min.x_loc;
+	stat.min.e_initialized = true;
+	input >> buff >> sdiv;
+	stat.setSquareSumFromStandardDeviation(sdiv);
+	return input;
+}
+
+statHolder::statHolder(bool useMeasureIn)
+{
+	setName("none", "none");
+	counter = 0;
+	sumMeasure = 0.0;
+	useMeasure = useMeasureIn;
+	sum = 0.0;
+	sumSquares = 0.0;
+
+	rN = 0.0;
+	sdiv_saved = 0.0;
+	b_sdiv_saved = false;
+}
+
+statHolder::statHolder(string& nameIn, string& nameLatexIn, bool useMeasureIn)
+{
+	setName(nameIn, nameLatexIn);
+	counter = 0;
+	sumMeasure = 0.0;
+	useMeasure = useMeasureIn;
+	sum = 0.0;
+	sumSquares = 0.0;
+}
+
+void statHolder::setName(const string& nameIn, const string& nameLatexIn)
+{
+	name = nameIn;
+	nameLatex = nameLatexIn;
+}
+
+double statHolder::getAverage() const
+{
+	if (counter > 0)
+		return (double)(sum / get_measure());
+	return 1e40;
+}
+
+double statHolder::getStandardDeviation() const
+{
+	if (b_sdiv_saved)
+		return sdiv_saved;
+	if (counter > 0)
+	{
+		double measureSum = (double)get_measure();
+		return sqrt(fabs(sumSquares - sum * sum / measureSum) / measureSum);
+	}
+	return 1e40;
+}
+
+double statHolder::getCOV() const
+{
+	if (counter > 0)
+		return computeRatio(getStandardDeviation(), getAverage());
+	return 1e40;
+}
+
+void statHolder::update(double value_in, double x_loc_in, double weightIn)
+{
+	max.updateMax(value_in, x_loc_in); min.updateMin(value_in, x_loc_in);
+	++counter;
+	if (!useMeasure)
+	{
+		sum += value_in;
+		sumSquares += (value_in * value_in);
+	}
+	else
+	{
+		sumMeasure += weightIn;
+		double tmp = value_in * weightIn;
+		sum += tmp;
+		sumSquares += (tmp * value_in);
+	}
+}
+
+void statHolder::MergeStatHolder(statHolder& stat)
+{
+	max.MergeMax(stat.max);
+	min.MergeMin(stat.min);
+	counter += stat.counter;
+	sumMeasure += stat.sumMeasure;
+	useMeasure = stat.useMeasure;
+	if (counter == 0)
+		return;
+	sum += stat.sum;
+	sumSquares += stat.sumSquares;
+}
+
+double statHolder::getValue(int setStatOp_type_i)
+{
+	setStatOp_type stat_sv_type = (setStatOp_type)setStatOp_type_i;
+	if (stat_sv_type == sso_number)
+		return getCount();
+	if (stat_sv_type == sso_mean_arithmetic)
+		return getAverage();
+	if (stat_sv_type == sso_sdiv)
+		return getStandardDeviation();
+	if (stat_sv_type == sso_min)
+		return getMin();
+	if (stat_sv_type == sso_max)
+		return getMax();
+	if (stat_sv_type == sso_normalized_number)
+		return rN;
+	if (stat_sv_type == sso_index_min)
+		return getMinLoc();
+	if (stat_sv_type == sso_index_max)
+		return getMaxLoc();
+	if (stat_sv_type == sso_cov)
+		return getCOV();
+	cout << "stat_sv_type\t" << stat_sv_type << '\n';
+	THROW("stat_sv_type\n");
+}
+
+void statHolder::setSquareSumFromStandardDeviation(double sDeviation)
+{
+	if (counter > 0)
+	{
+		if (!useMeasure)
+			sumSquares = (counter * sDeviation *  sDeviation + sum * sum / counter);
+		else
+			sumSquares = (sumMeasure * sDeviation *  sDeviation + sum * sum / sumMeasure);
+	}
+	else
+		sumSquares = 0.0;
 }

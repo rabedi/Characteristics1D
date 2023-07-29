@@ -45,7 +45,7 @@ istream& operator>>(istream& in, prob_distrib_type& dat);
 // sso_all_field_val returns the whole input vector
 // sso_all_field_time_val is similar to above and is added as a kludge to help in DomainPostProcessingS2 and S3 extracting time history vector fiels.  sso_all_field_val  -> extracts spatial fields
 // sso_number -> length of the vector
-typedef enum { sso_none = -1, sso_valStart, sso_valEnd, sso_index_min, sso_min, sso_index_max, sso_max, sso_mean_arithmetic, sso_sdiv, sso_cov, sso_var, sso_mean_harmonic, sso_mean_geometric, sso_number, sso_all_field_val, sso_all_field_time_val, setStatOp_type_SIZE} setStatOp_type;
+typedef enum { sso_none = -1, sso_valStart, sso_valEnd, sso_index_min, sso_min, sso_index_max, sso_max, sso_mean_arithmetic, sso_sdiv, sso_cov, sso_var, sso_mean_harmonic, sso_mean_geometric, sso_number, sso_all_field_val, sso_all_field_time_val, sso_normalized_number, setStatOp_type_SIZE} setStatOp_type;
 #define setStatOp_type_SIZE_SHORT	sso_mean_harmonic
 
 string getName(setStatOp_type dat);

@@ -98,6 +98,8 @@ string getName(setStatOp_type dat)
 		return "all_field_time_val";
 	if (dat == sso_number)
 		return "number";
+	if (dat == sso_normalized_number)
+		return "normalized_number";
 	cout << (int)dat << '\n';
 	THROW("invalid dat");
 }

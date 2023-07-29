@@ -19,11 +19,14 @@ from input_field import InpF as InpF
 #       1: 2^14 for all meshes
 
 # 2: resolution_x for fracture (SVE homogenization - Andy Tonge discussion)
+# 3 similar but with coarsening columns
 mo_frac_rate_cf = 0
 mo_frac_rate_f  = 1
 mo_frac_res_x = 2
+mo_frac_res_x_w_delc_fact = 3
 
-mainOption = mo_frac_res_x
+#mainOption = mo_frac_res_x
+mainOption = mo_frac_res_x_w_delc_fact
 
 
 # Change
@@ -31,6 +34,8 @@ if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
     sortingFields = ["llc", "dd2", "ldelc", "la"]
 elif (mainOption == mo_frac_res_x):
     sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
+elif (mainOption == mo_frac_res_x_w_delc_fact):
+    sortingFields = ["delc_Tf_fact", "dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
 
 # spatial field data
 valsAtVert = True
@@ -59,8 +64,9 @@ dist_logs["eps_f_norm"] = 10
 def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
     if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
         return read_updata_csv_frac_rate(filename)
-    elif (mainOption == mo_frac_res_x):
-        return read_updata_csv_frac_res_x(filename)
+    elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
+        has_deltaCFactor = (mainOption == mo_frac_res_x_w_delc_fact)
+        return read_updata_csv_frac_res_x(filename, has_deltaCFactor)
 
 def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
     db = pd.read_csv(filename)
@@ -159,19 +165,34 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
     return db
 
 
-def read_updata_csv_frac_res_x(filename = "../../data/resolution_x_fracture_scalars/pps3Out_resF_la2p0_004_0_9.csv"):
+def read_updata_csv_frac_res_x(filename = "../../data/resolution_x_fracture_scalars/pps3Out_resF_la2p0_004_0_9.csv", has_deltaCFactor = 0):
     goodRun = "nresF"
     zeroRes = "_001_"
     badHarmonic = not ((goodRun in filename) or (zeroRes in filename))
+    alreadyHasDeltaCFactor = ("mres" in filename)
+
     db = pd.read_csv(filename)
+
+    if ((not alreadyHasDeltaCFactor) and (has_deltaCFactor)):
+        c_ver1 = "verWOffsetNo"
+        i_ver1 = db.columns.get_loc(c_ver1)
+        index_position = i_ver1 + 1
+        column_name = 'inddelc_Tf_fact'
+        db.insert(index_position, column_name, 0)
+
+        index_position = i_ver1 + 2
+        column_name = 'inp_s_delc_Tf_fact'
+        db.insert(index_position, column_name, 1)
+
+    colnames = db.columns
+    numCols = len(colnames)
+    nRows = db.shape[0]
+
     c_ssoFS_ind = "indssoFS"
     c_ssoFS_v = "inp_s_ssoFS"
     i_ssoFS_ind = db.columns.get_loc(c_ssoFS_ind)
     i_ssoFS_v = db.columns.get_loc(c_ssoFS_v)
 
-    colnames = db.columns
-    numCols = len(colnames)
-    nRows = db.shape[0]
     pdOut = pd.DataFrame(columns=colnames)
 
     db = db.apply(pd.to_numeric, errors='coerce')
@@ -564,16 +585,18 @@ class Characteristics_data:
                 self.pd_data_w_iniField.insert(fxsi, names[i], np.nan)
         
         # now looping over rows get the random field realization and process it:
-
+        hasDeltFactor = (mainOption == mo_frac_res_x_w_delc_fact)
+        iCol_delC_fact = -1
         if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
-            iCol_llc = self.pos_inp_sortingFields[0]
-            iCol_dd2 = self.pos_inp_sortingFields[1]
-            iCol_la  = self.pos_inp_sortingFields[3]
+            iCol_llc = self.pd_data.columns.get_loc("inp_s_llc") #self.pos_inp_sortingFields[0]
+            iCol_dd2 = self.pd_data.columns.get_loc("inp_s_dd2") #self.pos_inp_sortingFields[1]
+            iCol_la = self.pd_data.columns.get_loc("inp_s_la") #self.pos_inp_sortingFields[3]
             iCol_resF = -1
-        elif (mainOption == mo_frac_res_x):
+        elif ((mainOption == mo_frac_res_x) or hasDeltFactor):
+            if (hasDeltFactor):
+                iCol_delC_fact = self.pd_data.columns.get_loc("inp_s_delc_Tf_fact")
             iCol_llc = self.pd_data.columns.get_loc("inp_s_llc")
             iCol_dd2 = self.pd_data.columns.get_loc("inp_s_dd2")
-            iCol_la = self.pd_data.columns.get_loc("inp_s_la")
             iCol_la = self.pd_data.columns.get_loc("inp_s_la")
             iCol_resF = self.pd_data.columns.get_loc("inp_s_resolutionFactor")
             iCol_sso = self.pd_data.columns.get_loc("inp_s_ssoFS")
@@ -601,7 +624,7 @@ class Characteristics_data:
                         # -1.0 -> 2
                         # -0.5 -> 2
                         meshp2_4Simulation = 13
-            elif (mainOption == mo_frac_res_x):
+            elif ((mainOption == mo_frac_res_x) or hasDeltFactor):
                 resF = self.pd_data.iloc[i, iCol_resF]
                 meshp2_4Simulation = 14 - resF
                 sso = self.pd_data.iloc[i, iCol_sso]

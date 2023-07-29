@@ -20,7 +20,6 @@ typedef enum { s1i_absStick = 0, s1i_absSlip = 1, s1i_absSep = 2, s1i_D, s1i_con
 // for storing Riemann solutions
 typedef enum { rmode_stick, rmode_sep, rmode_slip} RiemannMode_StorageT;
 
-
 // prints TSR stage of the point in the final solution files
 #define TSR_STAGE_IO 0
 

@@ -689,15 +689,16 @@ def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
     return pd_data
 
 def main_function():
-    sov = StatOfVec()
-    sov.Test_Gumbel2Weibull()
-    return
+    # sov = StatOfVec()
+    # sov.Test_Gumbel2Weibull()
+    # return
 
     mo_frac_rate_cf = 0
     mo_frac_rate_f  = 1
     mo_frac_res_x = 2
+    mo_frac_res_x_w_delc_fact = 3
 
-    mainOption = mo_frac_res_x
+    mainOption = mo_frac_res_x_w_delc_fact
 
     #README:
     # 1. set the path to "InhomogeneousFiles" folder
@@ -705,6 +706,7 @@ def main_function():
     # 2. set path to "2023_03_24". I put it inside a "data" folder for myself. You can adjust this path
     folderSource = "../../data/2023_04_11"
     folderSource = "../../data/resolution_x_fracture_scalars"
+    folderSource = "../../data/resolution_x_fracture_scalars_w_coarsening"
     # 3. If needed, adjust output path were the files are generated
     folderDest = "../../data/Characteristics_data"
     generatePlots = True
@@ -722,7 +724,7 @@ def main_function():
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
-    option = 100 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
@@ -758,7 +760,7 @@ def main_function():
             inpColDict["ldelc"] = "c" #"fillstyle" # marker style
         #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
             inpColDict["dd2"] = "marker" # marker fill color
-    elif (mainOption == mo_frac_res_x):
+    elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
         # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
         if (option < 100): # stat files
             if (option == 0):
@@ -767,12 +769,19 @@ def main_function():
                 inpColDict["ssoFS"] = "c"
                 inpColDict["llc"] = "ls"
                 inpColDict["la"] = "marker"
+                if (mainOption == mo_frac_res_x_w_delc_fact):
+                    inpColDict["delc_Tf_fact"] = "marker"
+                    inpColDict["ssoFS"] = "none"
             elif (option == 1):
                 inpColDict["dt_resap"] = "fillstyle"
                 inpColDict["resolutionFactor"] = "c"
                 inpColDict["ssoFS"] = "ls"
                 inpColDict["llc"] = "marker" # marker fill color
-                inpColDict["la"] = "lw"
+                inpColDict["la"] = "none"
+                if (mainOption == mo_frac_res_x_w_delc_fact):
+                    inpColDict["delc_Tf_fact"] = "marker"
+                    inpColDict["llc"] = "none"
+                    inpColDict["ssoFS"] = "none"
         else: # raw data
             inpColDict["runNo"] = "c"
             inpColDict["dt_resap"] = "fillstyle"
@@ -780,6 +789,10 @@ def main_function():
             inpColDict["ssoFS"] = "ls"
             inpColDict["llc"] = "lw" # marker fill color
             inpColDict["la"] = "marker"
+            if (mainOption == mo_frac_res_x_w_delc_fact):
+                inpColDict["delc_Tf_fact"] = "marker"
+                inpColDict["la"] = "none"
+                inpColDict["ssoFS"] = "none"
 
     # trying to see if "runNo" is one of the entries   -> dealing with raw data
     if "runNo" in inpColDict:
@@ -829,21 +842,27 @@ def main_function():
             #   splitInstructions.out_col_nameBases.append("la")
             splitInstructions.out_col_nameBases.append("llc")
             splitInstructions.in_col_nameBase = "la"
-    elif (mainOption == mo_frac_res_x):
+    elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
         # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
         if (option < 100): # stat files
             if (option == 0):
                 # splitInstructions.out_col_nameBases.append("ssoFS")
                 # splitInstructions.out_col_nameBases.append("dt_resap")
+                if (mainOption == mo_frac_res_x_w_delc_fact):
+                    splitInstructions.out_col_nameBases.append("dt_resap")
                 splitInstructions.out_col_nameBases.append("llc")
                 splitInstructions.out_col_nameBases.append("la")
                 splitInstructions.in_col_nameBase = "resolutionFactor"
             elif (option == 1):
+                if (mainOption == mo_frac_res_x_w_delc_fact):
+                    splitInstructions.out_col_nameBases.append("resolutionFactor")
                 splitInstructions.out_col_nameBases.append("ssoFS")
                 splitInstructions.out_col_nameBases.append("dt_resap")
                 splitInstructions.out_col_nameBases.append("llc")
                 splitInstructions.in_col_nameBase = "la"
         else: # raw data
+            if (mainOption == mo_frac_res_x_w_delc_fact):
+                splitInstructions.out_col_nameBases.append("delc_Tf_fact")
             splitInstructions.out_col_nameBases.append("ssoFS")
             splitInstructions.out_col_nameBases.append("dt_resap") # can comment this out
             splitInstructions.out_col_nameBases.append("llc")
