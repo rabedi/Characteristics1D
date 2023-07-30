@@ -1,4 +1,7 @@
 #include "globalFunctions.h"
+#include <iostream>
+#include <sstream>
+#include <string>
 
 int SetNewtonCotes_Points_AndWeights(int numSpatialSubsegments_BulkInterfacePoints_Print, bool useRepeatedSimpsonRuleForHigherOrders, vector<double>& spatialIntegrationWeights, vector<double>& spatialIntegrationPoints)
 {
@@ -185,6 +188,17 @@ unsigned int BreakString(const string& inString, vector<string>& parts)
 	return numF;
 	//#endif
 	//return 0;
+}
+
+unsigned int BreakStringBySeparator(const string& inString, vector<string>& parts, char separator)
+{
+	std::istringstream ss(inString);
+	string token;
+	parts.clear();
+	while (std::getline(ss, token, ',')) {
+		parts.push_back(token);
+	}
+	return parts.size();
 }
 
 std::string removeExtension(const std::string& filename)

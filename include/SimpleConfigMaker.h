@@ -9,6 +9,7 @@ public:
 	SimpleFormatConfigMaker();
 	//	returns true if successfull read
 	bool Read(string configMakerin, int cntrIn);
+	void Write(ostream& out, const string& nameSpecific);
 	int getIndexValueString(string groupNameIn, string& valOut);
 	int getIndexValueDouble(string groupNameIn, double& valOut);
 	int getIndexValueInt(string groupNameIn, int& valOut);

@@ -375,13 +375,13 @@ infile_inhomogeneous_elastic_frac0
 #					>  1  -> number of segments is DECREASED by this factor (e.g. if resolutionFactor ==  10 and numSegments = 1000 -> numSegments becoms 100)
 #					<  -1 -> number of segments is INCREASED by this factor (e.g. if resolutionFactor == -10 and numSegments = 1000 -> numSegments becoms 10000)
 resolutionFactor
-#0
+0
 #10
 #16
 #32
 #64
 #128
-256
+#256
 #512
 #2
 

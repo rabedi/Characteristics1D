@@ -118,8 +118,25 @@ fileMovers
 {	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_2_DelU_StatFragmentation			ext		txt		}
 
 {	isActive 1	isPPS2		0		fileName	sd_0__Summary											ext		txt		}
+{	isActive 1	isPPS2		0		fileName	version_serial_number									ext		txt		}
+
 {	isActive 1	isPPS2		1		fileName	_sd_0__tAll__keyParameters								ext		txt		}
 {	isActive 1	isPPS2		1		fileName	_sd_0__tAll__TimeIndicesValues							ext		txt		}
+
+# stat files for fragment points
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_1_Max_DelU_IndicesStrength			ext		txt		}
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_1_Max_DelU_Statstrength				ext		csv		}
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_1_Max_DelU_Statstress				ext		csv		}
+
+# {	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_2_DelU_IndicesStrength				ext		txt		}
+# {	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_2_DelU_Statstrength					ext		csv		}
+# {	isActive 1	isPPS2		1		fileName	sd_0__tAll__FragCrn_2_DelU_Statstress					ext		csv		}
+
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__Class_7_frag_maxEffDelU_FragCrn_1_Max_DelU_SizeFragmentation	ext		txt		}
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__Class_7_frag_maxEffDelU_FragCrn_1_Max_DelU_StatFragmentation	ext		txt		}
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__Class_7_frag_maxEffDelU_FragCrn_1_Max_DelU_ValuesStrength		ext		txt		}
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__Class_7_frag_maxEffDelU_FragCrn_1_Max_DelU_Statstrength			ext		csv		}
+{	isActive 1	isPPS2		1		fileName	sd_0__tAll__Class_7_frag_maxEffDelU_FragCrn_1_Max_DelU_Statstress			ext		csv		}
 
 }
 
@@ -186,6 +203,32 @@ timeStampOverwriters
 		post_name_Latex			_{tf}
 		isActive	-1
 	}
+
+	# fragmentation final time, when the number of fragments saturates
+	fFIN
+	{
+		timeStamp
+		{
+			timeStampType	f
+			lct				frag_maxEffDelU
+		}
+		post_name_In_CSV_file	_fF
+		post_name_Latex			_{ff}
+		isActive	-1
+	}
+
+	fFINDelU
+	{
+		timeStamp
+		{
+			timeStampType	f
+			lct				frag_DelU
+		}
+		post_name_In_CSV_file	_fFDelU
+		post_name_Latex			_{ff{\Delta}U}
+		isActive	-1
+	}
+
 }
 
 ######################################################################################################
@@ -205,10 +248,11 @@ timeStampOverwriters
 #																statistics of 			A. fields (energies, etc) 	B. fragmentation size Over all time
 #												:	mean_arithmetic		sdiv	cov		min		max		index_min	index_max	var		mean_harmonic		mean_geometric
 #																extract values for the start and end of the simulation
-#												:	valStart	valEnd
+#			stat_sv_type									:	valStart	valEnd
 #																the number of a vector of values (used to extract number of fragments)
 #												:	number
 #																extract all values of a SPATIAL field OR fragment sizes (latter not very useful here)
+#												:	normalized_number, normalized number (useful for fragment counts relative to initial grid interface number)
 #												:	all_field_val
 #																extract all values of a TEMPORAL field 
 #												:	all_field_time_val
@@ -230,6 +274,40 @@ timeStampOverwriters
 #												A.	spatial fields [function of (x)]
 #												:	D sigma  DelU	maxEffDelU   uL uR 
 #												A.	space / spacetime integrals [from summary files]
+
+
+#	fragPtStat									This is only on when wanting to print the statistics of (partially) fragmented interfaces
+#												e.g. number, relative number, mean, min, etc
+#												of (D=0, 0<D<1, D=1, 0<D, allD)
+#												x  (separation (S), stick (ST), and all (STS)) modes
+#												outputs are strengths or stresses at these points
+#												this stamp has 4 members:
+#													d_numerator_or_flag
+#													d_denominator_or_flag
+#													cs_numerator
+#													cs_denominator
+#				details
+#												these 4 values refer to what we get from Contact_Damage_State_Config storage
+#												d_numerator_or_flag ==
+#													1.	inactive					nothing is obtained from Contact_Damage_State_Config): A trick to turn this off
+#													2.	alpha, beta					alpha and beta values computed in Contact_Damage_Stat_Process_All_Interfaces are returned
+#													3.	t0							values of the initial mesh are returned
+#													4.	Dall, Dnz, Dz, Dgzn1, D1	choosing numerator interface point damage state (allD, 0<D, D=0,0<D<0,D=1)
+
+#												 ONLY for case 4 above other entries will have a meaning
+#													i.		cs_numerator	STS, ST, S		choosing numerator interface point contact/separation state 
+#														STS=stick + separaton (all points in terms of contact / separation mode)
+#														ST=stick (zero displacement jump)
+#														S=separation (> 0 displacement jump)
+
+#													ii. d_denominator_or_flag:
+#														ii.a)						inactive: no denominator exists
+#														ii.b)						Dall, Dnz, Dz, Dgzn1, D1 : denominator exists AND cs_denominator is meaningful
+
+#													iii. cs_denominator		ONLY meaningful under ii.b) same values of STS, ST, S
+
+
+
 
 ##########################################################################################################################################################
 #### stage csv
@@ -260,6 +338,122 @@ dataPointers			pps3_stageStat				input
 # stage/stat + output
 dataPointers			pps3_stageStat				output
 {
+
+# ############################## - damage field treated as input
+	{
+		isActive
+		1
+		
+		fldName
+		!sim_mean
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		\mu(\tilde{\sigma})
+	}
+
+	{
+		isActive
+		1
+		
+		fldName
+		!sim_mn
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		\mathrm{min}(\tilde{\sigma})
+	}
+
+	{
+		isActive
+		1
+		
+		fldName
+		!sim_mx
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		\mathrm{max}(\tilde{\sigma})
+	}
+
+	{
+		isActive
+		1
+		
+		fldName
+		!sim_cov
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		\mathrm{cov}(\tilde{\sigma})
+	}
+
+	{
+		isActive
+		1
+		
+		fldName
+		!sim_std
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		\varsigma(\tilde{\sigma})
+	}
+
+	{
+		isActive
+		1
+		
+		fldName
+		!sim_span
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		\mathrm{span}(\tilde{\sigma})
+	}
+
 
 # ############################## - relative times 
 # final
@@ -412,15 +606,15 @@ dataPointers			pps3_stageStat				output
 
 		timeStamp
 			{
-				timeStampType	f
-				lct				frag_maxEffDelU
+				timeStampType	m
+				lct				epssig_bulk
 			}
 	
 		name_In_CSV_file	
-		time_fragment2_sigmam
+		time_sigmam_2_fragment
 
 		name_Latex
-		t_{frag,f}/t_{\sigma,M}
+		t_{\sigma,M}/t_{frag,f}
 	}
 
 /
@@ -433,8 +627,8 @@ dataPointers			pps3_stageStat				output
 
 		timeStamp
 			{
-				timeStampType	m
-				lct				epssig_bulk
+				timeStampType	f
+				lct				frag_maxEffDelU
 			}
 	
 		name_In_CSV_file	
@@ -1981,7 +2175,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		Nl_current2allTime
+		Nl_DelU2MaxDelU
 
 		name_Latex
 		{N(l)^{\mathrm{cur}}/N(l)}
@@ -2019,7 +2213,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		Nl_current2allTime
+		Nl_DelU2MaxDelU
 
 		name_Latex
 		{N(l)^{\mathrm{cur}}/N(l)}
@@ -2405,7 +2599,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		Nl_current
+		Nl_DelU
 
 		name_Latex
 		N(l)^{\mathrm{cur}}
@@ -2423,7 +2617,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		lbar_current
+		lbar_DelU
 
 		name_Latex
 		\bar{l}^{\mathrm{cur}}
@@ -2441,7 +2635,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		lmin_current
+		lmin_DelU
 
 		name_Latex
 		\mathrm{min}(l)^{\mathrm{cur}}
@@ -2459,7 +2653,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		lmax_current
+		lmax_DelU
 
 		name_Latex
 		\mathrm{max}(l)^{\mathrm{cur}}
@@ -2477,7 +2671,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		sdiv_l_current
+		sdiv_l_DelU
 
 		name_Latex
 		\varsigma({l}^{\mathrm{cur}}
@@ -2495,7 +2689,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		MAX
 		
 		name_In_CSV_file	
-		cov_l_current
+		cov_l_DelU
 
 		name_Latex
 		\mathrm{cov}({l}^{\mathrm{cur}}
@@ -2514,7 +2708,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		Nl_current
+		Nl_DelU
 
 		name_Latex
 		N(l)^{\mathrm{cur}}
@@ -2532,7 +2726,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		lbar_current
+		lbar_DelU
 
 		name_Latex
 		\bar{l}^{\mathrm{cur}}
@@ -2550,7 +2744,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		lmin_current
+		lmin_DelU
 
 		name_Latex
 		\mathrm{min}(l)^{\mathrm{cur}}
@@ -2568,7 +2762,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		lmax_current
+		lmax_DelU
 
 		name_Latex
 		\mathrm{max}(l)^{\mathrm{cur}}
@@ -2586,7 +2780,7 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		sdiv_l_current
+		sdiv_l_DelU
 
 		name_Latex
 		\varsigma(l)^{\mathrm{cur}}
@@ -2604,11 +2798,1543 @@ dataPointers			pps3_stageStat				output
 		overwriterName		tFIN
 		
 		name_In_CSV_file	
-		cov_l_current
+		cov_l_DelU
 
 		name_Latex
 		\mathrm{cov}(l)^{\mathrm{cur}}
 	}
+
+
+
+
+
+############################################################################################
+# begin fragmentation point count, strength, and stress stats
+
+	{
+		isActive
+		1
+		
+		fldName
+		nodeCount
+
+		fragPtStat
+		{
+			d_numerator_or_flag	t0
+		}
+
+		name_In_CSV_file	
+		fldName
+
+		name_Latex
+		{n_\mathrm{node}}
+	}
+
+# ##############################
+# fragmentation stats
+##### final stage of fragmentation (based on MaxDelU)
+
+# alpha
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	alpha
+		}
+
+		name_In_CSV_file	
+		alpha
+
+		name_Latex
+		\alpha
+	}
+
+# beta
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	beta
+		}
+
+		name_In_CSV_file	
+		beta
+
+		name_Latex
+		\beta
+	}
+
+# ########## fragment numbers and relative numbers
+# ## final fragmentation state - D = 1 (that is fully debonded interfaces)
+# N(D=1)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_D1_STS
+
+		name_Latex
+		{N_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+# N(D=1,ST) bonded only at D = 1
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_D1_ST
+
+		name_Latex
+		{N_{\mathrm{D=1}}^{\mathrm{ST}}}
+	}
+
+# rN(D=1) # number of fragments / initial interfaces (what percentage is broken) 
+# This should be equal to alpha -> made inactive
+	{
+		isActive
+		0
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	normalized_number
+
+		name_In_CSV_file	
+		rN_D1_STS
+
+		name_Latex
+		{{\mathrm{rN}}_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+# N(D=1,ST)/N(D=1,STS) relative number of broken bonds that are in bonded mode
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		ST
+
+			d_denominator_or_flag	D1
+			cs_denominator			STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		rN_D1_ST2STS
+
+		name_Latex
+		{{\mathrm{rN}}_{\mathrm{D=1}}^{\mathrm{ST2STS}}}
+	}
+
+# N(D=1,STS)/N(D>0,STS) relative number of broken bonds to those that have partial or full damage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dnz
+			cs_denominator			STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		rN_D12Dnz_STS
+
+		name_Latex
+		{{\mathrm{rN}}_{\mathrm{D=1/D>0}}^{\mathrm{STS}}}
+	}
+
+
+# N(D=1) based on DelU rather than maxDelU in all outputs here
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFINDelU
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_D1_STS
+
+		name_Latex
+		{N_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+
+
+
+# N(D=1) based on DelU rather than maxDelU in all outputs here  / N(D=1) maxDelU
+[
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_D14MaxDelU2DelU
+
+		name_Latex
+		{N_{\mathrm{D=1}}^{\mathrm{max}{{\Delta}u}/{{\Delta}u}}}
+	}
+/
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFINDelU
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		none
+
+		name_Latex
+		none
+	}
+]
+
+
+# N(D>0)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dnz_STS
+
+		name_Latex
+		{N_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+
+# N(D>0,ST) bonded only for D > 0
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dnz_ST
+
+		name_Latex
+		{N_{\mathrm{D>0}}^{\mathrm{ST}}}
+	}
+
+# N(D>0,ST)/N(D>0,STS) relative number of broken bonds that are in bonded mode
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		ST
+
+			d_denominator_or_flag	Dnz
+			cs_denominator			STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		rN_Dnz_ST2STS
+
+		name_Latex
+		{{\mathrm{rN}}_{\mathrm{D>0}}^{\mathrm{ST2STS}}}
+	}
+
+# rN(D>0) # number of fragments with D > 0 / initial interfaces (what percentage has damage) 
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	normalized_number
+
+		name_In_CSV_file	
+		rN_Dnz_STS
+
+		name_Latex
+		{{\mathrm{rN}}_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+	
+# N(Dall,ST) how many interfaces are in contact (compressive stress and delta =~ 0)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dall_ST
+
+		name_Latex
+		{N^{\mathrm{ST}}}
+	}
+	
+# rN(Dall,ST) how many interfaces are in contact (compressive stress and delta =~ 0) -- relative to -- initial interfaces
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	normalized_number
+
+		name_In_CSV_file	
+		rN_Dall_ST
+
+		name_Latex
+		{\mathrm{rN}^{\mathrm{ST}}}
+	}
+
+# N(D=0,ST) how many D = 0 (bonded) interfaces have compressive stress
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dz_ST
+
+		name_Latex
+		{N_{D=0}^{\mathrm{ST}}}
+	}
+
+# what percentage of still bonded interfaces have compressive strength
+# N(D=0,ST)/N(D=0,STS) what percentage of D = 0 (bonded) interfaces have compressive stress
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dz
+			cs_numerator		ST
+			
+			d_denominator_or_flag Dz
+			cs_denominator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		rN_Dz_ST2STS
+
+		name_Latex
+		{N_{D=0}^{\mathrm{ST2STS}}}
+	}
+
+# rN(D=0,ST) number of D = 0 with compressive stress -- relative -- to initial interfaces
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	normalized_number
+
+		name_In_CSV_file	
+		rN_Dz_ST
+
+		name_Latex
+		{\mathrm{rN}^{D=0}_{\mathrm{ST}}}
+	}
+
+# ########## fragment strengths (D = 1)
+# mu(strength(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_D1_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+# mu(strength(D=1))/mu(all interfaces)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dall
+			cs_denominator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_D12Dall_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D=1/\mathrm{allD}}}^{\mathrm{STS}}}
+	}
+
+# mu(strength(D=1))/mu(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dnz
+			cs_denominator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_D12Dnz_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D=1/D>0}}^{\mathrm{STS}}}
+	}
+	
+# min(strength(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_D1_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+# min(strength(D=1))/min(all interfaces)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dall
+			cs_denominator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_D12Dall_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{D=1/\mathrm{allD}}}^{\mathrm{STS}}}
+	}
+
+# min(strength(D=1))/min(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dnz
+			cs_denominator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_D12Dnz_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{D=1/D>0}}^{\mathrm{STS}}}
+	}
+
+# max(strength(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	max
+
+		name_In_CSV_file	
+		max_strength_D1_STS
+
+		name_Latex
+		{\mathrm{max}(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+	
+	# cov(strength(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	cov
+
+		name_In_CSV_file	
+		cov_strength_D1_STS
+
+		name_Latex
+		{\mathrm{cov}(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+	# sdiv(strength(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	sdiv
+
+		name_In_CSV_file	
+		sdiv_strength_D1_STS
+
+		name_Latex
+		{\mathrm{sdiv}(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+
+# ########## fragment strengths (D > 0)
+# mu(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_Dnz_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+
+# mu(strength(D>0))/mu(all interfaces)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dall
+			cs_denominator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_Dnz2Dall_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D>0/\mathrm{allD}}}^{\mathrm{STS}}}
+	}
+
+# min(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_Dnz_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{Dnz}}^{\mathrm{STS}}}
+	}
+
+# min(strength(Dnz))/min(all interfaces)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+
+			d_denominator_or_flag	Dall
+			cs_denominator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_D12Dall_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{D>0/\mathrm{allD}}}^{\mathrm{STS}}}
+	}
+
+# max(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	max
+
+		name_In_CSV_file	
+		max_strength_Dnz_STS
+
+		name_Latex
+		{\mathrm{max}(\tilde{\sigma})_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+	
+	# cov(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	cov
+
+		name_In_CSV_file	
+		cov_strength_Dnz_STS
+
+		name_Latex
+		{\mathrm{cov}(\tilde{\sigma})_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+
+	# sdiv(strength(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	sdiv
+
+		name_In_CSV_file	
+		sdiv_strength_D1_STS
+
+		name_Latex
+		{\mathrm{sdiv}(\tilde{\sigma})_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+
+# ########## fragment compressive stresses (D = 1)
+# mu(stress(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		ST
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_stress_D1_ST
+
+		name_Latex
+		{\mu(\sigma)_{\mathrm{D=1}}^{\mathrm{ST}}}
+	}
+
+# min(stress(D=1))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		ST
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_stress_D1_ST
+
+		name_Latex
+		{\mathrm{min}(\sigma)_{\mathrm{D=1}}^{\mathrm{ST}}}
+	}
+	
+# ########## fragment compressive stresses (D > 0)
+# mu(stress(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_stress_Dnz_ST
+
+		name_Latex
+		{\mu(\sigma)_{\mathrm{D>0}}^{\mathrm{ST}}}
+	}
+
+# min(stress(D>0))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_stress_Dnz_ST
+
+		name_Latex
+		{\mathrm{min}(\sigma)_{\mathrm{D>0}}^{\mathrm{ST}}}
+	}
+	
+# ########## fragment compressive stresses (D = 0)
+# mu(stress(D=0))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_stress_Dz_ST
+
+		name_Latex
+		{\mu(\sigma)_{\mathrm{D=0}}^{\mathrm{ST}}}
+	}
+
+# min(stress(D=0))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_stress_Dz_ST
+
+		name_Latex
+		{\mathrm{min}(\sigma)_{\mathrm{D=0}}^{\mathrm{ST}}}
+	}
+
+# ########## fragment compressive stresses (all D)
+# mu(stress(allD))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_stress_Dall_ST
+
+		name_Latex
+		{\mu(\sigma)^{\mathrm{ST}}}
+	}
+
+# min(stress(allD))
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		fFIN
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_stress_Dall_ST
+
+		name_Latex
+		{\mathrm{min}(\sigma)^{\mathrm{ST}}}
+	}
+	
+# ########### select values for max stage
+# alpha(Max stage)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+
+		fragmentationCriterion	Max_DelU
+		
+		fragPtStat
+		{
+			d_numerator_or_flag	alpha
+		}
+
+		name_In_CSV_file	
+		alpha
+
+		name_Latex
+		\alpha
+	}
+
+# beta (max stage)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+
+		fragmentationCriterion	Max_DelU
+	
+		fragPtStat
+		{
+			d_numerator_or_flag	beta
+		}
+
+		name_In_CSV_file	
+		beta
+
+		name_Latex
+		\beta
+	}
+
+# ########## fragment numbers and relative numbers
+# ## max stage fragmentation state - D = 1 (that is fully debonded interfaces)
+# N(D=1)
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_D1_STS
+
+		name_Latex
+		{N_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+# N(D=1,ST) bonded only at D = 1 - max stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_D1_ST
+
+		name_Latex
+		{N_{\mathrm{D=1}}^{\mathrm{ST}}}
+	}
+
+# N(D>0) - max stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dnz_STS
+
+		name_Latex
+		{N_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+	
+# N(D>0,ST) bonded only for D > 0 - at MAX stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dnz_ST
+
+		name_Latex
+		{N_{\mathrm{D>0}}^{\mathrm{ST}}}
+	}
+
+# N(Dall,ST) how many interfaces are in contact (compressive stress and delta =~ 0) - MAX stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dall_ST
+
+		name_Latex
+		{N^{\mathrm{ST}}}
+	}
+
+# N(D=0,ST) how many D = 0 (bonded) interfaces have compressive stress - max stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dz
+			cs_numerator		ST
+		}
+
+		stat_sv_type	number
+
+		name_In_CSV_file	
+		N_Dz_ST
+
+		name_Latex
+		{N_{D=0}^{\mathrm{ST}}}
+	}
+	
+# ########## fragment strengths (D = 1) - MAX stage
+# mu(strength(D=1)) - max stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_D1_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+
+# min(strength(D=1)) - max stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	D1
+			cs_numerator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_D1_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{D=1}}^{\mathrm{STS}}}
+	}
+
+# ########## fragment strengths (D > 0) - MAX stage
+# mu(strength(D>0)) - MAX stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_strength_Dnz_STS
+
+		name_Latex
+		{\mu(\tilde{\sigma})_{\mathrm{D>0}}^{\mathrm{STS}}}
+	}
+
+# min(strength(D>0)) - MAX stage
+	{
+		isActive
+		1
+		
+		fldName
+		strength
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dnz
+			cs_numerator		STS
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_strength_Dnz_STS
+
+		name_Latex
+		{\mathrm{min}(\tilde{\sigma})_{\mathrm{Dnz}}^{\mathrm{STS}}}
+	}
+
+# ########## fragment compressive stresses (all D) - MAX stage
+# mu(stress(allD)) - MAX stage
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	mean_arithmetic
+
+		name_In_CSV_file	
+		mu_stress_Dall_ST
+
+		name_Latex
+		{\mu(\sigma)^{\mathrm{ST}}}
+	}
+
+# min(stress(allD)) - MAX stage
+	{
+		isActive
+		1
+		
+		fldName
+		stress
+
+		overwriterName		MAX
+	
+		fragmentationCriterion	Max_DelU
+
+		fragPtStat
+		{
+			d_numerator_or_flag	Dall
+			cs_numerator		ST
+		}
+
+		stat_sv_type	min
+
+		name_In_CSV_file	
+		min_stress_Dall_ST
+
+		name_Latex
+		{\mathrm{min}(\sigma)^{\mathrm{ST}}}
+	}
+
+# end fragmentation point count, strength, and stress stats
+############################################################################################
+
+
+
+
 
 
 ##########

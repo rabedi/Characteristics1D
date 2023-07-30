@@ -186,13 +186,16 @@ public:
 
 	statHolder(bool useMeasureIn = false);
 	statHolder(string& nameIn, string& nameLatexIn, bool useMeasureIn = false);
+	void setEmpty();
 	inline void set_useMeasure(bool useMeasureIn = true) { useMeasure = useMeasureIn; };
 
 	//	void printBrief(ostream& output);	
 	void setName(const string& nameIn, const string& nameLatexIn);
 	int getCount()const { return counter; }
+	void setCount(long counterIn) { counter = counterIn; }
 	inline double getSum() const { return sum; };
 	double getAverage()const;
+	void setAverage(double aveIn);
 	double getStandardDeviation() const;
 	void setStandardDeviation(double sdiv) { sdiv_saved = sdiv; b_sdiv_saved = true;	};
 	double getCOV() const;
@@ -204,6 +207,8 @@ public:
 	inline double getMax() const { if (counter > 0) return max.value;  return 1e40; };
 	inline double getMinLoc() const { if (counter > 0) return min.x_loc; return 1e40; };
 	inline double getMaxLoc() const { if (counter > 0) return max.x_loc; return 1e40; };
+	inline void setMin(double minVal, double minLoc) { min.updateMin(minVal, minLoc); }
+	inline void setMax(double maxVal, double maxLoc) { max.updateMin(maxVal, maxLoc); }
 	inline double get_measure() const { if (!useMeasure) return (double)get_counter(); if (counter > 0) return sumMeasure; return 1; }
 	double getValue(int setStatOp_type_i);
 

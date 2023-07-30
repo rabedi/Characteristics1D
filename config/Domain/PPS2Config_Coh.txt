@@ -2,7 +2,8 @@
 
 # if want to ensure redoing PPS2 calculation (e.g. if limit of D for fragmentation is changed) set the boolean below to true
 redoPPS2Calculations
-0
+#0
+1
 
 #################################### Fragmentation analysis
 
@@ -135,5 +136,46 @@ classification	time				{  Active 1 	tol4LinValChecks -0.0001 	tol4FinalValChecks
 # looser tolerance is used for tol4LinValChecks as it's really trying to determine the final (stabilized time) for input energy 
 # final values often need loower tolerances
 
+
+# config file for processing the strengths and stresses at (partially) fragmented points, and whether they are in separation or contact mode
+contact_damage_conf
+{
+isActive
+1
+processField
+# field 0: strength, field 1: stress (determines contact versus separation)
+1 1
+
+process_ciriticalPoints
+# there are 9 classficiation, and 3 stages (lin, max, final) - whether this data is generated for this
+1
+
+process_all_times
+# for all time steps available for fragmentation analysis, generate strength/stress analysis of (partially) fragmented points
+1
+
+printStrengthD1_ciritcalPoints
+# print vector of individiaul strengths at fragmented points | critical criteria mode
+1
+
+printStrengthD1_all_times
+# print vector of individiaul strength indices (positions) at fragmented points | all time mode
+1
+
+##########
+# in terms of statistics file, what to print
+print_sdiv
+1
+
+print_min_max
+1
+
+print_min_max_loc
+1
+
+print_uncomputed_vals_as_nan
+# when counter is zero for a group, mean, sdiv, etc are meaningless and nan is printed instead if 1 is entered (otherwise 1e40)
+1
+}		
 
 }

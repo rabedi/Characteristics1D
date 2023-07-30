@@ -29,6 +29,21 @@ bool SimpleFormatConfigMaker::Read(string configMakerin, int cntrIn)
 	success = ReadSimpleFormatConfigMaker(configMaker, cntr, names, indices, sVals, addedName);
 	return success;
 }
+
+void SimpleFormatConfigMaker::Write(ostream& out, const string& nameSpecific)
+{
+	out << "cntrV\t" << cntr;
+	out << "\tnameSpec\t" << nameSpecific;
+	unsigned int numGroups = sVals.size();
+	out << "\tnumGroups\t" << numGroups;
+	out << "\t{";
+	for (unsigned int i = 0; i < numGroups; ++i)
+	{
+		out << "\tgrp\t" << names[i] << "\tind\t" << indices[i] << "\tstr\t" << sVals[i];
+	}
+	out << "\t}\n";
+}
+
 int SimpleFormatConfigMaker::getIndexValueString(string groupNameIn, string& valOut)
 {
 	if (!success)

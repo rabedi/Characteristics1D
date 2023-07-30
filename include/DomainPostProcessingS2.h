@@ -159,11 +159,11 @@ istream& operator>>(istream& in, RMode_IOT& dat);
 // 1	: equal to 1
 typedef enum {ds_inactive = -4, ds_alpha = -3, ds_beta = -2, ds_t0 = -1, ds_Dall, ds_Dnz, ds_Dz, ds_Dgzn1, ds_D1, DamageState_IOT_SIZE} DamageState_IOT;
 
-string getLatexName(RMode_IOT dat);
-string getName(RMode_IOT dat);
-bool name2Type(string& name, RMode_IOT& typeVal);
-ostream& operator<<(ostream& out, RMode_IOT dat);
-istream& operator>>(istream& in, RMode_IOT& dat);
+string getLatexName(DamageState_IOT dat);
+string getName(DamageState_IOT dat);
+bool name2Type(string& name, DamageState_IOT& typeVal);
+ostream& operator<<(ostream& out, DamageState_IOT dat);
+istream& operator>>(istream& in, DamageState_IOT& dat);
 
 typedef enum {fio_strength, fio_stress, Field_IOT_SIZE} Field_IOT;
 
@@ -176,9 +176,11 @@ istream& operator>>(istream& in, Field_IOT& dat);
 // this is a class that goes with things stored in Contact_Damage_State_Config
 class FragmentationPtsStamp
 {
+	friend istream& operator>>(istream& in, FragmentationPtsStamp& dat);
 public:
 	FragmentationPtsStamp();
 	void MakeVoid();
+	void FragmentationPtsStamp_Read(istream& in);
 	// these 4 values refer to what we get from Contact_Damage_State_Config storage
 	//	d_numerator_or_flag ==
 	//1.	inactive					nothing is obtained from Contact_Damage_State_Config): A trick to turn this off
@@ -343,7 +345,7 @@ public:
 	// level 0: stat group, level 1: stat subgroup, level 2: name, level 3, name latex, level 4 values
 	// for levels 0 to 3 prints, it prints time index and value, alpha, beta heading
 	// for level 4 only prints alpha and beta
-	void PrintLineLevel(ostream& out, unsigned int nodeCount, unsigned int level, bool print_sdiv, bool print_min_max, bool print_min_max_loc);
+	void PrintLineLevel(ostream& out, unsigned int nodeCount, unsigned int level, bool print_sdiv, bool print_min_max, bool print_min_max_loc, bool print_uncomputed_vals_as_nan);
 
 	string name_fld_fragT, nameLatex_fld_fragT;
 	statHolder stats1Field[RMode_IOT_SIZE][DamageState_IOT_SIZE];
@@ -381,6 +383,7 @@ public:
 	lstClassificationT ct;
 	Contact_Damage_State_IO_Stat_AllsField_Times();
 	~Contact_Damage_State_IO_Stat_AllsField_Times();
+	void CloseFiles();
 
 	vector<Contact_Damage_State_IO_Stat_AllsField*> statsPtr;
 	unsigned int statsPtr_curIndex;
@@ -390,6 +393,7 @@ public:
 
 class Contact_Damage_State_Config
 {
+	friend istream& operator>>(istream& in, Contact_Damage_State_Config& dat);
 public:
 	Contact_Damage_State_Config();
 
@@ -401,9 +405,14 @@ public:
 	///////////////////// retrieve value function
 	// returns true if successful
 	double GetValue(PPS2_dataPointer& datPointer, bool& success);
-	///////////////////// reading data
-	void Read_Contact_Damage_State_Config(DomainPostProcessS2* configPPS2);
+	///////////////////// reading 
+	// data
+	void Read_Contact_Damage_State_ConfigFlagsParas(istream& in);
+	// data
+	void Read_Contact_Damage_State_ConfigData(DomainPostProcessS2* configPPS2);
 
+	/// closing files
+	void CloseFiles(DomainPostProcessS2* configPPS2);
 
 	// configuration paras
 	bool isActive;
@@ -411,6 +420,7 @@ public:
 	bool process_ciriticalPoints, process_all_times;
 	bool printStrengthD1_ciritcalPoints, printStrengthD1_all_times;
 	bool print_sdiv, print_min_max, print_min_max_loc;
+	bool print_uncomputed_vals_as_nan;
 	
 	/////////////////////////////////// set based on each individual run
 	unsigned int nodeCount;
@@ -799,7 +809,7 @@ class SlnPP2FileMover
 public:
 	SlnPP2FileMover();
 	bool SlnPP2FileMover_Read(istream& in, string& buf);
-	bool SlnPP2FileMover_MoveFile();
+	bool SlnPP2FileMover_MoveFile(bool do_copy);
 	bool isActive;
 	bool isPPS2;	// false file taken from solution file, otherwise from PPS2 file
 	string fileName;

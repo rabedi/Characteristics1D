@@ -343,7 +343,7 @@ inline bool copyFile(char* source, char* destination)
 	return (bool)rval;
 }
 
-inline bool moveFile(const string& src, const string& dest) 
+inline bool moveOrCopyFile(const string& src, const string& dest, bool do_copy) 
 {
 	vector<string> parts = getFileParts(dest);
 	string destFolder = "";
@@ -355,14 +355,18 @@ inline bool moveFile(const string& src, const string& dest)
 #if defined(_MSC_VER) //implemented in case future implementation can be optimized
 	if (CopyFileA(src.c_str(), dest.c_str(), false))
 	{
-		delete_path_tree(src.c_str());
+		if (!do_copy) 
+			delete_path_tree(src.c_str());
 		return true;
 	}
 	else
 		return false;
 #else
 	//	cout << "Moving:\n" << src << endl << newDest << endl;
-	string command = "mv " + src + " " + dest;
+	string command = "mv ";
+	if (do_copy)
+		command = "cp ";
+	command += (src + " " + dest);
 	if (CMD(command.c_str()))
 	{
 		return true;

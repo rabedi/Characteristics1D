@@ -15,6 +15,7 @@ bool DoublesAreEqual(double d1, double d2, double tol = 1e-5);
 
 // returns size
 unsigned int BreakString(const string& inString, vector<string>& parts);
+unsigned int BreakStringBySeparator(const string& inString, vector<string>& parts, char separator = ',');
 std::string removeExtension(const std::string& filename);
 
 void Test_SetNewtonCotes_Points_AndWeights();

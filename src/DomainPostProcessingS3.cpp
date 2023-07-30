@@ -278,8 +278,9 @@ void DomainPostProcessS3::MAIN_DomainPostProcessS3(const string configFileName)
 			}
 		}
 	}
+	bool do_copy = (g_low_disk_space != 0);
 	for (unsigned int i = 0; i < sz_fileMovers; ++i)
-		fileMovers[i].SlnPP2FileMover_MoveFile();
+		fileMovers[i].SlnPP2FileMover_MoveFile(do_copy);
 }
 
 
@@ -663,7 +664,14 @@ bool DomainPostProcessS3::ComputePrint_Data(PPS3_TimeOT tot, bool& accebleOverAl
 					vals.push_back(scalarVal);
 					if (!outputFile_exists)
 					{
-						name = preName + scalarFieldAddOn[sfot] + datPtr->name_In_CSV_file;
+						char c = datPtr->name_In_CSV_file[0];
+						if (c != '!')
+							name = preName + scalarFieldAddOn[sfot] + datPtr->name_In_CSV_file;
+						else
+						{
+							string bf = datPtr->name_In_CSV_file.substr(1, datPtr->name_In_CSV_file.size() - 1);
+							name = "inp_sfx_" + scalarFieldAddOn[sfot] + bf;
+						}
 						names.push_back(name);
 //						string nl = "{" + datPtr->name_Latex + "}" + scalarFieldAddOn_Latex[sfot];
 						string nl = datPtr->name_Latex;

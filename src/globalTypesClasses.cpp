@@ -707,25 +707,28 @@ istream& operator>>(istream &input, statHolder &stat)
 statHolder::statHolder(bool useMeasureIn)
 {
 	setName("none", "none");
+	setEmpty();
+	useMeasure = useMeasureIn;
+}
+
+statHolder::statHolder(string& nameIn, string& nameLatexIn, bool useMeasureIn)
+{
+	setName(nameIn, nameLatexIn);
+	setEmpty();
+	useMeasure = useMeasureIn;
+}
+
+void statHolder::setEmpty()
+{
 	counter = 0;
 	sumMeasure = 0.0;
-	useMeasure = useMeasureIn;
+	useMeasure = false;
 	sum = 0.0;
 	sumSquares = 0.0;
 
 	rN = 0.0;
 	sdiv_saved = 0.0;
 	b_sdiv_saved = false;
-}
-
-statHolder::statHolder(string& nameIn, string& nameLatexIn, bool useMeasureIn)
-{
-	setName(nameIn, nameLatexIn);
-	counter = 0;
-	sumMeasure = 0.0;
-	useMeasure = useMeasureIn;
-	sum = 0.0;
-	sumSquares = 0.0;
 }
 
 void statHolder::setName(const string& nameIn, const string& nameLatexIn)
@@ -739,6 +742,13 @@ double statHolder::getAverage() const
 	if (counter > 0)
 		return (double)(sum / get_measure());
 	return 1e40;
+}
+
+void statHolder::setAverage(double aveIn)
+{
+	sum = 0.0;
+	if (counter > 0)
+		sum = aveIn * counter;
 }
 
 double statHolder::getStandardDeviation() const

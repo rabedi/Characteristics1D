@@ -190,6 +190,9 @@ bool Solve_1_serialNumber(unsigned int serNumIn, int versionNumIn)
 			fileOperation(makeD, g_prefileName);
 			if ((solvePara.PPS2_outside == true) && (g_versionNumber >= 0))
 			{
+				string verSummName = g_prefileName + "/version_serial_number.txt";
+				fstream out_vs(verSummName.c_str(), ios::out);
+				sfcm.Write(out_vs, sfcm_gen.nameSpecific);
 				g_prefileNamePPS2 = "../_PPS2";
 				MakeDir(g_prefileNamePPS2);
 				g_prefileNamePPS2 += "/_PPS2_";
