@@ -131,7 +131,11 @@ void OneIHField::Read_Initialize_OneIHField(istream& inData, istream* inConfigPt
 {
 	Read_InstructionsOnly(inConfigPtr, isPeriodicPtr, xMPtr, xmPtr);
 	Read_DataOnly(inData, default_ValsAtVertices);
-
+	if (fabs(sfcm.sigmaCFactor - 1.0) > 1e-2)
+	{
+		for (unsigned int i = 0; i < vals.size(); ++i)
+			vals[i] *= sfcm.sigmaCFactor;
+	}
 #if PRNT_FLDOUT_RANDOM
 	static int cntr = 0;
 	string cntrStr;

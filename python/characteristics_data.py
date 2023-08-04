@@ -22,16 +22,19 @@ from input_field import InpF as InpF
 # 3 similar but with coarsening columns
 mo_frac_rate_cf = 0
 mo_frac_rate_f  = 1
-mo_frac_res_x = 2
-mo_frac_res_x_w_delc_fact = 3
+mo_frac_rate_f_wShape = 2
+mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
+mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-#mainOption = mo_frac_res_x
-mainOption = mo_frac_res_x_w_delc_fact
-
+mainOption = mo_frac_rate_f_wShape
+rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 # Change
-if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
-    sortingFields = ["llc", "dd2", "ldelc", "la"]
+if (rateStudy):
+    if (mainOption == mo_frac_rate_f_wShape):
+        sortingFields = ["shape", "llc", "dd2", "ldelc", "la"]
+    else:
+        sortingFields = ["llc", "dd2", "ldelc", "la"]
 elif (mainOption == mo_frac_res_x):
     sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
 elif (mainOption == mo_frac_res_x_w_delc_fact):
@@ -62,13 +65,14 @@ dist_logs["eps_f_norm"] = 10
 
 
 def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
-    if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
-        return read_updata_csv_frac_rate(filename)
+    if (rateStudy):
+        hasShape = (mainOption == mo_frac_rate_f_wShape)
+        return read_updata_csv_frac_rate(filename, hasShape)
     elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
         has_deltaCFactor = (mainOption == mo_frac_res_x_w_delc_fact)
         return read_updata_csv_frac_res_x(filename, has_deltaCFactor)
 
-def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
+def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv", hasShape = 0):
     db = pd.read_csv(filename)
     db = db.apply(pd.to_numeric, errors='coerce')
     #change
@@ -82,7 +86,25 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
     c_dd2_v = "inp_s_dd2"
     c_llc_ind = "indllc"
     c_llc_v = "inp_s_llc"
-    
+#    c_shape_ind = "indshape"
+    c_shape_v = "inp_s_shape"
+
+#    i_shape_ind = -1
+    i_shape_v = -1
+
+#    if (not hasShape):
+#        index_position = db.columns.get_loc("inddd2") + 2
+#        column_name = c_shape_ind
+#        db.insert(index_position, column_name, 2)
+#        index_position = index_position + 1
+#        column_name = c_shape_v
+#        db.insert(index_position, column_name, 2.0)
+        #		1.0 #		1.5 #	2.0 #		3.0 #		4.0
+
+    if (hasShape):
+#        i_shape_ind = db.columns.get_loc(c_llc_ind)
+        i_shape_v = db.columns.get_loc(c_shape_v)
+
     i_ver0 = db.columns.get_loc(c_ver0)
     i_ver1 = db.columns.get_loc(c_ver1)
     i_ldelc_ind = db.columns.get_loc(c_lldelc_ind)
@@ -93,6 +115,8 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
     i_dd2_v = db.columns.get_loc(c_dd2_v)
     i_llc_ind = db.columns.get_loc(c_llc_ind)
     i_llc_v = db.columns.get_loc(c_llc_v)
+
+ 
     i_col_phidtf = db.columns.get_loc("out_s_phi_d_tFin")
     log10Inv = 1.0 / np.log(10)
 
@@ -107,7 +131,7 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
         dd2_ind = int(row[i_dd2_ind])
         dd2_v = row[i_dd2_v]
         llc_v = row[i_llc_v]
-
+ 
         phidtf = row[i_col_phidtf]
         if (phidtf < 0):
             db = db.drop(i, axis=0)
@@ -130,23 +154,29 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
         ver0 = min(ver0 % 2000, ver1 % 2000)
         ver1 = ver0
 
-        if abs(dd2_v) < 0.001:
-            ver0 += 5000
+        if (hasShape):
             dd2_ind = 0
-        elif (abs(dd2_v - 0.1) < 0.0001):
-            dd2_ind = 1
-        elif (abs(dd2_v - 0.3) < 0.0001):
-            dd2_ind = 2
-        elif (abs(dd2_v - 0.5) < 0.0001):
-            dd2_ind = 3
-        elif (abs(dd2_v - 0.7) < 0.0001):
-            dd2_ind = 4
-        elif (abs(dd2_v - 0.9) < 0.0001):
-            dd2_ind = 5
+        else:
+            if abs(dd2_v) < 0.001:
+                ver0 += 5000
+                dd2_ind = 0
+            elif (abs(dd2_v - 0.1) < 0.0001):
+                dd2_ind = 1
+            elif (abs(dd2_v - 0.3) < 0.0001):
+                dd2_ind = 2
+            elif (abs(dd2_v - 0.5) < 0.0001):
+                dd2_ind = 3
+            elif (abs(dd2_v - 0.7) < 0.0001):
+                dd2_ind = 4
+            elif (abs(dd2_v - 0.9) < 0.0001):
+                dd2_ind = 5
 
         if (la_v < 0):
             ver0 += 10000
         la_ind = int(round(2 * la_v)) + 6         
+        if (hasShape):
+            shape_v = row[i_shape_v]
+            ver0 = ver0 + math.floor(100000 * shape_v)
         ver1 = ver0
 
         db.iloc[ii, i_ver0] = ver0 
@@ -163,7 +193,6 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
         ii += 1
     nRows = db.shape[0]
     return db
-
 
 def read_updata_csv_frac_res_x(filename = "../../data/resolution_x_fracture_scalars/pps3Out_resF_la2p0_004_0_9.csv", has_deltaCFactor = 0):
     goodRun = "nresF"
@@ -587,11 +616,14 @@ class Characteristics_data:
         # now looping over rows get the random field realization and process it:
         hasDeltFactor = (mainOption == mo_frac_res_x_w_delc_fact)
         iCol_delC_fact = -1
-        if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+        iCol_shape = -1
+        if (rateStudy):
             iCol_llc = self.pd_data.columns.get_loc("inp_s_llc") #self.pos_inp_sortingFields[0]
             iCol_dd2 = self.pd_data.columns.get_loc("inp_s_dd2") #self.pos_inp_sortingFields[1]
             iCol_la = self.pd_data.columns.get_loc("inp_s_la") #self.pos_inp_sortingFields[3]
             iCol_resF = -1
+            if (mainOption == mo_frac_rate_f_wShape):
+                iCol_shape = self.pd_data.columns.get_loc("inp_s_shape")
         elif ((mainOption == mo_frac_res_x) or hasDeltFactor):
             if (hasDeltFactor):
                 iCol_delC_fact = self.pd_data.columns.get_loc("inp_s_delc_Tf_fact")
@@ -608,6 +640,7 @@ class Characteristics_data:
             meshp2_4Simulation = -1
             # change:
             sso = reduction_sso
+            shape = 2
             if (mainOption == mo_frac_rate_cf):
                 if (la < 0.0): 
                     if (la < -2.4):
@@ -628,12 +661,14 @@ class Characteristics_data:
                 resF = self.pd_data.iloc[i, iCol_resF]
                 meshp2_4Simulation = 14 - resF
                 sso = self.pd_data.iloc[i, iCol_sso]
-
+            if (mainOption == mo_frac_rate_f_wShape):
+                shape = self.pd_data.iloc[i, iCol_shape]
+    
             serNo = self.pd_data.iloc[i, 0]
             pinp = InpF()
             pinp.Initialize_InpF(valsAtVert, meshp2, serNo, llc, dd2, \
                                 isPeriodic, sso, \
-                                meshp2_4Simulation, meshp2_4Output)
+                                meshp2_4Simulation, meshp2_4Output, shape)
             if (self.add_spatial_field_stat == True):
                 stat_vals = pinp.GetStatVecVals(addRawStat)
                 for ci, fxsi in enumerate(fx_col_pos):

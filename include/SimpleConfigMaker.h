@@ -15,6 +15,7 @@ public:
 	int getIndexValueInt(string groupNameIn, int& valOut);
 	bool success;
 	int cntr;
+	double sigmaCFactor;
 	string configMaker;
 	vector<string> names;
 	vector<int> indices;

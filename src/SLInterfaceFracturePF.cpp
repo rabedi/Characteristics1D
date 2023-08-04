@@ -642,7 +642,10 @@ void SL_Interface_Fracture_PF::Read_SL_Interface_Fracture_PF(istream& in, int in
 				}
 				key = "delc_Tf_fact";
 				if (Find_Version_Value(key, value, mpPtr) == true)
+				{
 					deltaC *= value;
+					deltaC /= sfcm.sigmaCFactor;
+				}
 			}
 			g_logout << "\tdeltaC\t" << deltaC;
 

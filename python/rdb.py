@@ -695,18 +695,29 @@ def main_function():
 
     mo_frac_rate_cf = 0
     mo_frac_rate_f  = 1
-    mo_frac_res_x = 2
-    mo_frac_res_x_w_delc_fact = 3
+    mo_frac_rate_f_wShape = 2
+    mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
+    mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-    mainOption = mo_frac_res_x_w_delc_fact
+    mainOption = mo_frac_rate_f_wShape
+    rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
+
 
     #README:
     # 1. set the path to "InhomogeneousFiles" folder
     InpF.setInputMeshRootFolder("../InhomogeneousFiles")
     # 2. set path to "2023_03_24". I put it inside a "data" folder for myself. You can adjust this path
-    folderSource = "../../data/2023_04_11"
-    folderSource = "../../data/resolution_x_fracture_scalars"
-    folderSource = "../../data/resolution_x_fracture_scalars_w_coarsening"
+    folderSource = ''
+    if (mainOption == mo_frac_rate_cf):
+        folderSource = "../../data/2023_04_11"
+    if (mainOption == mo_frac_rate_f):    
+        folderSource = "../../data/axt_orig"
+    if (mainOption == mo_frac_rate_f_wShape):    
+        folderSource = "../../data/axt_shape"
+    if (mainOption == mo_frac_res_x):    
+        folderSource = "../../data/resolution_x_fracture_scalars"
+    if (mainOption == mo_frac_res_x_w_delc_fact):    
+        folderSource = "../../data/resolution_x_fracture_scalars_w_coarsening"
     # 3. If needed, adjust output path were the files are generated
     folderDest = "../../data/Characteristics_data"
     generatePlots = True
@@ -724,7 +735,7 @@ def main_function():
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
-    option = 0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 3 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
@@ -735,9 +746,11 @@ def main_function():
 
     inpColDict = {}
 
-    if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+    if (rateStudy):
         # sortingFields = ["llc", "dd2", "ldelc", "la"]
         if (not plotFill):
+            if (mainOption == mo_frac_rate_f_wShape):
+                inpColDict["shape"] = "none"
             if (option == 0):
                 inpColDict["la"] = "fillstyle" #"c" # color
                 inpColDict["llc"] = "c" # line style
@@ -754,6 +767,13 @@ def main_function():
                 inpColDict["llc"] = "fillstyle" # line style
                 inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
                 inpColDict["dd2"] = "marker" # marker fill color
+            elif (option == 3): # for shape, with shape inside
+                if (mainOption == mo_frac_rate_f_wShape):
+                    inpColDict["shape"] = "c"
+                    inpColDict["la"] = "fillstyle" #"c" # color
+                    inpColDict["llc"] = "c" # line style
+                    inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
+                    inpColDict["dd2"] = "marker" # marker fill color
         else:
             inpColDict["la"] = "ls" #"c" # color
             inpColDict["llc"] = "fillstyle" # line style
@@ -770,8 +790,12 @@ def main_function():
                 inpColDict["llc"] = "ls"
                 inpColDict["la"] = "marker"
                 if (mainOption == mo_frac_res_x_w_delc_fact):
-                    inpColDict["delc_Tf_fact"] = "marker"
-                    inpColDict["ssoFS"] = "none"
+                    inpColDict["delc_Tf_fact"] = "c"
+                    inpColDict["dt_resap"] = "fillstyle"
+                    inpColDict["resolutionFactor"] = "none"
+                    inpColDict["ssoFS"] = "ls"
+                    inpColDict["llc"] = "none"
+                    inpColDict["la"] = "marker"
             elif (option == 1):
                 inpColDict["dt_resap"] = "fillstyle"
                 inpColDict["resolutionFactor"] = "c"
@@ -818,10 +842,12 @@ def main_function():
 
     splitInstructions = PlotOMISplit_Instruction()
 #    splitInstructions.out_col_nameBases.append("ssoFS")
-    if ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f)):
+    if (rateStudy):
         # sortingFields = ["llc", "dd2", "ldelc", "la"]
         if (not plotFill):
             # default option
+            if ((mainOption == mo_frac_rate_f_wShape) and (option < 3)):
+                splitInstructions.out_col_nameBases.append("shape")
             if (option == 0):
                 splitInstructions.out_col_nameBases.append("dd2")
                 splitInstructions.out_col_nameBases.append("ldelc")
@@ -836,6 +862,11 @@ def main_function():
                 splitInstructions.out_col_nameBases.append("dd2")
                 splitInstructions.out_col_nameBases.append("ldelc")
                 splitInstructions.in_col_nameBase = "llc"
+            elif (option == 3):
+                splitInstructions.out_col_nameBases.append("dd2")
+                splitInstructions.out_col_nameBases.append("ldelc")
+                splitInstructions.out_col_nameBases.append("llc")
+                splitInstructions.in_col_nameBase = "la"
         else:
             splitInstructions.out_col_nameBases.append("dd2")
             #   splitInstructions.out_col_nameBases.append("ldelc")
@@ -846,10 +877,9 @@ def main_function():
         # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
         if (option < 100): # stat files
             if (option == 0):
-                # splitInstructions.out_col_nameBases.append("ssoFS")
-                # splitInstructions.out_col_nameBases.append("dt_resap")
+                splitInstructions.out_col_nameBases.append("dt_resap")
                 if (mainOption == mo_frac_res_x_w_delc_fact):
-                    splitInstructions.out_col_nameBases.append("dt_resap")
+                    splitInstructions.out_col_nameBases.append("ssoFS")
                 splitInstructions.out_col_nameBases.append("llc")
                 splitInstructions.out_col_nameBases.append("la")
                 splitInstructions.in_col_nameBase = "resolutionFactor"

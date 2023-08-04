@@ -107,7 +107,7 @@ class InpF:
         rootIFFOlder = rootFolderIn
     # dd2 is the "span" parameter of pointwise PDF
     # sso_valStart = 0, sso_valEnd = 1, sso_min = 3, sso_max = 5, sso_mean_arithmetic = 6, sso_mean_harmonic = 10
-    def Initialize_InpF(self, valsAtVert = True, meshp2 = 14, serNo = 0, llc = -4, dd2 = 0.7, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1):
+    def Initialize_InpF(self, valsAtVert = True, meshp2 = 14, serNo = 0, llc = -4, dd2 = 0.7, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1, shape = 2):
         nSeg = 2**meshp2
         if (meshp2_4Simulation == -1):
             meshp2_4Simulation = meshp2
@@ -134,13 +134,20 @@ class InpF:
                 self.vals[0] = vm
                 self.vals[-1] = vm
             
-            def SN_2_Tri(xstandardNormalValue): # x is a sandard normal value is is going to be mapped to a triangular one with mean 1 and min/max 1 - dd2, 1 + dd2
+            def SN_2_genTri(xstandardNormalValue): # x is a sandard normal value is is going to be mapped to a triangular one with mean 1 and min/max 1 - dd2, 1 + dd2
                 p = 0.5 * (1.0 + math.erf(xstandardNormalValue * inv_sqrt2)) # p = sn_cdf
+                if (shape == 2):
+                    if (p < 0.5):
+                        return 1.0 + dd2 * (-1.0 + np.sqrt(2.0 * p)) 
+                    return 1 + dd2 * (1.0 - np.sqrt(2.0 * (1.0 - p)))
+                if (shape == 1):
+                    return 1 + dd2 * (2.0 * p - 1.0)
+                inv_shape = 1.0 / shape
                 if (p < 0.5):
-                    return 1.0 + dd2 * (-1.0 + np.sqrt(2.0 * p)) 
-                return 1 + dd2 * (1.0 - np.sqrt(2.0 * (1.0 - p)))
+                    return 1.0 + dd2 * (-1.0 + pow(2.0 * p, inv_shape)) 
+                return 1 + dd2 * (1.0 - pow(2.0 * (1.0 - p), inv_shape))
 
-            self.vals = list(map(SN_2_Tri, self.vals))
+            self.vals = list(map(SN_2_genTri, self.vals))
 
             # this is the actual input mesh (with potentially reduced resolution)
             # computing stats

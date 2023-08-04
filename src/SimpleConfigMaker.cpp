@@ -19,6 +19,7 @@ SimpleFormatConfigMaker::SimpleFormatConfigMaker()
 {
 	Zero_SimpleFormatConfigMaker();
 	success = false;
+	sigmaCFactor = 1.0;
 }
 
 bool SimpleFormatConfigMaker::Read(string configMakerin, int cntrIn)
