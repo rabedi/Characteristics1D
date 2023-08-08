@@ -160,3 +160,6 @@ Windows a single run:
 ./solver -sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst 0 -ven 17 -np 3
 ./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New_delC_Tf_Factor.txt -st 0 -en 0 -vst 119 -ven 119
 -sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp_gen_Tri.txt -cp config/Domain/PPS3Config_Coh.txt
+./solver -sp -mc config/MainConfig/mainConfig_resolution_x_New_delC_Tf_Factor.txt -st 0 -en 9 -vst 0 -ven 219 -np 24
+
+
