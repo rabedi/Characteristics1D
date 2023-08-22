@@ -4,6 +4,7 @@
 #include "SLInterfaceCalculator.h"
 #include "globalTypesClasses.h"
 
+
 // This class contains the time sequence of solutions at ONE spatial position
 
 class SL_OneInterfaceAllTimes
@@ -123,6 +124,8 @@ public:
 	ostream *outScalars, *outFinalSln, *outAdaptivity, *outIterationConv;
 	SL_OneInterfaceAllTimes(const SL_OneInterfaceAllTimes& other);
 	SL_OneInterfaceAllTimes& operator=(const SL_OneInterfaceAllTimes& other);
+
+	int Main_One_InterfaceProblem_Aux();
 };
 
 // this is useful in generating contour plots of data

@@ -9,8 +9,8 @@
 	damageOffOnMix		interfacial_damage_on
 
 	# contact_off				contact_on					contact_mixed	
-	# contactOffOnMix	contact_off
-	contactOffOnMix	contact_mixed
+	contactOffOnMix	contact_off
+	#contactOffOnMix	contact_mixed
 
 	# decides to do regularization in positivie separation for contact problems and negative (interpenetration) for fracture problems
 	rel_dcont_or_dsep	0.01

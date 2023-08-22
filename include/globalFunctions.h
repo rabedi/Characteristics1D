@@ -9,6 +9,7 @@
 // points are between 0 and 1
 // useRepeatedSimpsonRuleForHigherOrders: for higher orders (numSpatialSubsegments_BulkInterfacePoints_Print >= 3), it uses repeated Simpson (+Trapezoidal rule)
 int SetNewtonCotes_Points_AndWeights(int numSpatialSubsegments_BulkInterfacePoints_Print, bool useRepeatedSimpsonRuleForHigherOrders, vector<double>& spatialIntegrationWeights, vector<double>& spatialIntegrationPoints);
+double rlog10(double val);
 
 double computeRatio(double numerator, double denominator);
 bool DoublesAreEqual(double d1, double d2, double tol = 1e-5);

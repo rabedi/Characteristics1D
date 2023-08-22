@@ -26,7 +26,7 @@ mo_frac_rate_f_wShape = 2
 mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
 mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-mainOption = mo_frac_rate_f_wShape
+mainOption = mo_frac_rate_f
 rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 # Change
@@ -414,7 +414,7 @@ class Characteristics_data:
     markers = ["o", "s", "D", "p", "^", "<", ">", "P", "d", "X", "+", "x", "*", ".", "1", "2", "3", "4", "8"]
 
     def __init__(self):
-        self.print_spatial_field_csv = False #True
+        self.print_spatial_field_csv = True #True #change
         self.add_spatial_field_stat = True
 
         self.pd_data = pd.DataFrame()
@@ -453,7 +453,7 @@ class Characteristics_data:
         self.GenerateOneSortedFile()
         self.FormMultiIndexMatrix_AfterSortedMatrix()
         self.WriteTextData()
-        self.print_spatial_field_csv = False
+        self.print_spatial_field_csv = True # change
         self.add_spatial_field_stat = True
         self.Add_SpatialFieldData()
         self.PlotScatter()

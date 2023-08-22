@@ -2,6 +2,8 @@
 #include "SLDescriptorData.h"
 #include "SL_OneInterfaceAllTimes.h"
 #include "Domain_AllInterfacesAllTimes.h"
+#include "globalFunctions.h"
+Periodic1IntrFrag per_if;
 
 SLInterfaceCalculator::SLInterfaceCalculator()
 {
@@ -649,7 +651,7 @@ AdaptivityS SLInterfaceCalculator::Main_Compute_OnePoint(bool& accept_point, IOF
 
 
 			if (checkConvergence)
-				Check_withinstep_iteration_convergence();
+				iterations_enough = Check_withinstep_iteration_convergence();
 			else
 				iterations_enough = true;
 			DBCHK(dbout << "iterations_enough" << iterations_enough << '\n';);
@@ -2679,3 +2681,908 @@ void SLInterfaceCalculator::Set_pPtSlns(SL_interfacePPtData* pPtSlnsIn, bool pPt
 	pPtSlns = pPtSlnsIn;
 	pPtSlns_Deletable = pPtSlnsDeletableIn;
 }
+
+Periodic1IntrFrag_TimeStageStorage::Periodic1IntrFrag_TimeStageStorage()
+{
+	b_set = 0;
+	pitss = pit_sigma0;
+	timeIndex = 0;
+	perConf = NULL;
+}
+
+void Periodic1IntrFrag_TimeStageStorage::CopyData(const Periodic1IntrFrag_TimeStageStorage& other)
+{
+	b_set = other.b_set;
+	pitss = other.pitss;
+	perConf = other.perConf;
+	timeIndex = other.timeIndex;
+	vals = other.vals;
+	spatial_stress_vals = other.spatial_stress_vals;
+	spatial_vel_vals = other.spatial_vel_vals;
+}
+
+void Periodic1IntrFrag_TimeStageStorage::Initialize(PITSS pitssIn, const string& nameBase, Periodic1IntrFrag* perConfIn)
+{
+	pitss = pitssIn;
+	perConf = perConfIn;
+	string name = nameBase + "_criterion_", ser;
+	unsigned int ipitss = (int)pitss;
+	toString(ipitss, ser);
+	name += ser;
+	name += "_";
+	name += getName(pitss);
+	name += ".txt";
+	fstream in(name.c_str(), ios::in);
+	if (!in.is_open())
+	{
+		out.open(name.c_str(), ios::app);
+		out << "success\ta\tl\tlog10(a)\tlog10(l)\ttimeIndex";
+		for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+			out << "\t" << getName((OneSegmentPFT)i);
+		for (unsigned int i = 0; i < perConf->stressHeader.size(); ++i)
+			out << "\t" << perConf->stressHeader[i];
+		for (unsigned int i = 0; i < perConf->velHeader.size(); ++i)
+			out << "\t" << perConf->velHeader[i];
+		out << '\n';
+	}
+	else
+	{
+		in.close();
+		out.open(name.c_str(), ios::app);
+	}
+}
+
+void Periodic1IntrFrag_TimeStageStorage::Print()
+{
+	out << b_set << '\t';
+	out << perConf->a << '\t';
+	out << perConf->l << '\t';
+	out << perConf->log10a << '\t';
+	out << perConf->log10l << '\t';
+	if (b_set != 0)
+	{
+		out << timeIndex;
+		for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+			out << "\t" << vals[i];
+		for (unsigned int i = 0; i < perConf->velHeader.size(); ++i)
+			out << "\t" << spatial_stress_vals[i];
+		for (unsigned int i = 0; i < perConf->stressHeader.size(); ++i)
+			out << "\t" << spatial_vel_vals[i];
+		out << '\n';
+	}
+	else
+	{
+		string nan = "nan";
+		out << -1;
+		for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+			out << "\t" << nan;
+		for (unsigned int i = 0; i < perConf->stressHeader.size(); ++i)
+			out << "\t" << nan;
+		for (unsigned int i = 0; i < perConf->velHeader.size(); ++i)
+			out << "\t" << nan;
+		out << '\n';
+	}
+	out.close();
+}
+
+Periodic1IntrFrag::Periodic1IntrFrag()
+{
+	setEmpty_Periodic1IntrFrag();
+}
+
+void Periodic1IntrFrag::setEmpty_Periodic1IntrFrag()
+{
+	max_bsigma = -0.1 * DBL_MAX;
+	max_bsigma_pw = max_bsigma;
+	aIndex = 0;
+	lIndex = 0;
+	a = 10.0;
+	l = 2.0;
+	relTol = 1e-4;
+	isActive = false;
+	energy_diss_per_length_At_t_dilute_set = false;
+	numSpatialSubsegments_BulkInterfacePoints_Print_4PP = 10;
+	useRepeatedSimpsonRuleForHigherOrders_4PP = true;
+	delvsZeroObserved = false;
+	nameBase = "periodic1IntrFrag";
+	step4_segment_vsigma_output = 1;
+	terminateState = PITSS_none;
+	isExtrinsic = true;
+	energyScale = 0.5;
+}
+
+Periodic1IntrFrag::~Periodic1IntrFrag()
+{
+	Finalize_Periodic1IntrFrag();
+}
+
+void Periodic1IntrFrag::Initialize_Periodic1IntrFrag()
+{
+//	setEmpty_Periodic1IntrFrag();
+	la = l * a;
+	aInv = 1.0 / a;
+	string aIndex_s, lIndex_s;
+	toString(aIndex, aIndex_s);
+	toString(lIndex, lIndex_s);
+	nameOne_a_SharedAll_l = nameBase + "_aI_" + aIndex_s;
+	nameOne_a_One_l = nameOne_a_SharedAll_l + "_lI_" + lIndex_s;
+
+	// (x): equation number x from Zhu06
+	log10a = rlog10(a);
+	log10l = rlog10(l);
+	zhu6_epsilonDotScale = 1.0 / energyScale;//(13)
+	a_p = a / zhu6_epsilonDotScale; // (11) normalized loadingrate from Zhu06
+	zhu6_sBarScale = energyScale; // (21)
+	l_p = l / zhu6_sBarScale;
+
+	l_Zhu6a = zhu6_sBarScale * 4.5 / (1.0 + 6.00 * pow(a_p, 2.0 / 3.0)); //(28)
+	l_Zhu6b = zhu6_sBarScale * 4.5 / (1.0 + 0.77 * pow(a_p, 0.25) + 5.4 * pow(a_p, 0.75)); // (29a)
+	l_Grady = zhu6_sBarScale * pow(24.0 / a_p / a_p, 1.0 / 3.0); // (1')
+	l_Glenn = zhu6_sBarScale * 4.0 / a_p * sinh(1.0 / 3 * asinh(1.5 * a_p));// (2')
+
+#if 0 // older calculations
+	double l_Grady_b = pow(24.0 * energyScale / a / a, 1.0 / 3.0);
+	double alpha = 3.0 / a / a;
+	double beta = alpha * energyScale / 2.0; // 3.0 G / 2.0 / a / a;
+	double phi = asinh(beta * pow(3.0 / alpha, 1.5));
+	double l_Glenn_b = 4.0 * sinh(phi / 3.0) * sqrt(alpha / 3.0);
+#endif
+
+	// reference wherein t0 = Z deltaC/2/sigmaC (Zhu06, (12)), and s0 is different ...
+	tFailure = -1.0;
+	if (isExtrinsic) // Ortiz model - Zhu06, (16)
+	{
+		// equation is Zhu06, (16), a_p(exp(t_p) - t_p - 1) = 1.0
+		if (a_p > 0.499)
+			t_dilute_approx_p = sqrt(2.0 / a_p);
+		else
+			t_dilute_approx_p = log(1.0 / a_p);
+
+		double tol_t = t_dilute_approx_p * 1e-9;
+		unsigned int cntr = 0;
+		double tmp, fl, fpl, delt;
+		t_dilute_p = t_dilute_approx_p;
+		while (cntr++ < 1000)
+		{
+			tmp = exp(t_dilute_p) - 1.0;
+			fl = a_p * (tmp - t_dilute_p) - 1.0;
+			fpl = a_p * tmp;
+			delt = -computeRatio(fl, fpl);
+			t_dilute_p += delt;
+			//		cout << cntr << '\t' << t_dilute_p << '\t' << fl << '\t' << delt << '\n';
+			if ((delt < tol_t) && (fl < 1e-9))
+				break;
+		}
+		if (cntr == 1000)
+		{
+			THROW("Cannot find the approximate solution. Can comment out throw and get to the next line.\n");
+			t_dilute_p = t_dilute_approx_p;
+		}
+		delu4Sigma0 = 1.0;
+		t_SigmaMax_dilute = aInv;
+		t_SigmaMax_real = aInv;
+
+		l_dilute_p = t_dilute_p;
+		l_dilute_approx_p = t_dilute_approx_p;
+
+		// getting back to real fragment size, using sBar (Zhu06 eqn (21)), zhu6_sBarScale = GFactor = (0.5 for Ortiz, e for Xu-Needleman)
+		l_dilute_approx = zhu6_sBarScale * l_dilute_approx_p;
+		l_dilute = zhu6_sBarScale * l_dilute_p;
+
+		t_dilute_zeroStressCheck = l_dilute + aInv - t0;
+
+		t_dilute = 0.5 * t_dilute_p;
+		t_dilute_approx = 0.5 * t_dilute_approx_p;
+		if (diluteFractureModel)
+			tFailure = l_dilute + aInv;
+
+		/// now incrementing t_dilutes to match start from time zero
+		t_dilute += aInv;
+		t_dilute_approx += aInv;
+
+		t_dilute_p += 2.0 * aInv;
+		t_dilute_approx_p += 2.0 * aInv;
+
+		// f(delta) + 0.5 deltaDot = at
+		// vsolid = 0 -> al/2 - deltaDot/2 = 0
+		// -> l = 2t - 2 f(delta) / a, where t, delta are taken for a reference point, and t is total time from time zero
+		// A) initial stage of unloading:
+		// t = 1/a, f(delta) = 1 -> l = 2/a - 2/a = 0 ! Not appropriate! This is similar to what Drugan does for XuNeedleman at max load but it does not apply here
+		// B) final stage  (delta = 1, sigma = 0)
+		// -> l = 2 t_final - 2 * 0 / a = 2 * t final
+		l_SigmaRef_Drugan_Dilute = 2.0 * t_dilute;
+	}
+	else // intrinsic Xu-Needleman, Drugan, eqn (36) and also (31)
+	{
+		tsr_xn.a = a;
+		tsr_xn.Z = 1.0;
+		tsr_xn.sigmaC = 1.0;
+		tsr_xn.deltaC = 1.0;
+		tsr_xn.sigmaCFactor4Zero = 0.01; // 0.001
+		tsr_xn.delTFactor = 0.0001;
+		string name = nameOne_a_One_l + "_TSR_XuNeedleman.txt";
+		fstream out(name.c_str(), ios::out);
+		tsr_xn.Compute(&out);
+
+		t_dilute = tsr_xn.tSigmaZero;
+		t_dilute_approx = t_dilute;
+		
+		l_dilute = t_dilute;
+		l_dilute_approx = t_dilute_approx;
+
+		// other normalization
+		t_dilute_p = 2.0 * t_dilute;
+		t_dilute_approx_p = 2.0 * t_dilute_approx;
+
+		l_dilute_p = l_dilute / zhu6_sBarScale;
+		l_dilute_approx_p = l_dilute_approx / zhu6_sBarScale;
+
+		/////////////////////////////////////////////////
+		t_dilute_zeroStressCheck = t_dilute; // this is the time that for dilute model stress is "0" e.g. around 0.01 stress
+		delu4Sigma0 = tsr_xn.delnSigmaZero;
+		
+		////////////////////////////////////////////////
+		// Drugan model
+		t_SigmaMax_dilute = tsr_xn.tSigmaMax;
+		// getting segment size from Drugan idea:
+		// vSolid = al/2 - deltaDot/2 = 0 -> deltDot = al
+		// -> deltaDot = al
+		// from characteristics
+		// sigma(delta) + Z/2 deltaDot = at,
+		// at tR, delta = 1 -> sigma = 1; Moreover we have Z = 1.0 ->
+		// 1 + 0.5 deltaDot = at -> 
+		// 1 + 0.5 al = a tR -> l = 2(a tR - 1)/a = 2 tR - 2/a // Drugan equation (27)
+		l_SigmaRef_Drugan_Dilute = 2.0 * t_SigmaMax_dilute - 2.0 / a;
+		if (diluteFractureModel)
+			tFailure = t_dilute;
+#if 0
+		// Drugan (31), (36) a_p(e(-t_p) + t_p - 1) = 1  NOTE: t' is measured fro mtime zero NOT time of sigmaC
+		// Eventually time to sigmaC is subtracted
+		if (a_p > 0.499)
+			t_dilute_approx_p = sqrt(2.0 / a_p);
+		else
+			t_dilute_approx_p = 1.0 / a_p;
+
+		double tol_t = t_dilute_approx_p * 1e-9;
+		unsigned int cntr = 0;
+		double tmp, fl, fpl, delt;
+		t_dilute_p = t_dilute_approx_p;
+		while (cntr++ < 1000)
+		{
+			tmp = exp(-t_dilute_p) - 1.0;
+			fl = a_p * (tmp + t_dilute_p) - 1.0;
+			fpl = -a_p * tmp;
+			delt = -computeRatio(fl, fpl);
+			t_dilute_p += delt;
+			//		cout << cntr << '\t' << t_dilute_p << '\t' << fl << '\t' << delt << '\n';
+			if ((delt < tol_t) && (fl < 1e-9))
+				break;
+		}
+		if (cntr == 1000)
+		{
+			THROW("Cannot find the approximate solution. Can comment out throw and get to the next line.\n");
+			t_dilute_p = t_dilute_approx_p;
+		}
+#endif
+	}
+	t_SigmaZero_minus_SigmaMax_dilute = t_dilute - t_SigmaMax_dilute;
+
+	diluteFractureModel = (l >= 0.9999 * l_dilute);
+	//t0 = aInv;
+	double suggested_delt_a = aInv;
+	double suggested_delt_l = 1.0 / l;
+	double suggested_delt_dilute_l = 1.0 / l_dilute;
+	double del_t = MIN(MIN(suggested_delt_a, suggested_delt_l), suggested_delt_dilute_l);
+	suggeste_delt = relTol * del_t;
+	double fact = 10.0;
+	if (!isExtrinsic)
+		fact = 20.0;
+	if (diluteFractureModel)
+		suggested_final_time4ZeroSigmaC = t_dilute_zeroStressCheck;
+	else
+		suggested_final_time4ZeroSigmaC = fact * t_dilute_zeroStressCheck * l_dilute / l; // 10.0 * l_dilute * l_dilute / l;
+
+	energy_diss_per_length = energyScale / l;
+	energy_diss_per_length_At_t_dilute = energyScale / l;
+
+	//	sigmaMaxPrecalculated = 1.0 + 0.5 * la;
+//	if (la > )
+	SetNewtonCotes_Points_AndWeights(numSpatialSubsegments_BulkInterfacePoints_Print_4PP, useRepeatedSimpsonRuleForHigherOrders_4PP, weights, xs_wrCenter);
+	sz_xs = xs_wrCenter.size();
+	velVals.resize(sz_xs);
+	stressVals.resize(sz_xs);
+
+	half_l = 0.5 * l;
+	for (unsigned int i = 0; i < sz_xs; ++i)
+	{
+		xs_wrCenter[i] *= half_l;
+//		weights[i] *= half_l; // not scaled by size as we are calculating averages anyway (if half_l is used here, a division by l/2 is needed later)
+	}
+	currentStepVals.resize(OneSegmentPFT_SIZE);
+	fill(currentStepVals.begin(), currentStepVals.end(), 0.0);
+	currentStepVals[pft_ivsolid] = 0.5 * la;
+	if (t0 >= 1e-9)
+	{
+		currentStepVals[pft_time] = t0;
+		currentStepVals[pft_isigma] = 1.0;
+		currentStepVals[pft_ichar] = 1.0;
+		currentStepVals[pft_irelusolid] = 1.0; //0.5 l / 0.5 l
+		currentStepVals[pft_bepsilon] = 1.0;
+		currentStepVals[pft_bsigma] = 1.0;
+		currentStepVals[pft_bsigma_maxpw] = 1.0;
+		currentStepVals[pft_bU_PL] = 0.5;
+	}
+	currentStepVals[pft_ilog10Ened] = rlog10(currentStepVals[pft_iEned]);
+	currentStepVals[pft_ilog10Ened_PL] = rlog10(currentStepVals[pft_iEned_PL]);
+	stat4Vals.resize(OneSegmentPFT_SIZE);
+	string name = nameOne_a_One_l + "_outAllVals.txt";
+	outAllVals.open(name.c_str(), ios::out);
+	name = nameOne_a_One_l + "_out_Stress.txt";
+	outStress.open(name.c_str(), ios::out);
+	name = nameOne_a_One_l + "_out_Vel.txt";
+	outVel.open(name.c_str(), ios::out);
+	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+	{
+		string name = getName((OneSegmentPFT)i);
+		stat4Vals[i].setName(name, name);
+	}
+	velHeader.clear();
+	stressHeader.clear();
+	outStress << "timeIndex\ttime\tnumCycles";
+	outVel << "timeIndex\ttime\tnumCycles";
+	for (unsigned int i = 0; i < sz_xs; ++i)
+	{
+		string name_x = "x_i_", tmp;
+		toString(i, tmp);
+		name_x += tmp;
+		name_x += "_xr2c_";
+		double tmpd = xs_wrCenter[i] / half_l;
+		toString(tmpd, tmp);
+		name_x += tmp;
+		outStress << '\t' << name_x;
+		outVel << '\t' << name_x;
+		velHeader.push_back("v_" + name_x);
+		stressHeader.push_back("s_" + name_x);
+	}
+	outStress << '\n';
+	outVel << '\n';
+	outStress << "0\t" << t0 << "\t0.0";
+	outVel << "0\t" << t0 << "\t0.0";
+	for (unsigned int i = 0; i < sz_xs; ++i)
+	{
+		outStress << '\t' << sigma_t0;
+		outVel << '\t' << 0.0;
+	}
+	outStress << '\n';
+	outVel << '\n';
+
+	outAllVals << "timeIndex";
+	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+		outAllVals << '\t' << getName((OneSegmentPFT)i);
+	outAllVals << '\n';
+	timeIndexNew = 0,
+	outAllVals << timeIndexNew++;
+	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+		outAllVals << '\t' << currentStepVals[i];
+	outAllVals << '\n';
+
+	for (unsigned int i = 0; i < PITSS_SIZE; ++i)
+		stageSlns[i].Initialize((PITSS)i , nameOne_a_SharedAll_l, this);
+}
+
+PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, double sigma)
+{
+	double timeNewAbsolute = timeNew + t0;
+	double timeRelSigmaMax = timeNewAbsolute;
+	if (isExtrinsic)
+		timeRelSigmaMax -= aInv;
+	vector<PITSS> pits;
+	bool printSegmentvsigma = (timeIndexNew % step4_segment_vsigma_output == 0);
+	double halfla = 0.5 * la;
+	double prevTime = currentStepVals[pft_time];
+	double delT = timeNewAbsolute - prevTime;
+	currentStepVals[pft_time] = timeNewAbsolute;
+	double numCycles = timeRelSigmaMax / l;
+	currentStepVals[pft_numCyclesAfterCrackOpening] = numCycles;
+	double prevDelu = currentStepVals[pft_idelu];
+	currentStepVals[pft_idelu] = delu;
+	double prevDelv = currentStepVals[pft_idelv];
+	currentStepVals[pft_idelv] = delv;
+	double prevSigma = currentStepVals[pft_isigma];
+	currentStepVals[pft_isigma] = sigma;
+	currentStepVals[pft_ichar] = sigma + 0.5 * delv;
+	currentStepVals[pft_iEne] += 0.5 * (sigma + prevSigma) * (delu - prevDelu);
+	currentStepVals[pft_iEner] = 0.5 * (sigma * delu);
+	currentStepVals[pft_iEned] = currentStepVals[pft_iEne] - currentStepVals[pft_iEner];
+	currentStepVals[pft_ilog10Ened] = rlog10(currentStepVals[pft_iEned]);
+	double delvs = halfla - 0.5 * delv;
+	currentStepVals[pft_ivsolid] = delvs;
+	double reldus = (halfla * timeNewAbsolute - 0.5 * delu) / half_l;
+	currentStepVals[pft_irelusolid] = reldus;
+	bool current_delvsZero = false;
+	if (delvsZeroObserved == false)
+	{
+		if (delv < 1e-13 * la)
+		{
+			current_delvsZero = true;
+			delvsZeroObserved = true;
+		}
+	}
+	currentStepVals[pft_bepsilon] = a * timeNewAbsolute;
+	double bsigma = 0.0, bsigma_maxpw = sigma, K = 0.0, U = 0.0;
+
+	if (printSegmentvsigma)
+	{
+		outStress << timeIndexNew << '\t' << timeNewAbsolute << '\t' << numCycles;
+		outVel << timeIndexNew << '\t' << timeNewAbsolute << '\t' << numCycles;
+	}
+	for (unsigned int i = 0; i < sz_xs; ++i)
+	{
+		double x = xs_wrCenter[i];
+		double weight = weights[i];
+		bool lastPoint = (fabs(x - half_l) < 0.0001 * half_l);
+		// x is w.r.t. the center of the segment
+		// A is the point on the left  side of point (x, timeNew) -> left side, right-going characteristics
+		// B is the point on the right side of point (x, timeNew) -> right side, left-going characteristics
+		double sigma_pw, vTheta_pw;
+		if (!lastPoint)
+		{
+			double sigmaA, vA, sigmaB, vB, vL, vR;
+			double tA = timeNew - (x + half_l); // /c but wave speed = 1
+			if (tA < 0)
+			{
+				sigmaA = sigma_t0;
+				vA = a * (x - timeNew); // timeNew * c but c = 1.0
+			}
+			else
+			{
+				bool found = g_seq_short.GetPt(tA, vL, vR, sigmaA);
+				if (!found)
+				{
+					THROW("Could not find the point!\n");
+				}
+				vA = vR - halfla; // -0.5 la is to take care of -0.5l shift to the left relative to the center of the segment
+			}
+
+			double tB = timeNew - (half_l - x); // /c but wave speed = 1
+			if (tB < 0)
+			{
+				sigmaB = sigma_t0;
+				vB = a * (x + timeNew); // timeNew * c but c = 1.0
+			}
+			else
+			{
+				bool found = g_seq_short.GetPt(tB, vL, vR, sigmaB);
+				if (!found)
+				{
+					THROW("Could not find the point!\n");
+				}
+				vB = vL + halfla; // +0.5 la is to take care of +0.5l shift to the right relative to the center of the segment
+			}
+			double wL_rightGoing = sigmaA - vA;
+			double wR_leftGoing = sigmaB + vB;
+			sigma_pw = 0.5 * (wR_leftGoing + wL_rightGoing);
+			vTheta_pw = 0.5 * (wR_leftGoing - wL_rightGoing) - a * x; // -ax is to get to vTheta from v'Theta, see Zhou_2006_Molinari_Ramesh_Analysis of the brittle fragmentation of an expanding ring.pdf eqn 9
+		}
+		else
+		{
+			sigma_pw = sigma;
+			vTheta_pw = -0.5 * delv;
+		}
+		stressVals[i] = sigma_pw;
+		velVals[i] = vTheta_pw;
+
+		bsigma += weight * sigma_pw;
+		K += weight * vTheta_pw * vTheta_pw;
+		U += weight * sigma_pw * sigma_pw;
+		if (sigma_pw > bsigma_maxpw)
+		{
+			bsigma_maxpw = sigma_pw;
+		}
+		if (printSegmentvsigma)
+		{
+			outStress << '\t' << sigma_pw;
+			outVel << '\t' << vTheta_pw;
+		}
+	}
+	if (bsigma > max_bsigma)
+	{
+		max_bsigma = bsigma;
+		pits.push_back(pit_timeSigmaAveMax);
+	}
+	if (bsigma_maxpw > max_bsigma_pw)
+	{
+		max_bsigma_pw = bsigma_maxpw;
+		pits.push_back(pit_timeSigmaPWMax);
+	}
+	if (printSegmentvsigma)
+	{
+		outStress << '\n';
+		outVel << '\n';
+	}
+	K *= 0.5;
+	U *= 0.5;
+	double bsigmaPrev = currentStepVals[pft_bsigma];
+	currentStepVals[pft_bsigma] = bsigma;
+	currentStepVals[pft_bsigma_maxpw] = bsigma_maxpw;
+	currentStepVals[pft_bK_PL] = K;
+	currentStepVals[pft_bU_PL] = U;
+	currentStepVals[pft_bEneSource_PL] += 0.5 * a * delT * (bsigma + bsigmaPrev);
+	currentStepVals[pft_iEned_PL] = currentStepVals[pft_iEned] / l;
+	currentStepVals[pft_ilog10Ened_PL] = rlog10(currentStepVals[pft_iEned_PL]);
+	// initial K = 0.0
+	double U0 = 0.5 * sigma_t0 * sigma_t0;
+	currentStepVals[pft_bEneN_PL] = U0 + currentStepVals[pft_bEneSource_PL]  - (K + U + currentStepVals[pft_iEned_PL]);
+	// currentStepVals[pft_iEned]  = EneD = total energy dissipation
+	// currentStepVals[pft_bEneSource] = is total energy from stress source (from vR term)
+	// K(t) + U(t) - K(0) - U(0) = -EneD + EneSource - EneN
+
+	outAllVals << timeIndexNew++;
+	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+		outAllVals << '\t' << currentStepVals[i];
+	outAllVals << '\n';
+
+	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+		stat4Vals[i].update(currentStepVals[i], timeNewAbsolute);
+
+	PITSS retVal = PITSS_none;
+	if (delu4Sigma0 - delu < 1e-6)
+	{
+		retVal = pit_sigma0;
+		pits.push_back(pit_sigma0);
+	}
+	PITSS tmp = pit_sigmaMax;
+	if ((!isExtrinsic) && (1.0 - delu < 1e-6) && (stageSlns[tmp].b_set == 0))
+	{
+		stageSlns[tmp].b_set = 1;
+		pits.push_back(tmp);
+		t_SigmaMax_real = timeNew;
+	}
+	tmp = PITSS_none;
+	if (currentStepVals[pft_ivsolid] < 0.0)
+		tmp = pit_vSolidNegative;
+	else if (1e-3 < 1.0 - reldus)
+		tmp = pit_reluSolid1;
+	else if (reldus <= 0.0)
+		tmp = pit_reluSolid0;
+	else if ((reldus + 1.0) <= 1e-3)
+	{
+		retVal = pit_reluSolidm1;
+		tmp = pit_reluSolidm1;
+	}
+	else if (timeRelSigmaMax >= l_dilute)
+		tmp = pit_timeDilute;
+	else if (timeRelSigmaMax >= l)
+		tmp = pit_timeInteraction;
+	if ((tmp != PITSS_none) && (stageSlns[tmp].b_set == 0))
+		pits.push_back(tmp);
+	for (unsigned int i = 0; i < pits.size(); ++i)
+		Updata_Periodic1IntrFrag_TimeStageStorage(pits[i]);
+	if (terminateState != pit_sigma0)
+		terminateState = retVal;
+
+	set_energy_diss_per_length_4_t_dilute(timeNew, delu);
+	return retVal;
+}
+
+void Periodic1IntrFrag::Finalize_Periodic1IntrFrag()
+{
+	if (!isActive)
+		return;
+	string name = nameOne_a_One_l + "_outStats.txt";
+	fstream out(name.c_str(), ios::out);
+	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+	{
+#if 0
+		string name = nameOne_a_One_l + "_outStats_", ser;
+		toString(i, ser);
+		name += ser;
+		name += "_";
+		name += getName((OneSegmentPFT)i);
+		name += ".txt";
+		fstream out(name.c_str(), ios::out);
+#endif
+		out << stat4Vals[i];
+	}
+	if (stageSlns[pit_timeDilute].b_set == 0)
+	{
+		stageSlns[pit_timeDilute].CopyData(stageSlns[terminateState]);
+		stageSlns[pit_timeDilute].b_set = 2;
+	}
+	if (stageSlns[pit_timeInteraction].b_set == 0)
+	{
+		stageSlns[pit_timeInteraction].CopyData(stageSlns[terminateState]);
+		stageSlns[pit_timeInteraction].b_set = 2;
+	}
+	for (unsigned int i = 0; i < PITSS_SIZE; ++i)
+		stageSlns[i].Print();
+}
+
+void Periodic1IntrFrag::Updata_Periodic1IntrFrag_TimeStageStorage(PITSS pitss)
+{
+	Periodic1IntrFrag_TimeStageStorage* stagePtr = &stageSlns[pitss];
+	stagePtr->b_set = 1;
+	stagePtr->vals = currentStepVals;
+	stagePtr->spatial_stress_vals = stressVals;
+	stagePtr->spatial_vel_vals = velVals;
+	stagePtr->timeIndex = timeIndexNew;
+}
+
+void Periodic1IntrFrag::set_energy_diss_per_length_4_t_dilute(double time, double deltau)
+{
+	double timeAbsolute = time + t0;
+	if ((tFailure < 0.0) && (delu4Sigma0 - deltau <= 1e-5))
+		tFailure = timeAbsolute;
+	if (energy_diss_per_length_At_t_dilute_set)
+		return;
+	if (timeAbsolute >= t_dilute)
+	{
+		energy_diss_per_length_At_t_dilute_set = true;
+		energy_diss_per_length_At_t_dilute = currentStepVals[pft_iEned] / l;
+		return;
+	}
+	if (diluteFractureModel)
+	{
+		energy_diss_per_length_At_t_dilute_set = true;
+		energy_diss_per_length_At_t_dilute = energy_diss_per_length;
+		return;
+	}
+}
+
+void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
+{
+	out << "terminateFlag" << "\t";
+	out << "failureState" << "\t";
+
+	out << "a" << '\t';
+	out << "l" << '\t';
+	out << "log10(a)" << '\t';
+	out << "log10(l)" << '\t';
+	out << "t_SigmaMax_real" << '\t';
+	out << "t_SigmaZero_real" << '\t';
+	out << "t_SigmaZero_minus_SigmaMax_real" << '\t';
+	out << "t_SigmaMax_dilute" << '\t';
+	out << "t_SigmaZero_dilute" << '\t';
+	out << "t_SigmaZero_minus_SigmaMax_dilute" << '\t';
+
+	out << "t_dilute_approx" << '\t';
+	out << "t_dilute" << '\t';
+	out << "l_dilute_approx" << '\t';
+	out << "l_dilute" << '\t';
+	out << "l_SigmaRef_Drugan_Dilute" << '\t';
+	out << "l_Zhu6a" << '\t';
+	out << "l_Zhu6b" << '\t';
+	out << "l_Grady" << '\t';
+	out << "l_Glenn" << '\t';
+
+	out << "a_p" << '\t';
+	out << "l_p" << '\t';
+	out << "log10(a_p)" << '\t';
+	out << "log10(l_p)" << '\t';
+	out << "t_SigmaMax_real_p" << '\t';
+	out << "t_SigmaZero_real_p" << '\t';
+	out << "t_SigmaZero_minus_SigmaMax_real_p" << '\t';
+	out << "t_SigmaMax_dilute_p" << '\t';
+	out << "t_dilute_p" << '\t';
+	out << "t_SigmaZero_minus_SigmaMax_dilute_p" << '\t';
+
+	out << "t_dilute_approx_p" << '\t';
+	out << "t_dilute_p" << '\t';
+	out << "l_dilute_approx_p" << '\t';
+	out << "l_dilute_p" << '\t';
+	out << "l_SigmaRef_Drugan_Dilute_p" << '\t';
+	out << "l_Zhu6a_p" << '\t';
+	out << "l_Zhu6b_p" << '\t';
+	out << "l_Grady_p" << '\t';
+	out << "l_Glenn_p" << '\t';
+
+	out << "energy_diss_per_length_At_t_dilute" << '\t';
+	out << "log10(energy_diss_per_length_At_t_dilute)" << '\t';
+	out << "energy_diss_per_length" << '\t';
+	out << "log10(energy_diss_per_length)" << '\t';
+
+	out << "inputEnergyFromMeanStress_PL" << '\t';
+	out << "energy_diss_real_inp_E_t_final" << '\t';
+	out << "log10(energy_diss_real_inp_E_t_final)" << '\t';
+
+	out << "inputEnergyFromMeanStress_MaxPossVal_PL" << '\t';
+	out << "energy_diss_max_inp_E_t_final" << '\t';
+	out << "log10(energy_diss_max_inp_E_t_final)" << '\t';
+
+	out << "diluteFractureModel" << '\t';
+	out << "isExtrinsic" << '\t';
+	out << "energyScale" << '\t';
+	out << "zhu6_epsilonDotScale" << '\t';
+	out << "zhu6_sBarScale" << '\t';
+	out << "delu4Sigma0" << '\t';
+	out << "la" << '\t';
+	out << "aInv" << '\t';
+	out << "sigma_t0" << '\t';
+	out << "t0" << '\t';
+
+//	out << "tFailure" << '\t';
+
+	out << "failure_Ncylce" << '\t';
+	out << "failure_relus" << '\t';
+	out << "failure_vs" << '\t';
+	out << "failure_bsigma" << '\t';
+	out << "failure_bsigma_pwMax" << '\t';
+	out << "failure_K" << '\t';
+	out << "failure_U" << '\t';
+	out << "failure_phi" << '\t';
+	out << "failure_K2phi" << '\t';
+	out << "failure_EneN" << '\t';
+
+	out << "bsigmaMax_val" << '\t';
+	out << "bsigmaMax_time" << '\t';
+	out << "bsigmaMax_pw_val" << '\t';
+	out << "bsigmaMax_pw_time" << '\t';
+
+	// v solid zero
+	out << "vs0_time" << '\t';
+	out << "vs0_Ncylce" << '\t';
+	out << "vs0_relus" << '\t';
+	out << "vs0_vs" << '\t';
+	out << "vs0_energy_diss_per_length" << '\t';
+	out << "vs0_log10(energy_diss_per_length)" << '\t';
+	out << "vs0_energy_diss/phi0" << '\t';
+	out << "vs0_delu" << '\t';
+	out << "vs0_delv" << '\t';
+	out << "vs0_sigma" << '\t';
+	out << "vs0_bulk_sigma" << '\t';
+	out << "vs0_bulk_sigma_maxpw" << '\t';
+	out << "vs0_K" << '\t';
+	out << "vs0_U" << '\t';
+
+	out << "suggeste_delt" << '\t';
+	out << "suggested_final_time4ZeroSigmaC" << '\t';
+	out << "t_dilute_zeroStressCheck" << '\n';
+}
+
+void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
+{
+	static string nan = "nan";
+	PITSS pit = pit_sigma0;
+	Periodic1IntrFrag_TimeStageStorage *stageSln = &stageSlns[pit];
+	if (stageSln->b_set == 0)
+	{
+		pit = pit_reluSolidm1;
+		stageSln = &stageSlns[pit];
+	}
+	if (stageSln->b_set == 0)
+		THROW("Neither state is set, perhaps need to increase time\n");
+	double t_SigmaZero_real = stageSln->vals[pft_time];
+	t_SigmaZero_minus_SigmaMax_real = t_SigmaZero_real - t_SigmaMax_real;
+	out << (int)terminateState << "\t";
+	out << pit << '\t';
+
+	inputEnergyFromMeanStress_PL = stageSln->vals[pft_bEneSource_PL];
+	// 0.5 E (a tF)^2
+	inputEnergyFromMeanStress_MaxPossVal_PL = (a * t_SigmaZero_real);
+	inputEnergyFromMeanStress_MaxPossVal_PL *= (0.5 * inputEnergyFromMeanStress_MaxPossVal_PL);
+
+	energy_diss_real_inp_E_t_final = energy_diss_per_length / inputEnergyFromMeanStress_PL;
+	energy_diss_max_inp_E_t_final = energy_diss_per_length / inputEnergyFromMeanStress_MaxPossVal_PL;
+
+	// max value that I could have taken above, if sigma = at -> IMax = a^2t^2 E / 2 -- t is the final time
+
+	out << a << '\t';
+	out << l << '\t';
+	out << rlog10(a) << '\t';
+	out << rlog10(l) << '\t';
+	out << t_SigmaMax_real << '\t';
+	out << t_SigmaZero_real << '\t';
+	out << t_SigmaZero_minus_SigmaMax_real << '\t';
+	out << t_SigmaMax_dilute << '\t';
+	out << t_dilute << '\t';
+	out << t_SigmaZero_minus_SigmaMax_dilute << '\t';
+	out << t_dilute_approx << '\t';
+	out << t_dilute << '\t';
+	out << l_dilute_approx << '\t';
+	out << l_dilute << '\t';
+	out << l_SigmaRef_Drugan_Dilute << '\t';
+	out << l_Zhu6a << '\t';
+	out << l_Zhu6b << '\t';
+	out << l_Grady << '\t';
+	out << l_Glenn << '\t';
+
+	out << a_p << '\t';
+	out << l_p << '\t';
+	out << rlog10(a_p) << '\t';
+	out << rlog10(l_p) << '\t';
+	out << 2.0 * t_SigmaMax_real << '\t';
+	out << 2.0 * t_SigmaZero_real << '\t';
+	out << 2.0 * t_SigmaZero_minus_SigmaMax_real << '\t';
+	out << 2.0 * t_SigmaMax_dilute << '\t';
+	out << 2.0 * t_dilute << '\t';
+	out << 2.0 * t_SigmaZero_minus_SigmaMax_dilute << '\t';
+	out << t_dilute_approx_p << '\t';
+	out << t_dilute_p << '\t';
+	out << l_dilute_approx_p << '\t';
+	out << l_dilute_p << '\t';
+	double factor = 1.0 / zhu6_sBarScale;
+	out << factor * l_SigmaRef_Drugan_Dilute << '\t';
+	out << factor * l_Zhu6a << '\t';
+	out << factor * l_Zhu6b << '\t';
+	out << factor * l_Grady << '\t';
+	out << factor * l_Glenn << '\t';
+
+	out << energy_diss_per_length_At_t_dilute << '\t';
+	out << rlog10(energy_diss_per_length_At_t_dilute) << '\t';
+	out << energy_diss_per_length << '\t';
+	out << rlog10(energy_diss_per_length) << '\t';
+
+	out << inputEnergyFromMeanStress_PL << '\t';
+	out << energy_diss_real_inp_E_t_final << '\t';
+	out << rlog10(energy_diss_real_inp_E_t_final) << '\t';
+
+	out << inputEnergyFromMeanStress_MaxPossVal_PL << '\t';
+	out << energy_diss_max_inp_E_t_final << '\t';
+	out << rlog10(energy_diss_max_inp_E_t_final) << '\t';
+
+	out << diluteFractureModel << '\t';
+	out << isExtrinsic << '\t';
+	out << energyScale << '\t';
+	out << zhu6_epsilonDotScale << '\t';
+	out << zhu6_sBarScale << '\t';
+	out << delu4Sigma0 << '\t';
+	out << la << '\t';
+	out << aInv << '\t';
+	out << sigma_t0 << '\t';
+	out << t0 << '\t';
+
+	out << stageSln->vals[pft_numCyclesAfterCrackOpening] << '\t';
+	out << stageSln->vals[pft_irelusolid] << '\t';
+	out << stageSln->vals[pft_ivsolid] << '\t';
+	out << stageSln->vals[pft_bsigma] << '\t';
+	out << stageSln->vals[pft_bsigma_maxpw] << '\t';
+	double K = stageSln->vals[pft_bK_PL], U = stageSln->vals[pft_bU_PL];
+	double phi = K + U, K2phi = K / phi;
+	out << K << '\t';
+	out << U << '\t';
+	out << phi << '\t';
+	out << K2phi << '\t';
+	out << stageSln->vals[pft_bEneN_PL] << '\t';
+
+	if (stageSlns[pit_timeSigmaAveMax].b_set != 0)
+		out << stageSlns[pit_timeSigmaAveMax].vals[pft_bsigma] << '\t' << stageSlns[pit_timeSigmaAveMax].vals[pft_time] << '\t';
+	else
+		out << nan << '\t' << nan << '\t';
+	if (stageSlns[pit_timeSigmaPWMax].b_set != 0)
+		out << stageSlns[pit_timeSigmaPWMax].vals[pft_bsigma_maxpw] << '\t' << stageSlns[pit_timeSigmaPWMax].vals[pft_time] << '\t';
+	else
+		out << nan << '\t' << nan << '\t';
+
+	pit = pit_vSolidNegative;
+	stageSln = &stageSlns[pit];
+	if (stageSln->b_set == 1)
+	{
+		stageSln = &stageSlns[pit];
+		out << stageSln->vals[pft_time] << '\t';
+		out << stageSln->vals[pft_numCyclesAfterCrackOpening] << '\t';
+		out << stageSln->vals[pft_irelusolid] << '\t';
+		out << stageSln->vals[pft_ivsolid] << '\t';
+		out << stageSln->vals[pft_iEned_PL] << '\t';
+		out << stageSln->vals[pft_ilog10Ened_PL] << '\t';
+		out << stageSln->vals[pft_iEned] / energyScale << '\t';
+		out << stageSln->vals[pft_idelu] << '\t';
+		out << stageSln->vals[pft_idelv] << '\t';
+		out << stageSln->vals[pft_isigma] << '\t';
+		out << stageSln->vals[pft_bsigma] << '\t';
+		out << stageSln->vals[pft_bsigma_maxpw] << '\t';
+		out << stageSln->vals[pft_bK_PL] << '\t';
+		out << stageSln->vals[pft_bU_PL] << '\t';
+	}
+	else
+	{
+		out << -1.0 << '\t';
+		for (unsigned int i = 0; i < 13; ++i)
+			out << nan << '\t';
+	}
+	out << suggeste_delt << '\t';
+	out << suggested_final_time4ZeroSigmaC << '\t';
+	out << t_dilute_zeroStressCheck << '\n';
+}
+
+
+

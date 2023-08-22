@@ -648,7 +648,7 @@ void extermumhold::MergeMax(const extermumhold& exte_in)
 ///////////////////////
 ostream& operator<<(ostream &output, const statHolder &stat)
 {
-	output << "useMeasure" << stat.useMeasure << "\tmeasuresum\t" << stat.sumMeasure << '\n';
+	output << "useMeasure\t" << stat.useMeasure << "\tmeasuresum\t" << stat.sumMeasure << '\n';
 	output << setprecision(22);
 	output << stat.name << '\t' << stat.nameLatex << '\t' << "count\t";
 	output << stat.counter << '\n';

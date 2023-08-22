@@ -760,3 +760,84 @@ int Test_TSR_Ortiz_1D(string nameWOExtIn)
 	getchar();
 	return cntr;
 }
+
+TSR_XuNeedleman::TSR_XuNeedleman()
+{
+	a = 10.0;
+	Z = 1.0;
+	deltaC = 1.0;
+	sigmaC = 1.0;
+	delTFactor = 0.0001;
+	sigmaCFactor4Zero = 0.01;
+}
+
+void TSR_XuNeedleman::Compute(ostream* outPtr)
+{
+	tauC = deltaC * Z / sigmaC;
+	delT = tauC * delTFactor;
+	double sigTol = sigmaCFactor4Zero * sigmaC;
+	// sigma(delta) + Z/2 * deltaDot = at -> 
+	// deltaDot = At - B delta exp(1.0 - delta/deltaC)
+	double ZInv2 = 2.0 / Z;
+	double deltaCInv = 1.0 / deltaC, deln;
+	double A = ZInv2 * a;
+	double B = ZInv2 * sigmaC * deltaCInv;
+	double time = 0.0;
+	double delta = 0.0;
+	double sigma = 0.0;
+	double deltaDot = 0.0;
+	bool b_print = (outPtr != NULL);
+	if (b_print)
+	{
+		*outPtr << "time\tdelta\tsigma\tdeltaDot\n";
+		*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\n";
+	}
+	double h = delT, hd2 = 0.5 * delT, h6 = h / 6.0;
+	double k1, k2, k3, k4, del, t;
+	bool deltaCPassed = false;
+	bool cont = true;
+	while (cont)
+	{
+		t = time;
+		del = delta;
+		k1 = A * t - B * del * exp(1.0 - del * deltaCInv);
+		t = time + hd2;
+		del = delta + 0.5 * k1;
+		k2 = A * t - B * del * exp(1.0 - del * deltaCInv);
+		del = delta + 0.5 * k2;
+		k3 = A * t - B * del * exp(1.0 - del * deltaCInv);
+		t = time + h;
+		del = delta + k3;
+		k4 = A * t - B * del * exp(1.0 - del * deltaCInv);
+		time += h;
+		delta += h6 * (k1 + 2.0 * (k2 + k3) + k4);
+		deln = delta * deltaCInv;
+		sigma = sigmaC * deln * exp(1.0 - deln);
+		deltaDot = ZInv2 * (a * time - sigma);
+		if ((!deltaCPassed) && (deln >= 1.000))
+		{
+			deltaCPassed = true;
+			tSigmaMax = time;
+		}
+		if (b_print)
+			*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\n";
+		if ((deltaCPassed) && (sigma < sigTol))
+		{
+			delnSigmaZero = deln;
+			tSigmaZero = time;
+			cont = false;
+		}
+	}
+	if (b_print)
+		outPtr->flush();
+}
+
+void TSR_XuNeedleman::OutMain(ostream & out)
+{
+	out << "tSigmaMax\t" << tSigmaMax;
+	out << "\tdelnSigmaZero\t" << delnSigmaZero;
+	out << "\ttSigmaZero\t" << tSigmaZero;
+	out << '\n';
+}
+
+

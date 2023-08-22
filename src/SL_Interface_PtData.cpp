@@ -2,6 +2,169 @@
 #include "SLInterfaceFracturePF.h"
 #include "Domain_AllInterfacesAllTimes.h"
 #include "SLDescriptorData.h"
+#include "globalFunctions.h"
+
+
+/////////////////
+string getName(OneSegmentPFT dat)
+{
+	if (dat == pft_time)
+		return "time";
+	if (dat == pft_numCyclesAfterCrackOpening)
+		return "numCyclesAfterCrackOpening";
+	if (dat == pft_idelu)
+		return "delu";
+	if (dat == pft_idelv)
+		return "delv";
+	if (dat == pft_isigma)
+		return "sigma";
+	if (dat == pft_ichar)
+		return "char";
+	if (dat == pft_iEne)
+		return "iEnePL";
+	if (dat == pft_iEner)
+		return "Ener";
+	if (dat == pft_iEned)
+		return "Ened";
+	if (dat == pft_ilog10Ened)
+		return "log10Ened";
+	if (dat == pft_iEned_PL)
+		return "Ened_PL";
+	if (dat == pft_ilog10Ened_PL)
+		return "log10Ened_PL";
+	if (dat == pft_ivsolid)
+		return "vsolid";
+	if (dat == pft_irelusolid)
+		return "relusolid";
+	if (dat == pft_bepsilon)
+		return "bepsilon";
+	if (dat == pft_bsigma)
+		return "bsigma";
+	if (dat == pft_bsigma_maxpw)
+		return "bsigma_maxpw";
+	if (dat == pft_bK_PL)
+		return "K_PL";
+	if (dat == pft_bU_PL)
+		return "U_PL";
+	if (dat == pft_bEneSource_PL)
+		return "EneSource_PL";
+	if (dat == pft_bEneN_PL)
+		return "EneN_PL";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+void name2Type(string& name, OneSegmentPFT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= OneSegmentPFT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (OneSegmentPFT)num;
+		return;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < OneSegmentPFT_SIZE; ++i)
+	{
+		typeVal = (OneSegmentPFT)i; // casting integer to OneSegmentPFT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return;
+	}
+	cout << "name\t" << name << '\n';
+	THROW("wrong name reading OneSegmentPFT\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, OneSegmentPFT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, OneSegmentPFT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+
+
+/////////////////
+string getName(PITSS dat)
+{
+	if (dat == PITSS_none)
+		return "none";
+	if (dat == pit_sigma0)
+		return "sigma0";
+	if (dat == pit_sigmaMax)
+		return "sigmaMax";
+	if (dat == pit_timeDilute)
+		return "timeDilute";
+	if (dat == pit_timeInteraction)
+		return "timeInteraction";
+	if (dat == pit_timeSigmaAveMax)
+		return "timeSigmaAveMax";
+	if (dat == pit_timeSigmaPWMax)
+		return "timeSigmaPWMax";
+	if (dat == pit_vSolidNegative)
+		return "vSolidNegative";
+	if (dat == pit_reluSolid1)
+		return "reluSolid1";
+	if (dat == pit_reluSolid0)
+		return "reluSolid0";
+	if (dat == pit_reluSolidm1)
+		return "reluSolidm1";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+void name2Type(string& name, PITSS& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= PITSS_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (PITSS)num;
+		return;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < PITSS_SIZE; ++i)
+	{
+		typeVal = (PITSS)i; // casting integer to PITSS, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return;
+	}
+	cout << "name\t" << name << '\n';
+	THROW("wrong name reading PITSS\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, PITSS dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, PITSS& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
 
 SL_interface_Temp_PPtData::SL_interface_Temp_PPtData()
 {
@@ -313,7 +476,7 @@ void SL_interfacePPtData::Output_FinalSolution(ostream& out, IOF_type iot, doubl
 			out << sl_side_ptData[SDL].sigma_downstream_final[i] << '\t';
 		for (int i = 0; i < DiM; ++i)
 			out << sl_side_ptData[SDR].sigma_downstream_final[i] << '\t';
-		if (!g_domain->b_ring_opened1D)
+		if ((g_domain != NULL) && (!g_domain->b_ring_opened1D))
 		{
 			// velocities
 			for (int i = 0; i < DiM; ++i)
@@ -880,6 +1043,68 @@ void Pt_Error_Data::PrintShort(ostream & out, double time, int itern)
 	out << damage_source_tau << '\t';
 	out << del_sep2cont_c;
 }
+
+void SL_Interface1DPtSeq_Short::AddPt(double time, double vL, double vR, double sigma, double delT2Keep)
+{
+	SL_Interface1DPt_Short pt;
+	pt.sigma = sigma;
+	pt.vL = vL;
+	pt.vR = vR;
+	pt.time = time;
+	ptHistory.push_back(pt);
+	if (delT2Keep < 0)
+		return;
+	double delTlimit = time - 1.00001 * delT2Keep;
+	unsigned int sz = ptHistory.size() - 1;
+	while (sz > 0)
+	{
+		if (ptHistory[0].time < delTlimit)
+		{
+			ptHistory.pop_front();
+			--sz;
+		}
+		else
+			return;
+	}
+}
+
+bool SL_Interface1DPtSeq_Short::GetPt(double time, double& vL, double& vR, double& sigma) const
+{
+	unsigned int sz = ptHistory.size();
+	unsigned int i;
+	bool found = false;
+	for (i = 0; i < sz; ++i)
+	{
+		if (ptHistory[i].time > time)
+		{
+			found = true;
+			break;
+		}
+	}
+	if (!found)
+		i = sz - 1;
+	bool sameVal = DoublesAreEqual(ptHistory[i].time, time);
+	if ((i == 0) || (!found))
+	{
+		if (!sameVal)
+			return false;
+	}
+	const SL_Interface1DPt_Short* ptNext = &ptHistory[i];
+	if (sameVal)
+	{
+		vL = ptNext->vL, vR = ptNext->vR, sigma = ptNext->sigma;
+		return true;
+	}
+	const SL_Interface1DPt_Short* ptPrev = &ptHistory[i - 1];
+	double factorPrev = (ptNext->time - time) / (ptNext->time - ptPrev->time);
+	double factorNext = 1.0 - factorPrev;
+	vL = ptNext->vL * factorNext + ptPrev->vL * factorPrev;
+	vR = ptNext->vR * factorNext + ptPrev->vR * factorPrev;
+	sigma = ptNext->sigma  * factorNext + ptPrev->sigma * factorPrev;
+	return true;
+}
+
+SL_Interface1DPtSeq_Short g_seq_short;
 
 Pt_Error_Data::Pt_Error_Data()
 {

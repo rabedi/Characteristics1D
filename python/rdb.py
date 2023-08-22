@@ -699,7 +699,7 @@ def main_function():
     mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
     mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-    mainOption = mo_frac_rate_f_wShape
+    mainOption = mo_frac_rate_f
     rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 
@@ -735,7 +735,7 @@ def main_function():
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
-    option = 3 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats

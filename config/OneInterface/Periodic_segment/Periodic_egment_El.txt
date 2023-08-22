@@ -1,0 +1,20 @@
+{
+	directionalBCType
+	Dirichlet
+	
+	bulk_leftPtr
+	{
+		rho	1.0
+		E_iso	1.0
+		nu_iso	0.3
+	}
+	
+	bulk_rightPtr
+	{
+		rho	1.0
+		E_iso	1.0
+#		rho	3
+#		E_iso	27
+		nu_iso	0.3
+	}
+}

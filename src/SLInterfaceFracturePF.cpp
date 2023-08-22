@@ -48,6 +48,9 @@ SLFractureGlobal_Configuration::SLFractureGlobal_Configuration()
 	terminate_run_target_max_damage = 1.0 - 1e-7;
 
 	a_flag_default = a_none;
+
+	periodic_1Fragment_size = -1.0;
+	isPeriodic_1Fragment = false;
 }
 
 void SLFractureGlobal_Configuration::Initialize_SLFractureGlobal_Configuration_After_Reading() 
@@ -77,6 +80,7 @@ void SLFractureGlobal_Configuration::Initialize_SLFractureGlobal_Configuration_A
 		do_mkdir(rootFolder.c_str());
 		rootFolder += "/";
 	}
+	isPeriodic_1Fragment = (periodic_1Fragment_size > 0.0);
 }
 
 void SLFractureGlobal_Configuration::Read(istream& in)
@@ -263,6 +267,10 @@ void SLFractureGlobal_Configuration::Read(istream& in)
 		else if (buf == "terminate_run_target_max_damage")
 		{
 			READ_NDOUBLE(in, buf, terminate_run_target_max_damage);
+		}
+		else if (buf == "periodic_1Fragment_size")
+		{
+			READ_NDOUBLE(in, buf, periodic_1Fragment_size);
 		}
 		else
 		{
@@ -882,16 +890,7 @@ void SL_Interface_Fracture_PF::Get_sigmaC_deltaC_phiC_scales(double& sigmaCScale
 	deltaCScale = deltaC;
 	energyCScale = sigmaCScale * deltaCScale;
 	if (TRS_Tensile_Mode())
-	{
-		if (tsrModel == tsr_Ortiz)
-			energyCScale *= 0.5;
-		else if (tsrModel == tsr_Xu_Needleman)
-			energyCScale *= exp(1.0);
-		else
-		{
-			THROW("Imeplement the option here or leave the factoring out\n");
-		}
-	}
+		energyCScale *= GetEnergyConstantFactor(tsrModel);
 }
 
 

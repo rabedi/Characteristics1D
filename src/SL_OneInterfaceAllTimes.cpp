@@ -736,7 +736,32 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 	// note: for nonzero source problems characteristics are updated in SLInterfaceCalculator::Main_Compute_OnePoint
 	VEC wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ;
 	SL_interface_Temp_PPtData* current_ptData = NULL;
-	Compute_DownStream_Characteristics_wo_in_situ(wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ,
+	bool compute_w_from_IC = true;
+	double t0;
+	if (g_slf_conf->isPeriodic_1Fragment)
+	{
+		double ws = slic.ts_bulkProps->bulk_leftPtr->cd_iso;
+		double L = g_slf_conf->periodic_1Fragment_size;
+		t0 = L / ws;
+		if (currentTime > t0)
+		{
+			compute_w_from_IC = false;
+			double timePrev = currentTime - t0;
+			double vL, vR, sigma;
+			bool found = g_seq_short.GetPt(timePrev, vL, vR, sigma);
+			if (!found)
+			{
+				THROW("Previous point cannot be found\n");
+			}
+			double Z = slic.ts_bulkProps->bulk_leftPtr->c_rhos[0];
+			double a = g_SL_desc_data.a_xt_prob[0];
+			double Zla = Z * L * a;
+			wlSide_rGoing_WO_in_situ[0] = sigma - Z * vR + Zla;
+			wrSide_lGoing_WO_in_situ[0] = sigma + Z * vL + Zla;
+		}
+	}
+	if (compute_w_from_IC)
+		Compute_DownStream_Characteristics_wo_in_situ(wlSide_rGoing_WO_in_situ, wrSide_lGoing_WO_in_situ,
 		currentTime, slic.current_timeIndex, current_ptData);
 	slic.Initialize_setFromOutside_Incoming_Characteristics_etc(&wlSide_rGoing_WO_in_situ, &wrSide_lGoing_WO_in_situ);
 	// setting sigmaC and deltaC factors
@@ -759,11 +784,40 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 		maxTime = maxTimeBeforeThisPoint;
 	}
 	else
+	{
 		maxTime = currentTime;
+		if (g_slf_conf->isPeriodic_1Fragment)
+		{
+			double sigma = slic.pPtSlns->sl_side_ptData[SDL].sigma_downstream_final[0];
+			double vL = slic.pPtSlns->sl_side_ptData[SDL].v_downstream_final[0], vR = slic.pPtSlns->sl_side_ptData[SDR].v_downstream_final[0];
+			g_seq_short.AddPt(maxTime, vL, vR, sigma, 2.0 * t0);
+			double delv = vR - vL;
+			double uL = slic.pPtSlns->sl_side_ptData[SDL].u_downstream_final[0], uR = slic.pPtSlns->sl_side_ptData[SDR].u_downstream_final[0];
+			double delu = uR - uL;
+			PITSS terminateState = per_if.UpdateStats(maxTime, delu, delv, sigma);
+		}
+	}
 	return as;
 }
-
 int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem()
+{
+	int terminateFlag = Main_One_InterfaceProblem_Aux();
+	if (per_if.isActive)
+	{
+		string fileName = per_if.nameOne_a_SharedAll_l +  "_laStudies.txt";
+		fstream in(fileName.c_str(), ios::in);
+		bool fileExists = in.is_open();
+		if (fileExists)
+			in.close();
+		fstream out(fileName.c_str(), ios::app);
+		if (!fileExists)
+			per_if.Output_Periodic1IntrFrag_Header(out);
+		per_if.Output_Periodic1IntrFrag(out);
+	}
+	return terminateFlag;
+}
+
+int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem_Aux()
 {
 	SLInterfaceCalculator slic;
 	InitialStep_Use_IC(slic);
@@ -776,6 +830,8 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem()
 	bool accept_point;
 	double maxTime;
 	Set1DOrtizType();
+	if (g_slf_conf->isPeriodic_1Fragment)
+		g_seq_short.AddPt(0.0, 0.0, 0.0, 1.0, 2.0 * per_if.aInv);
 
 	long cntr = 0;
 	while (cntr < 1000000000000)
@@ -784,9 +840,37 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem()
 			cout << cntr << '\n';
 		SLInterfaceCalculator slic;
 		as = NonInitialStep(as.a_delt, accept_point, maxTime, cntr, slic);
+		if (per_if.isActive)
+		{
+			double maxDelU = slic.pPtSlns->maxEffDelU;
+			double delta_u = slic.pPtSlns->sl_side_ptData[SDR].u_downstream_final[0] - slic.pPtSlns->sl_side_ptData[SDL].u_downstream_final[0];
+			bool ready2Return = false;
+#if 0
+			if (maxTime >= per_if.t_dilute_zeroStressCheck)
+			{
+				if (per_if.diluteFractureModel)
+				{
+					per_if.terminateState = pit_sigma0;
+					return 1;
+				}
+				cout << "delta_u\t" << delta_u << '\n';
+				if (per_if.delu4Sigma0 - delta_u < 1e-6)
+				{
+					per_if.terminateState = pit_sigma0;
+					return 1;
+				}
+			}
+			else 
+#endif
+			if (per_if.terminateState != PITSS_none)
+				return 1;
+		}
 		AdaptivityF a_flag = as.get_a_flag();
 		if ((maxTime >= g_slf_conf->terminate_run_target_time) || (a_flag == a_terminate_run_correctly))
-			return 1;
+		{
+			if (!per_if.isActive)
+				return 1;
+		}
 		if (a_flag == a_terminate_run_prematurely)
 			return 0;
 	}
@@ -813,10 +897,6 @@ void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn)
 
 	if (icbc_configName != "default")
 		g_SL_desc_data.Read(icbc_configName);
-	if (slfg_configName != "default")
-		g_slf_conf->Read(slfg_configName);
-	else
-		g_slf_conf->Initialize_SLFractureGlobal_Configuration_After_Reading();
 
 	fstream inb(pf_configName.c_str(), ios::in);
 	if (!inb.is_open())
@@ -828,6 +908,32 @@ void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn)
 	interfacePFs.Read_SL_Interface_Fracture_PF(inb, 1);
 	inb.close();
 
+	if (slfg_configName != "default")
+		g_slf_conf->Read(slfg_configName);
+	else
+		g_slf_conf->Initialize_SLFractureGlobal_Configuration_After_Reading();
+
+	if (g_slf_conf->isPeriodic_1Fragment)
+	{
+		per_if.isActive = true;
+		per_if.l = g_slf_conf->periodic_1Fragment_size;
+		per_if.a = g_SL_desc_data.a_xt_prob[0];
+		per_if.isExtrinsic = IsExtrinsic(interfacePFs.tsrModel);
+		per_if.energyScale = GetEnergyConstantFactor(interfacePFs.tsrModel);
+		if (!per_if.isExtrinsic)
+			per_if.t0 = 0.0;
+		else
+			per_if.t0 = 1.0 / per_if.a;
+
+		gt0 = per_if.t0;
+		per_if.sigma_t0 = per_if.t0 * per_if.a;
+		if (g_slf_conf->uniform_del_t < 0)
+			per_if.relTol = -g_slf_conf->uniform_del_t;
+		per_if.Initialize_Periodic1IntrFrag();
+		g_slf_conf->uniform_del_t = per_if.suggeste_delt;
+		g_slf_conf->terminate_run_target_time = per_if.suggested_final_time4ZeroSigmaC;
+		g_slf_conf->between_steps_adaptivity = false;
+	}
 	inb.open(el_configName.c_str(), ios::in);
 	if (!inb.is_open())
 	{
@@ -847,3 +953,4 @@ void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn)
 	int successMode = oiat.Main_One_InterfaceProblem();
 	cout << "successMode\t" << successMode << '\n';
 }
+

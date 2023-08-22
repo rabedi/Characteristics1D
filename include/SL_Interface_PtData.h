@@ -29,6 +29,44 @@ typedef enum { rmode_stick, rmode_sep, rmode_slip} RiemannMode_StorageT;
 #define NUMSLRMN 2
 #endif
 
+// PFT periodic fragment type
+// _PL: per length
+// _i cohesive interface values: ened = int sigma delu
+// pft_iEne is the integral of sigma versus epsilon
+// pft_iEner = 0.5 * sigma * delu
+//		ivsolid = la/2 - delv/2 (l segment length) a loading rate: from Drugan_2001_Dynamic fragmentation of brittle materials_Analytical mechanics-based models, equations (11) and (26)
+//		pft_irelusolid = usolide / (l/2) (displacement of l/2 - displacement 0) / (l/2) has the unit of strain and measures relative displacement of end point 
+//		value 0 -> no stretch, -1 -> length = 0!!
+// _b bulk values averaged over a segment length
+//		pft_bepsilon, pft_bsigma are average strain stress for the segment
+//		pft_bsigma_maxpw: maximum pointwise stress in the segment
+//		energies:	K, U, EneSource, EneN are kinetic (from vTheta), internal, source (aint_0^t <sigma_bulk>) energies and N is numerical dissipation
+//					pft_iEned: is energy dissipation K(t) + U(t) = K(0) + U(0) = ened(t) + a int_0^t <sigma>(tau) dtau - eneN
+typedef enum {	pft_time, pft_numCyclesAfterCrackOpening, pft_idelu, pft_idelv, pft_isigma, pft_ichar,pft_iEne, pft_iEner, pft_iEned, pft_ilog10Ened, pft_irelusolid, pft_ivsolid,
+				pft_bepsilon, pft_bsigma, pft_bsigma_maxpw,
+				pft_bK_PL, pft_bU_PL, pft_bEneSource_PL, pft_iEned_PL, pft_ilog10Ened_PL, pft_bEneN_PL, OneSegmentPFT_SIZE} OneSegmentPFT;
+
+string getName(OneSegmentPFT dat);
+void name2Type(string& name, OneSegmentPFT& typeVal);
+ostream& operator<<(ostream& out, OneSegmentPFT dat);
+istream& operator>>(istream& in, OneSegmentPFT& dat);
+
+// Periodic1IntrFrag_TimeStageStorageStage -> PITSS
+// pit_sigma0, sigma becomes 0 - full failure
+// pit_timeDilute, time of dilute (constant time for a given loading rate) is passed 
+// pit_timeInteraction - time of one wave travel across the segment of size l is passed (time = l)
+// pit_vSolidNegative = vSolid becomes negative (eq 26 in Drugan 2001)
+// pit_reluSolid1,  relative solid displacement = 1,  e.g. solid bar gets back to its 100% strain at the beginning of fragmentation (t = t0 = 1/a)
+// pit_reluSolid0,  relative solid displacement = 0,  e.g. solid bar regains its initial length
+// pit_reluSolidm1, relative solid displacement = -1, e.g. solid bar length becomes zero!
+
+typedef enum {PITSS_none = -1, pit_sigma0, pit_sigmaMax, pit_timeDilute, pit_timeInteraction, pit_timeSigmaAveMax, pit_timeSigmaPWMax,
+pit_vSolidNegative, pit_reluSolid1, pit_reluSolid0, pit_reluSolidm1, PITSS_SIZE} PITSS;
+string getName(PITSS dat);
+void name2Type(string& name, PITSS& typeVal);
+ostream& operator<<(ostream& out, PITSS dat);
+istream& operator>>(istream& in, PITSS& dat);
+
 // the first 3 are also used for labeling target values
 
 // stores main properties of one side of the interface.
@@ -184,13 +222,32 @@ public:
 #endif
 };
 
+// these two classes are to store the time history of velL, velR, and stress of an interface of a periodic segent (used in SL_OneInterfaceAllTimes)
+// not used
+class SL_Interface1DPt_Short
+{
+public:
+	double time, vL, vR, sigma;
+};
+
+class SL_Interface1DPtSeq_Short
+{
+public:
+	void AddPt(double time, double vL, double vR, double sigma, double delT2Keep);
+	bool GetPt(double time, double& vL, double& vR, double& sigma) const;
+private:
+	deque<SL_Interface1DPt_Short> ptHistory;
+};
+
+extern SL_Interface1DPtSeq_Short g_seq_short;
+
+
 // this class stores errors (see SLFractureGlobal_Configuration items 1 and 2 for further discussion and relevant tolerances)
 // 1. Iteration to iteration within one time step: step n+1, iterations k and k + 1
 //				Used to continue iterations until solution for time step n + 1 is finalized
 // 2. Time step to the next: step n+1, 
 //				Used to adjust time step, it acts as refinement check to reduce time step for an already analyzed point
-
-
+	
 class Pt_Error_Data
 {
 public:

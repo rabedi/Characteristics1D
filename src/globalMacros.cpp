@@ -15,6 +15,7 @@ double invalidNum = 1e40;
 int g_serialNumber = 0;
 double g_time = 0.0;
 int g_low_disk_space = 0;
+double gt0 = 0.1;
 
 bool b_db_p = false;
 fstream g_logout;

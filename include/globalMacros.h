@@ -13,7 +13,7 @@
 /// mainConfig_resolution_x_New.txt, configMaker_axt_resolution_x_Fracture_New.inst, resolutionFactors
 // resolutionFactor * 4 + 2
 // 1
-#define SIZE_PT_TIME_SEQUENCE	6
+///////////////#define SIZE_PT_TIME_SEQUENCE	6
 // 2
 //#define SIZE_PT_TIME_SEQUENCE	10
 // 4
@@ -37,7 +37,7 @@
 
 //#define SIZE_PT_TIME_SEQUENCE	162
 //#define SIZE_PT_TIME_SEQUENCE	2002
-//#define SIZE_PT_TIME_SEQUENCE	50000
+#define SIZE_PT_TIME_SEQUENCE	6
 
 // prints velocity fields in DSU files (useful for elstic problems)
 #define DSU_PRINT_VS	1
@@ -124,6 +124,9 @@ extern double invalidNum;
 // serial number correspond to the input random domain to be read (dealing with input domain)
 extern int g_serialNumber;
 extern double g_time;
+
+// solution starts from this time rather than time = 0
+extern double gt0;
 
 // if 1, it does not generate large files, 0 it does, 2 -> only prints fixed space data
 extern int g_low_disk_space;

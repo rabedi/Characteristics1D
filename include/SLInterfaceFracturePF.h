@@ -111,6 +111,10 @@ public:
 	// others (e.g. contact, etc.) can be added later, especially for contact problems
 
 	AdaptivityF a_flag_default;
+
+	/// periodic 1 cell domain (for SL_OneInterfaceAllTimes class)
+	double periodic_1Fragment_size; // if > 0 -> isPeriodic_1Fragment = true
+	bool isPeriodic_1Fragment;
 private:
 	void Read(istream& in);// does not read computed parts
 };

@@ -1,0 +1,54 @@
+{
+baseName
+_Solver1D_sample
+
+
+# 0: do not read previous solutions, 1 reads restart files 
+read_Results 
+1
+
+# write solution logs (e.g. every point added, the log file is written so that restart can happen)
+write_Results
+1
+
+# in checking if points are the same either the coordinate of the points are used (recommended - equality_by_x = 1) or indexMain, indexSecondary are used (equality_by_x = 0)
+equality_by_x 
+1
+
+# sample set of parameters for this solve
+paras1D
+{
+2.0	3.2
+}
+
+# sample 
+indices4paras1D
+{
+3	4
+}
+
+
+### instructions for what to solve for (min, max, crossing), values of crossings, etc.
+posConfs2Solve
+{
+	# 0th position looking for zero value
+	{
+		nameBase	zero_pos0
+		pos_y		0
+		isExtremum	0
+		# isMins
+		crossing_ys	{	0.0		}
+	}
+	
+	# 1st position looking for min value
+	{
+		nameBase	min_pos1
+		pos_y		1
+		isExtremum	1
+		isMins	{ 	1	}
+		# crossing_ys	{	0.0		}
+	}
+	
+}
+
+}

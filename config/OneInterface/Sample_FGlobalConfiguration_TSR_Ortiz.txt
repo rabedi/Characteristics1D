@@ -63,7 +63,8 @@ between_steps_adaptivity
 uniform_del_t
 #0.0001
 #0.01
-0.0001
+#0.0001
+0.00001
 
 # minimum allowable time step, smaller than this the run terminates. We can get to such small sizes if successive refinements are needed
 min_del_t

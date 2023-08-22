@@ -1264,6 +1264,21 @@ istream& operator>>(istream& in, SLFF_TSRType& dat)
 	return in;
 }
 
+bool IsExtrinsic(SLFF_TSRType dat)
+{
+	if ((dat == tsr_Ortiz) || (dat == tsr_linear))
+		return true;
+	return false;
+}
+
+double GetEnergyConstantFactor(SLFF_TSRType dat)
+{
+	if ((dat == tsr_Ortiz) || (dat == tsr_linear))
+		return 0.5;
+	if (dat == tsr_Xu_Needleman)
+		return exp(1.0);
+	THROW("Option not implemented\n");
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void getName(SLFF_PF_velOptionType dat, string& name)

@@ -41,6 +41,7 @@
 
 // this class is only used to update downstream characteristics for problems with source term
 class SL_OneInterfaceAllTimes;
+class Periodic1IntrFrag;
 
 class SLInterfaceCalculator
 {
@@ -276,6 +277,144 @@ public:
 	double theta4MaxPower;
 	double maximumPower;
 };
+
+class Periodic1IntrFrag_TimeStageStorage
+{
+public:
+	Periodic1IntrFrag_TimeStageStorage();
+	void CopyData(const Periodic1IntrFrag_TimeStageStorage& other);
+	void Initialize(PITSS pitssIn, const string& nameBase, Periodic1IntrFrag* perConfIn);
+	void Print();
+
+	int b_set;
+	PITSS pitss;
+	Periodic1IntrFrag* perConf;
+	unsigned int timeIndex;
+	vector<double> vals; // U, K, delU, ...
+	vector<double> spatial_stress_vals, spatial_vel_vals;
+	fstream out;
+};
+
+class Periodic1IntrFrag
+{
+public:
+	Periodic1IntrFrag();
+	~Periodic1IntrFrag();
+	void Output_Periodic1IntrFrag_Header(ostream& out);
+	void Output_Periodic1IntrFrag(ostream& out);
+	double relTol; // to make small values
+	// inputs:
+	// all quantities are noramlized to result in 
+	int aIndex;
+	int lIndex;
+	double a; // normalized loading rate
+	double l; // normaliezd fragment size used
+	bool isActive;
+	bool isExtrinsic;
+	double energyScale; // factor of deltaC * sigmaC that gives sigmaC
+	string nameBase;
+	string nameOne_a_SharedAll_l;
+	string nameOne_a_One_l;
+	// bulk interface PP
+	int numSpatialSubsegments_BulkInterfacePoints_Print_4PP;
+	bool useRepeatedSimpsonRuleForHigherOrders_4PP;
+	int step4_segment_vsigma_output;
+
+	void Initialize_Periodic1IntrFrag();
+	// returns PITSS_none if the run should continue, otherwise the run terminates
+	PITSS UpdateStats(double timeNew, double delu, double delv, double sigma);
+	void Finalize_Periodic1IntrFrag();
+
+	///// related to Periodic1IntrFrag_TimeStageStorage
+	void Updata_Periodic1IntrFrag_TimeStageStorage(PITSS pitss);
+
+	// computed
+	//Zhou_2006_Effects of material properties on the fragmentation of brittle materials.pdf
+	// my time scale is twice larger so equations are different
+
+	double t0; // = 1/a
+	double t_SigmaMax_dilute;
+	double t_SigmaZero_minus_SigmaMax_dilute;
+	double t_SigmaMax_real;
+	double t_SigmaZero_minus_SigmaMax_real;
+	double t_dilute_approx, t_dilute;
+	double t_dilute_approx_p, t_dilute_p; // _p means values are normalized by Zhu06 and Drugan's paper 
+	double l_dilute_approx_p, l_dilute_p;
+	TSR_XuNeedleman tsr_xn;
+
+	double delu4Sigma0;
+	double l_dilute_approx; // equations (17 & 19)
+	double l_dilute; // equation (16) = time_dilute (length and time needed for fragments to not interact with each other)
+		
+	// Drugan reference:
+	// Xu-Needleman	: REF = MAX : correponds to max stress in TSR, l_Drugan is the length for which solid speed is zero
+	// Ortiz		: REF = FIN : correponds to final stress in TSR (delta = 1, sigma = 0) as for initial stage vSolid is always going to be > 0
+	double l_SigmaRef_Drugan_Dilute;
+	bool diluteFractureModel; // l >= l_dilute
+	double a_p, l_p; // zhu6_a, zhu6_l; // epsilonDotNonDimensional; // (11)
+	double zhu6_epsilonDotScale; // (13)
+	double zhu6_sBarScale; // (21) fragment size scale
+	double l_Zhu6a; // (28)
+	double l_Zhu6b; // (29a)
+	double l_Grady;
+	double l_Glenn;
+
+	double la;
+	double sigma_t0;
+	double aInv;
+	double log10a;
+	double log10l;
+	double suggeste_delt;
+	double suggested_final_time4ZeroSigmaC;
+// see the formula how predicted sigma max is computed
+
+	double tFailure;
+
+	double energy_diss_per_length;
+	double energy_diss_per_length_At_t_dilute;
+
+	bool energy_diss_per_length_At_t_dilute_set;
+	// this is another way to normalize energy dissipation of different models. 
+	// It's normalized by input energy throught stress source term, from time 0 to t
+	// int 0 to t of I = a * spatialMean(stress) dtau -- t is the final time
+	double inputEnergyFromMeanStress_PL;
+	// max value that I could have taken above, if sigma = at -> IMax = a^2t^2 E / 2 -- t is the final time
+	double inputEnergyFromMeanStress_MaxPossVal_PL;
+
+	double energy_diss_real_inp_E_t_final; // energy_diss_per_length / inputEnergyFromMeanStress_PL
+	double energy_diss_max_inp_E_t_final;  // energy_diss_per_length / inputEnergyFromMeanStress_MaxPossVal_PL
+
+
+	// bulk interface PP
+	vector<double> xs_wrCenter;
+	vector<double> weights;
+	unsigned int sz_xs;
+	double half_l;
+
+	///
+	unsigned int timeIndexNew;
+	vector<double> currentStepVals;
+	double max_bsigma, max_bsigma_pw;
+	vector<statHolder> stat4Vals;
+	fstream outAllVals, outStress, outVel;
+	vector<string> velHeader, stressHeader;
+	vector<double> velVals, stressVals;
+	bool delvsZeroObserved;
+
+	// the time to check if we have reacheed dilute limit
+	double t_dilute_zeroStressCheck;
+
+	///// related to Periodic1IntrFrag_TimeStageStorage
+	Periodic1IntrFrag_TimeStageStorage stageSlns[PITSS_SIZE];
+	PITSS terminateState;
+
+private:
+	void setEmpty_Periodic1IntrFrag();
+	void set_energy_diss_per_length_4_t_dilute(double time, double deltau);
+};
+
+extern Periodic1IntrFrag per_if;
+
 bool SetSlip3DParameters(const SL_Interface_Fracture_PF* interfacePFs, const SL_Elastic_InterfaceProperties*	ts_bulkProps, Slip3D& s3d, Vec_nt& del_u_nt_parts, Slip3D_1Dir& s3d1Dir);
 
 void Compute_Directional_FrictionParameters(Vec_nt& del_u_nt_parts, double delV_Angle, const SL_Interface_Fracture_PF* interfacePFs, double& k, double& damaged_sn, double& damaged_c);

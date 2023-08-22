@@ -113,6 +113,14 @@ int SetNewtonCotes_Points_AndWeights(int numSpatialSubsegments_BulkInterfacePoin
 	return numSpatialPointsPerSegment;
 }
 
+double rlog10(double val)
+{
+	static double factor = 1.0 / log(10.0);
+	if (val > 0.0)
+		return log(val) * factor;
+	return std::numeric_limits<double>::quiet_NaN();
+}
+
 void Test_SetNewtonCotes_Points_AndWeights()
 {
 	bool useRepeatedSimpsonRuleForHigherOrders = false;

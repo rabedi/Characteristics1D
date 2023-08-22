@@ -26,6 +26,7 @@
     <ClCompile Include="src\LAFuncs.cc" />
     <ClCompile Include="src\LAfuncsFinalStep.cpp" />
     <ClCompile Include="src\LAfuncsFixed.cpp" />
+    <ClCompile Include="src\MinCrossingSolver1D.cpp" />
     <ClCompile Include="src\RandomVariable.cpp" />
     <ClCompile Include="src\SimpleConfigMaker.cpp" />
     <ClCompile Include="src\SLBulk_Properties.cpp" />
@@ -57,6 +58,7 @@
     <ClInclude Include="include\LAFuncs.h" />
     <ClInclude Include="include\LAfuncsFinalStep.h" />
     <ClInclude Include="include\LAfuncsFixed.h" />
+    <ClInclude Include="include\MinCrossingSolver1D.h" />
     <ClInclude Include="include\RandomVariable.h" />
     <ClInclude Include="include\SimpleConfigMaker.h" />
     <ClInclude Include="include\SLBulk_Properties.h" />

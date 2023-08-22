@@ -5,6 +5,7 @@
 
 SLDescriptorData g_SL_desc_data;
 
+
 SLDescriptorData::SLDescriptorData()
 {
 	setValue(a_xt_prob, 0.0);
@@ -142,9 +143,16 @@ void SLDescriptorData::Read(istream & in)
 	}
 	if (load_number == AXT_LN)
 	{
+		if (load_parameters.size() == 0)
+		{
+			load_parameters.resize(1);
+			load_parameters[0] = a_xt_prob[0];
+		}
 		double value = 0.0; map<string, string>* mpPtr;
 		if (Find_Version_Value("la", value, mpPtr))
+		{
 			load_parameters[0] = pow(10.0, value);
+		}
 		g_logout << "\tla\t" << value << "\tlrate\t" << load_parameters[0];
 	}
 	Finalize_SLDescriptorData();
@@ -269,7 +277,11 @@ void SLDescriptorData::Get_IC(SL_Bulk_Properties* bulk_Ptr, GID bulkFlag, double
 	if (load_number == AXT_LN)
 	{
 		for (int i = 0; i < DiM; ++i)
+		{
 			v_0[i] = a_xt_prob[i] * x;
+			u_0[i] = v_0[i] * gt0;
+			eps_0[i] = a_xt_prob[i] * gt0;
+		}
 	}
 	else
 	{
@@ -310,13 +322,13 @@ void SLDescriptorData::GetBoundaryConditionValue_LeftRight(bool isLeft, SL_Elast
 				if (ts_bulkProps->directionalBCType[i] == bct_Dirichlet)
 					BC_val[i] = a_xt_prob[i] * x;
 				else if (ts_bulkProps->directionalBCType[i] == bct_Neumann)
-					BC_val[i] = a_xt_prob[i] * t * bulk_Ptr->effective_CsIso[i];
+					BC_val[i] = a_xt_prob[i] * (t + gt0) * bulk_Ptr->effective_CsIso[i];
 				else if (ts_bulkProps->directionalBCType[i] == bct_Characteristics)
 				{
 					if (isLeft)
-						BC_val[i] = a_xt_prob[i] * t * bulk_Ptr->effective_CsIso[i] - a_xt_prob[i] * x;
+						BC_val[i] = a_xt_prob[i] * (t + gt0) * bulk_Ptr->effective_CsIso[i] - a_xt_prob[i] * x;
 					else
-						BC_val[i] = a_xt_prob[i] * t * bulk_Ptr->effective_CsIso[i] + a_xt_prob[i] * x;
+						BC_val[i] = a_xt_prob[i] * (t + gt0) * bulk_Ptr->effective_CsIso[i] + a_xt_prob[i] * x;
 				}
 			}
 		}
@@ -495,8 +507,8 @@ void SLDescriptorData::Get1InterfaceImpingingCharacteristics(SL_Elastic_Interfac
 		{
 			for (int i = 0; i < DiM; ++i)
 			{
-				wlSide_rGoing[i] = a_xt_prob[i] * t * ts_bulkProps->bulk_leftPtr->effective_CsIso[i];
-				wrSide_lGoing[i] = a_xt_prob[i] * t * ts_bulkProps->bulk_rightPtr->effective_CsIso[i];
+				wlSide_rGoing[i] = a_xt_prob[i] * (t + gt0) * ts_bulkProps->bulk_leftPtr->effective_CsIso[i];
+				wrSide_lGoing[i] = a_xt_prob[i] * (t + gt0) * ts_bulkProps->bulk_rightPtr->effective_CsIso[i];
 			}
 		}
 #if COMPUTE_ANISO_BULK

@@ -1488,7 +1488,7 @@ void Domain_All_Interfaces_All_Times::Compute1D_Averages()
 		if ((si == 0) && (b_ring_opened1D))
 		{
 			ring_opened1D_kinetic_energy_vr = 0.0;
-			// ring_opened1D_kinetic_energy_vr = rhoAverage * a ^ 2 * L ^ 2 / 8 / PI ^ 2
+			// ring_opened1D_kinetic_energy_vr = rhoAverage * a ^ 2 * L ^ 3 / 8 / PI ^ 2
 			if (b_ring_opened1D_kinetic_energy_on_full_vTheta)
 				ring_opened1D_kinetic_energy_vr = 0.125 * osabci->rhoAve * ring_opened1D_al * ring_opened1D_al * L / (PI * PI);
 		}

@@ -130,6 +130,29 @@ private:
 	void Zero_TSR1d_stepn_to_np1();
 };
 
+class TSR_XuNeedleman
+{
+public:
+	TSR_XuNeedleman();
+	double a; 
+	double Z;
+	double deltaC;
+	double sigmaC;
+	double delTFactor; // as a factor of tauC
+	double sigmaCFactor4Zero; // sigma never becomes zero, but a fraction like 0.01 or 0.001 is taken as value considered zero past peak
+	// loading rate: problem sigma(delta) + Z/2 * deltaDot = at
+	// sigma(delta) = sigmaC * ndel exp(-ndel), ndel = delta/deltaC
+	void Compute(ostream* outPtr = NULL);
+	void OutMain(ostream& out);
+
+	// computed
+	double tauC;
+	double delT;
+	double tSigmaMax;
+	double delnSigmaZero;
+	double tSigmaZero;
+};
+
 // return number of cases tested
 int Test_TSR_Ortiz_1D(string nameWOExtIn = "TestFiles/TestOrtiz1D_debug");
 

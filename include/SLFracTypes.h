@@ -374,7 +374,9 @@ void getName(SLFF_TSRType dat, string& name);
 ostream& operator<<(ostream& out, SLFF_TSRType dat);
 bool string2Type(string name, SLFF_TSRType& dat);
 istream& operator>>(istream& in, SLFF_TSRType& dat);
-
+bool IsExtrinsic(SLFF_TSRType dat);
+// energy = returnValue * deltaC * sigmaC
+double GetEnergyConstantFactor(SLFF_TSRType dat);
 /////
 void getName(SLFF_PF_velOptionType dat, string& name);
 ostream& operator<<(ostream& out, SLFF_PF_velOptionType dat);
