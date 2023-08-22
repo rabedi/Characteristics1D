@@ -19,18 +19,9 @@ bool Solve_1_serialNumber(unsigned int serNumIn, int versionNumIn);
 void Solve_all_serialNumbers();
 void Print_slscript(unsigned int numParallelRuns);
 
-#include "TSR1D.h"
-#include "MinCrossingSolver1D.h"
-
 int main(int argc, char *argv[])
 {
-//	Test_SolveYCrossing();
-//	Test_SolveYExtremum();
-	MAIN_Solver1D();
-	cout << "Finished\n";
-	getchar();
-	getchar();
-	return 0;
+
 
 //	Test_TSR_Ortiz_1D();
 //	return 0;
