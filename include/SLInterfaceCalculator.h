@@ -295,21 +295,36 @@ public:
 	fstream out;
 };
 
+// F: "final", e.g. when stress response in Periodic1IntrFrag goes to zero
+// OFC: "other failure criterion"				Examples, when vSolid = 0, when uRelSolid = 0, uRelSolid = -1
+
+// Want to come up with a function that takes the 
+//	if (tF > tOFC)				(That is when the OFC happens BEFORE tF)
+//		crosserValue = tF - tOFC	> 0			
+//	else
+//		crossValue = (vtOFCbar - vF) < 0   [OFC_v_decreasing = true, otherwise * -1]
+//		vTOFCbar is the target value for OFC, e.g. zero for vSolid = 0, 1 for uRelSolid = 0, -1, for uRelSolid = -1			
+
+//		if	tOFC has not reached, -1 is passed to the function			-> return false
+//			otherwise														return true
+bool GetZeroCrosserValue(double tF, double tOFC, double vF, double vtOFCbar, double& tF_minus_tOFC, double& crosserValue, bool OFC_v_decreasing = true);
+
 class Periodic1IntrFrag
 {
 public:
 	Periodic1IntrFrag();
-	~Periodic1IntrFrag();
-	void Output_Periodic1IntrFrag_Header(ostream& out);
+	void Set_TSR_Model(SLFF_TSRType	tsrModelIn);
+	static void Output_Periodic1IntrFrag_Header(ostream& out);
 	void Output_Periodic1IntrFrag(ostream& out);
 	double relTol; // to make small values
 	// inputs:
 	// all quantities are noramlized to result in 
 	int aIndex;
 	int lIndex;
+	int aIndex_secondary;
+	int lIndex_secondary;
 	double a; // normalized loading rate
 	double l; // normaliezd fragment size used
-	bool isActive;
 	bool isExtrinsic;
 	double energyScale; // factor of deltaC * sigmaC that gives sigmaC
 	string nameBase;
@@ -320,7 +335,7 @@ public:
 	bool useRepeatedSimpsonRuleForHigherOrders_4PP;
 	int step4_segment_vsigma_output;
 
-	void Initialize_Periodic1IntrFrag();
+	void Initialize_Periodic1IntrFrag(bool prematureExit = false);
 	// returns PITSS_none if the run should continue, otherwise the run terminates
 	PITSS UpdateStats(double timeNew, double delu, double delv, double sigma);
 	void Finalize_Periodic1IntrFrag();
@@ -328,6 +343,7 @@ public:
 	///// related to Periodic1IntrFrag_TimeStageStorage
 	void Updata_Periodic1IntrFrag_TimeStageStorage(PITSS pitss);
 
+	void GetPrimaryFragmentSizes(vector<double>& primaryFragmentSizes);
 	// computed
 	//Zhou_2006_Effects of material properties on the fragmentation of brittle materials.pdf
 	// my time scale is twice larger so equations are different
@@ -408,12 +424,17 @@ public:
 	Periodic1IntrFrag_TimeStageStorage stageSlns[PITSS_SIZE];
 	PITSS terminateState;
 
+	/// Crossers and time differences for other fracture criteria
+	double delt_vs0, crosser_vs0;		  // vs becomes negative (Drugan's idea)
+	double delt_relus_0, crosser_relus_0; // solid bar reaches its original length
+	double delt_relus_m1, crosser_relus_m1; // relus = -1 criterion (mine, bar goes to nondimensional strain = -1 (eps/(sigma_C/E) = -1)
+
 private:
 	void setEmpty_Periodic1IntrFrag();
 	void set_energy_diss_per_length_4_t_dilute(double time, double deltau);
 };
 
-extern Periodic1IntrFrag per_if;
+extern Periodic1IntrFrag* per_if;
 
 bool SetSlip3DParameters(const SL_Interface_Fracture_PF* interfacePFs, const SL_Elastic_InterfaceProperties*	ts_bulkProps, Slip3D& s3d, Vec_nt& del_u_nt_parts, Slip3D_1Dir& s3d1Dir);
 

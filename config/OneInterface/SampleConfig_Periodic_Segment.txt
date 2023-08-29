@@ -9,7 +9,7 @@ config/OneInterface/Periodic_segment/Periodic_segment_ICBC.txt
 config/OneInterface/Periodic_segment/Periodic_segment_FGlobalConfiguration.txt
 
 # pf_configName: SL_Interface_Fracture_PF
-config/OneInterface/Periodic_segment/Periodic_egment_PF.txt
+config/OneInterface/Periodic_segment/Periodic_segment_PF.txt
 
 # el_configName: SL_Elastic_InterfaceProperties
-config/OneInterface/Periodic_segment/Periodic_egment_El.txt
+config/OneInterface/Periodic_segment/Periodic_segment_El.txt

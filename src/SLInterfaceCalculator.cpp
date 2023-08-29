@@ -3,7 +3,7 @@
 #include "SL_OneInterfaceAllTimes.h"
 #include "Domain_AllInterfacesAllTimes.h"
 #include "globalFunctions.h"
-Periodic1IntrFrag per_if;
+Periodic1IntrFrag* per_if = NULL;
 
 SLInterfaceCalculator::SLInterfaceCalculator()
 {
@@ -2765,6 +2765,21 @@ void Periodic1IntrFrag_TimeStageStorage::Print()
 	out.close();
 }
 
+bool GetZeroCrosserValue(double tF, double tOFC, double vF, double vtOFCbar, double& tF_minus_tOFC, double& crosserValue, bool OFC_v_decreasing)
+{
+	if (tOFC < 0) // this time has not reached
+	{
+		tF_minus_tOFC = std::numeric_limits<double>::quiet_NaN();
+		crosserValue = vtOFCbar - vF;
+		if (!OFC_v_decreasing)
+			crosserValue *= -1;
+		return false;
+	}
+	tF_minus_tOFC = tF - tOFC;
+	crosserValue = tF_minus_tOFC;
+	return true;
+}
+
 Periodic1IntrFrag::Periodic1IntrFrag()
 {
 	setEmpty_Periodic1IntrFrag();
@@ -2776,10 +2791,11 @@ void Periodic1IntrFrag::setEmpty_Periodic1IntrFrag()
 	max_bsigma_pw = max_bsigma;
 	aIndex = 0;
 	lIndex = 0;
+	aIndex_secondary = 0;
+	lIndex_secondary = 0;
 	a = 10.0;
 	l = 2.0;
 	relTol = 1e-4;
-	isActive = false;
 	energy_diss_per_length_At_t_dilute_set = false;
 	numSpatialSubsegments_BulkInterfacePoints_Print_4PP = 10;
 	useRepeatedSimpsonRuleForHigherOrders_4PP = true;
@@ -2791,21 +2807,59 @@ void Periodic1IntrFrag::setEmpty_Periodic1IntrFrag()
 	energyScale = 0.5;
 }
 
-Periodic1IntrFrag::~Periodic1IntrFrag()
+void Periodic1IntrFrag::Set_TSR_Model(SLFF_TSRType	tsrModelIn)
 {
-	Finalize_Periodic1IntrFrag();
+	isExtrinsic = IsExtrinsic(tsrModelIn);
+	energyScale = GetEnergyConstantFactor(tsrModelIn);
 }
 
-void Periodic1IntrFrag::Initialize_Periodic1IntrFrag()
+void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 {
 //	setEmpty_Periodic1IntrFrag();
+	fstream inla("l10a.txt", ios::in);
+	if (inla.is_open())
+	{
+		double tmp;
+		inla >> tmp; // is log10 of a
+		a = pow(10.0, tmp);
+		int tmpi;
+		inla >> tmpi;
+		if (!inla.eof())
+			aIndex = tmpi;
+		inla >> tmpi;
+		if (!inla.eof())
+			aIndex_secondary = tmpi;
+	}
+	fstream inll("l10l.txt", ios::in);
+	if (inll.is_open())
+	{
+		double tmp;
+		inll >> tmp; // is log10 of l
+		l = pow(10.0, tmp);
+		int tmpi;
+		inll >> tmpi;
+		if (!inll.eof())
+			lIndex = tmpi;
+		inll >> tmpi;
+		if (!inll.eof())
+			lIndex_secondary = tmpi;
+	}
+
 	la = l * a;
 	aInv = 1.0 / a;
 	string aIndex_s, lIndex_s;
 	toString(aIndex, aIndex_s);
 	toString(lIndex, lIndex_s);
 	nameOne_a_SharedAll_l = nameBase + "_aI_" + aIndex_s;
+	string ser;
+	toString(aIndex_secondary, ser);
+	nameOne_a_SharedAll_l += "_";
+	nameOne_a_SharedAll_l += ser;
+
 	nameOne_a_One_l = nameOne_a_SharedAll_l + "_lI_" + lIndex_s;
+	toString(lIndex_secondary, ser);
+	nameOne_a_One_l += "_";
+	nameOne_a_One_l += ser;
 
 	// (x): equation number x from Zhu06
 	log10a = rlog10(a);
@@ -2869,6 +2923,9 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag()
 		l_dilute_approx = zhu6_sBarScale * l_dilute_approx_p;
 		l_dilute = zhu6_sBarScale * l_dilute_p;
 
+		if (prematureExit)
+			return;
+
 		t_dilute_zeroStressCheck = l_dilute + aInv - t0;
 
 		t_dilute = 0.5 * t_dilute_p;
@@ -2909,6 +2966,8 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag()
 		
 		l_dilute = t_dilute;
 		l_dilute_approx = t_dilute_approx;
+		if (prematureExit)
+			return;
 
 		// other normalization
 		t_dilute_p = 2.0 * t_dilute;
@@ -3136,7 +3195,7 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 			}
 			else
 			{
-				bool found = g_seq_short.GetPt(tA, vL, vR, sigmaA);
+				bool found = g_seq_short->GetPt(tA, vL, vR, sigmaA);
 				if (!found)
 				{
 					THROW("Could not find the point!\n");
@@ -3152,9 +3211,17 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 			}
 			else
 			{
-				bool found = g_seq_short.GetPt(tB, vL, vR, sigmaB);
+				bool found = g_seq_short->GetPt(tB, vL, vR, sigmaB);
 				if (!found)
 				{
+					double tm;
+					cout << "FirstPt\t" << g_seq_short->GetPt(0, tm, vL, vR, sigma);
+					cout << "\time\t" << tm << "\tvL\t" << vL << "\tvR\t" << vR << "\tsigma\t" << sigma << '\n';
+					cout << "LastPt\t" << g_seq_short->GetPt(-1, tm, vL, vR, sigma);
+					cout << "\time\t" << tm << "\tvL\t" << vL << "\tvR\t" << vR << "\tsigma\t" << sigma << '\n';
+					cout << "tB\t" << tB << '\n';
+					if (per_if != NULL)
+						cout << "a\t" << per_if->a << "\tl\t" << per_if->l << '\n';
 					THROW("Could not find the point!\n");
 				}
 				vB = vL + halfla; // +0.5 la is to take care of +0.5l shift to the right relative to the center of the segment
@@ -3238,24 +3305,45 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 		pits.push_back(tmp);
 		t_SigmaMax_real = timeNew;
 	}
+	vector<PITSS> tmps;
 	tmp = PITSS_none;
 	if (currentStepVals[pft_ivsolid] < 0.0)
-		tmp = pit_vSolidNegative;
-	else if (1e-3 < 1.0 - reldus)
-		tmp = pit_reluSolid1;
-	else if (reldus <= 0.0)
-		tmp = pit_reluSolid0;
-	else if ((reldus + 1.0) <= 1e-3)
 	{
-		retVal = pit_reluSolidm1;
-		tmp = pit_reluSolidm1;
+		tmp = pit_vSolidNegative;
+		tmps.push_back(tmp);
 	}
-	else if (timeRelSigmaMax >= l_dilute)
+	if (1e-3 < 1.0 - reldus)
+	{
+		tmp = pit_reluSolid1;
+		tmps.push_back(tmp);
+	}
+	if (reldus <= 0.0)
+	{
+		tmp = pit_reluSolid0;
+		tmps.push_back(tmp);
+	}
+	if ((reldus + 1.0) <= 1e-3)
+	{
+//		retVal = pit_reluSolidm1;
+		tmp = pit_reluSolidm1;
+		tmps.push_back(tmp);
+	}
+	if (timeRelSigmaMax >= l_dilute)
+	{
 		tmp = pit_timeDilute;
-	else if (timeRelSigmaMax >= l)
+		tmps.push_back(tmp);
+	}
+	if (timeRelSigmaMax >= l)
+	{
 		tmp = pit_timeInteraction;
-	if ((tmp != PITSS_none) && (stageSlns[tmp].b_set == 0))
-		pits.push_back(tmp);
+		tmps.push_back(tmp);
+	}
+	for (unsigned int jj = 0; jj < tmps.size(); ++jj)
+	{
+		tmp = tmps[jj];
+		if ((tmp != PITSS_none) && (stageSlns[tmp].b_set == 0))
+			pits.push_back(tmp);
+	}
 	for (unsigned int i = 0; i < pits.size(); ++i)
 		Updata_Periodic1IntrFrag_TimeStageStorage(pits[i]);
 	if (terminateState != pit_sigma0)
@@ -3267,8 +3355,6 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 
 void Periodic1IntrFrag::Finalize_Periodic1IntrFrag()
 {
-	if (!isActive)
-		return;
 	string name = nameOne_a_One_l + "_outStats.txt";
 	fstream out(name.c_str(), ios::out);
 	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
@@ -3308,6 +3394,17 @@ void Periodic1IntrFrag::Updata_Periodic1IntrFrag_TimeStageStorage(PITSS pitss)
 	stagePtr->timeIndex = timeIndexNew;
 }
 
+void Periodic1IntrFrag::GetPrimaryFragmentSizes(vector<double>& primaryFragmentSizes)
+{
+	primaryFragmentSizes.resize(FragmentSizeT_SIZE);
+	primaryFragmentSizes[fst_dilute] = l_dilute;
+	primaryFragmentSizes[fst_dilute_approx] = l_dilute_approx;
+	primaryFragmentSizes[fst_zhu6a] = l_Zhu6a;
+	primaryFragmentSizes[fst_zhu6b] = l_Zhu6b;
+	primaryFragmentSizes[fst_Glenn] = l_Glenn;
+	primaryFragmentSizes[fst_Grady] = l_Grady;
+}
+
 void Periodic1IntrFrag::set_energy_diss_per_length_4_t_dilute(double time, double deltau)
 {
 	double timeAbsolute = time + t0;
@@ -3332,7 +3429,14 @@ void Periodic1IntrFrag::set_energy_diss_per_length_4_t_dilute(double time, doubl
 void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 {
 	out << "terminateFlag" << "\t";
+	out << "iterminateFlag" << "\t";
+	
 	out << "failureState" << "\t";
+	out << "ifailureState" << "\t";
+
+	out << "aIndex" << '\t';
+	out << "lIndex" << '\t';
+	out << "lIndex_secondary" << '\t';
 
 	out << "a" << '\t';
 	out << "l" << '\t';
@@ -3389,6 +3493,16 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 	out << "energy_diss_max_inp_E_t_final" << '\t';
 	out << "log10(energy_diss_max_inp_E_t_final)" << '\t';
 
+	out << "t_vs0" << '\t';
+	out << "delt_vs0" << '\t';
+	out << "crosser_vs0" << '\t';
+	out << "t_relus_0" << '\t';
+	out << "delt_relus_0" << '\t';
+	out << "crosser_relus_0" << '\t';
+	out << "t_relus_m1" << '\t';
+	out << "delt_relus_m1" << '\t';
+	out << "crosser_relus_m1" << '\t';
+
 	out << "diluteFractureModel" << '\t';
 	out << "isExtrinsic" << '\t';
 	out << "energyScale" << '\t';
@@ -3436,7 +3550,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 
 	out << "suggeste_delt" << '\t';
 	out << "suggested_final_time4ZeroSigmaC" << '\t';
-	out << "t_dilute_zeroStressCheck" << '\n';
+	out << "t_dilute_zeroStressCheck";
 }
 
 void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
@@ -3451,10 +3565,63 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	}
 	if (stageSln->b_set == 0)
 		THROW("Neither state is set, perhaps need to increase time\n");
+	Periodic1IntrFrag_TimeStageStorage *stageSlnF = stageSln;
+
 	double t_SigmaZero_real = stageSln->vals[pft_time];
 	t_SigmaZero_minus_SigmaMax_real = t_SigmaZero_real - t_SigmaMax_real;
+
+	static double nand = std::numeric_limits<double>::quiet_NaN();
+	double tF_minus_tOFC, crosserValue, vF = 0.0, vtOFCbar = 0.0, tOFC = -1;
+	double t_vs0 = nand, t_relus_0 = nand, t_relus_m1 = nand;
+	bool OFC_v_decreasing = true;
+	// vs = 0 criterion (Drugan)
+	pit = pit_vSolidNegative;
+	stageSln = &stageSlns[pit];
+	vF = stageSlnF->vals[pft_ivsolid];
+	if (stageSln->b_set == 1)
+	{
+		tOFC = stageSln->vals[pft_time];
+		t_vs0 = tOFC;
+	}
+	GetZeroCrosserValue(t_SigmaZero_real, tOFC, vF, vtOFCbar, tF_minus_tOFC, crosserValue, OFC_v_decreasing);
+	delt_vs0 = tF_minus_tOFC, crosser_vs0 = crosserValue;
+
+	// relus = 0 criterion (mine, bar back to its original length)
+	pit = pit_reluSolid0;
+	stageSln = &stageSlns[pit];
+	vF = stageSlnF->vals[pft_irelusolid];
+	tOFC = -1.0;
+	if (stageSln->b_set == 1)
+	{ 
+		tOFC = stageSln->vals[pft_time];
+		t_relus_0 = tOFC;
+	}
+	GetZeroCrosserValue(t_SigmaZero_real, tOFC, vF, vtOFCbar, tF_minus_tOFC, crosserValue, OFC_v_decreasing);
+	delt_relus_0 = tF_minus_tOFC, crosser_relus_0 = crosserValue;
+
+	// relus = -1 criterion (mine, bar goes to nondimensional strain = -1 (eps/(sigma_C/E) = -1)
+	pit = pit_reluSolidm1;
+	vtOFCbar = -1.0;
+	stageSln = &stageSlns[pit];
+	vF = stageSlnF->vals[pft_irelusolid];	// already retrieved above, but keeping it to be safe
+	tOFC = -1.0;
+	if (stageSln->b_set == 1)
+	{ 
+		tOFC = stageSln->vals[pft_time];
+		t_relus_m1 = tOFC;
+	}
+	GetZeroCrosserValue(t_SigmaZero_real, tOFC, vF, vtOFCbar, tF_minus_tOFC, crosserValue, OFC_v_decreasing);
+	delt_relus_m1 = tF_minus_tOFC, crosser_relus_m1 = crosserValue;
+	stageSln = stageSlnF;
+
+	out << terminateState << "\t";
 	out << (int)terminateState << "\t";
 	out << pit << '\t';
+	out << (int)pit << '\t';
+
+	out << aIndex << '\t';
+	out << lIndex << '\t';
+	out << lIndex_secondary << '\t';
 
 	inputEnergyFromMeanStress_PL = stageSln->vals[pft_bEneSource_PL];
 	// 0.5 E (a tF)^2
@@ -3519,6 +3686,16 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << inputEnergyFromMeanStress_MaxPossVal_PL << '\t';
 	out << energy_diss_max_inp_E_t_final << '\t';
 	out << rlog10(energy_diss_max_inp_E_t_final) << '\t';
+
+	out << t_vs0 << '\t';
+	out << delt_vs0 << '\t';
+	out << crosser_vs0 << '\t';
+	out << t_relus_0 << '\t';
+	out << delt_relus_0 << '\t';
+	out << crosser_relus_0 << '\t';
+	out << t_relus_m1 << '\t';
+	out << delt_relus_m1 << '\t';
+	out << crosser_relus_m1 << '\t';
 
 	out << diluteFractureModel << '\t';
 	out << isExtrinsic << '\t';

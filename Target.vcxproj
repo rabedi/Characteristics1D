@@ -27,6 +27,7 @@
     <ClCompile Include="src\LAfuncsFinalStep.cpp" />
     <ClCompile Include="src\LAfuncsFixed.cpp" />
     <ClCompile Include="src\MinCrossingSolver1D.cpp" />
+    <ClCompile Include="src\MinCrossingSolver1DPeriodicDFragment.cpp" />
     <ClCompile Include="src\RandomVariable.cpp" />
     <ClCompile Include="src\SimpleConfigMaker.cpp" />
     <ClCompile Include="src\SLBulk_Properties.cpp" />
@@ -53,6 +54,7 @@
     <ClInclude Include="include\globalFunctions.h" />
     <ClInclude Include="include\globalMacros.h" />
     <ClInclude Include="include\globalTypesClasses.h" />
+    <ClInclude Include="include\Header.h" />
     <ClInclude Include="include\InhomogeneousElasticFracture.h" />
     <ClInclude Include="include\InhomogeousField.h" />
     <ClInclude Include="include\LAFuncs.h" />

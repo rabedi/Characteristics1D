@@ -748,7 +748,7 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 			compute_w_from_IC = false;
 			double timePrev = currentTime - t0;
 			double vL, vR, sigma;
-			bool found = g_seq_short.GetPt(timePrev, vL, vR, sigma);
+			bool found = g_seq_short->GetPt(timePrev, vL, vR, sigma);
 			if (!found)
 			{
 				THROW("Previous point cannot be found\n");
@@ -790,11 +790,11 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 		{
 			double sigma = slic.pPtSlns->sl_side_ptData[SDL].sigma_downstream_final[0];
 			double vL = slic.pPtSlns->sl_side_ptData[SDL].v_downstream_final[0], vR = slic.pPtSlns->sl_side_ptData[SDR].v_downstream_final[0];
-			g_seq_short.AddPt(maxTime, vL, vR, sigma, 2.0 * t0);
+			g_seq_short->AddPt(maxTime, vL, vR, sigma, 2.0 * t0);
 			double delv = vR - vL;
 			double uL = slic.pPtSlns->sl_side_ptData[SDL].u_downstream_final[0], uR = slic.pPtSlns->sl_side_ptData[SDR].u_downstream_final[0];
 			double delu = uR - uL;
-			PITSS terminateState = per_if.UpdateStats(maxTime, delu, delv, sigma);
+			PITSS terminateState = per_if->UpdateStats(maxTime, delu, delv, sigma);
 		}
 	}
 	return as;
@@ -802,17 +802,25 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem()
 {
 	int terminateFlag = Main_One_InterfaceProblem_Aux();
-	if (per_if.isActive)
+	if (per_if != NULL)
 	{
-		string fileName = per_if.nameOne_a_SharedAll_l +  "_laStudies.txt";
+		string fileName = per_if->nameOne_a_SharedAll_l +  "_laStudies.txt";
 		fstream in(fileName.c_str(), ios::in);
 		bool fileExists = in.is_open();
 		if (fileExists)
 			in.close();
 		fstream out(fileName.c_str(), ios::app);
 		if (!fileExists)
-			per_if.Output_Periodic1IntrFrag_Header(out);
-		per_if.Output_Periodic1IntrFrag(out);
+		{
+			Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(out);
+			out << '\n';
+		}
+		per_if->Output_Periodic1IntrFrag(out);
+
+		string nameOneRun = per_if->nameOne_a_One_l + ".yvals";
+		fstream outy(nameOneRun.c_str(), ios::out);
+		per_if->Output_Periodic1IntrFrag(outy);
+		per_if->Finalize_Periodic1IntrFrag();
 	}
 	return terminateFlag;
 }
@@ -831,7 +839,7 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem_Aux()
 	double maxTime;
 	Set1DOrtizType();
 	if (g_slf_conf->isPeriodic_1Fragment)
-		g_seq_short.AddPt(0.0, 0.0, 0.0, 1.0, 2.0 * per_if.aInv);
+		g_seq_short->AddPt(0.0, 0.0, 0.0, 1.0, 2.0 * per_if->aInv);
 
 	long cntr = 0;
 	while (cntr < 1000000000000)
@@ -840,35 +848,35 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem_Aux()
 			cout << cntr << '\n';
 		SLInterfaceCalculator slic;
 		as = NonInitialStep(as.a_delt, accept_point, maxTime, cntr, slic);
-		if (per_if.isActive)
+		if (per_if != NULL)
 		{
 			double maxDelU = slic.pPtSlns->maxEffDelU;
 			double delta_u = slic.pPtSlns->sl_side_ptData[SDR].u_downstream_final[0] - slic.pPtSlns->sl_side_ptData[SDL].u_downstream_final[0];
 			bool ready2Return = false;
 #if 0
-			if (maxTime >= per_if.t_dilute_zeroStressCheck)
+			if (maxTime >= per_if->t_dilute_zeroStressCheck)
 			{
-				if (per_if.diluteFractureModel)
+				if (per_if->diluteFractureModel)
 				{
-					per_if.terminateState = pit_sigma0;
+					per_if->terminateState = pit_sigma0;
 					return 1;
 				}
 				cout << "delta_u\t" << delta_u << '\n';
-				if (per_if.delu4Sigma0 - delta_u < 1e-6)
+				if (per_if->delu4Sigma0 - delta_u < 1e-6)
 				{
-					per_if.terminateState = pit_sigma0;
+					per_if->terminateState = pit_sigma0;
 					return 1;
 				}
 			}
 			else 
 #endif
-			if (per_if.terminateState != PITSS_none)
+			if (per_if->terminateState != PITSS_none)
 				return 1;
 		}
 		AdaptivityF a_flag = as.get_a_flag();
 		if ((maxTime >= g_slf_conf->terminate_run_target_time) || (a_flag == a_terminate_run_correctly))
 		{
-			if (!per_if.isActive)
+			if (per_if == NULL)
 				return 1;
 		}
 		if (a_flag == a_terminate_run_prematurely)
@@ -908,6 +916,10 @@ void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn)
 	interfacePFs.Read_SL_Interface_Fracture_PF(inb, 1);
 	inb.close();
 
+	if (g_slf_conf != NULL)
+		delete g_slf_conf;
+	g_slf_conf = new SLFractureGlobal_Configuration();
+
 	if (slfg_configName != "default")
 		g_slf_conf->Read(slfg_configName);
 	else
@@ -915,23 +927,27 @@ void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn)
 
 	if (g_slf_conf->isPeriodic_1Fragment)
 	{
-		per_if.isActive = true;
-		per_if.l = g_slf_conf->periodic_1Fragment_size;
-		per_if.a = g_SL_desc_data.a_xt_prob[0];
-		per_if.isExtrinsic = IsExtrinsic(interfacePFs.tsrModel);
-		per_if.energyScale = GetEnergyConstantFactor(interfacePFs.tsrModel);
-		if (!per_if.isExtrinsic)
-			per_if.t0 = 0.0;
+		if (per_if != NULL)
+			delete per_if;
+		per_if = new Periodic1IntrFrag();
+		if (g_seq_short != NULL)
+			delete g_seq_short;
+		g_seq_short = new SL_Interface1DPtSeq_Short();
+		per_if->l = g_slf_conf->periodic_1Fragment_size;
+		per_if->a = g_SL_desc_data.a_xt_prob[0];
+		per_if->Set_TSR_Model(interfacePFs.tsrModel);
+		if (!per_if->isExtrinsic)
+			per_if->t0 = 0.0;
 		else
-			per_if.t0 = 1.0 / per_if.a;
+			per_if->t0 = 1.0 / per_if->a;
 
-		gt0 = per_if.t0;
-		per_if.sigma_t0 = per_if.t0 * per_if.a;
+		gt0 = per_if->t0;
+		per_if->sigma_t0 = per_if->t0 * per_if->a;
 		if (g_slf_conf->uniform_del_t < 0)
-			per_if.relTol = -g_slf_conf->uniform_del_t;
-		per_if.Initialize_Periodic1IntrFrag();
-		g_slf_conf->uniform_del_t = per_if.suggeste_delt;
-		g_slf_conf->terminate_run_target_time = per_if.suggested_final_time4ZeroSigmaC;
+			per_if->relTol = -g_slf_conf->uniform_del_t;
+		per_if->Initialize_Periodic1IntrFrag();
+		g_slf_conf->uniform_del_t = per_if->suggeste_delt;
+		g_slf_conf->terminate_run_target_time = per_if->suggested_final_time4ZeroSigmaC;
 		g_slf_conf->between_steps_adaptivity = false;
 	}
 	inb.open(el_configName.c_str(), ios::in);
@@ -951,6 +967,16 @@ void MAIN_SL_OneInterfaceAllTimes_ONE_Interface(string configNameIn)
 	oiat.Open_fixed_x_files_SL_OneInterfaceAllTimes(iof_ascii, iof_ascii);
 
 	int successMode = oiat.Main_One_InterfaceProblem();
+	if (per_if != NULL)
+	{
+		delete per_if;
+		per_if = NULL;
+	}
+	if (g_seq_short != NULL)
+	{
+		delete g_seq_short;
+		g_seq_short = NULL;
+	}
 	cout << "successMode\t" << successMode << '\n';
 }
 

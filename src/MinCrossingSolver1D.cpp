@@ -213,9 +213,10 @@ ConvergenceLog::ConvergenceLog()
 	iterExtremumNotChanged = 0;
 }
 
-void gFx2y::InitializeValues(const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& tol_ys, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y)
+void gFx2y::InitializeValues(const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys)
 {
 	double tol = 1e-2;
+	str_map = str_mapIn;
 	paras = parasIn;
 	indices4Paras = indices4ParasIn;
 	double x0 = 2.0;
@@ -227,7 +228,7 @@ void gFx2y::InitializeValues(const vector<unsigned int>& indices4ParasIn, const 
 	tol_x = tol;
 	num_y = 2;
 	tol_ys.resize(num_y);
-	for (unsigned int i = 0; i < num_y; ++i)
+	for (unsigned int i = 0; i < (unsigned int)num_y; ++i)
 		tol_ys[i] = tol * 1e-3;
 
 	primary_xs.clear();
@@ -276,7 +277,7 @@ void gFx2y::Print_Header(ostream& out, int num_y) const
 void gFx2y::Print_YHeader(ostream& out, int num_y) const
 {
 	out << "out0";
-	for (unsigned int i = 1; i < num_y; ++i)
+	for (unsigned int i = 1; i < (unsigned int)num_y; ++i)
 		out << "\tout" << i;
 }
 
@@ -517,9 +518,17 @@ bool Solver1D_1posConf::Read_Solver1D_1posConf(istream& in)
 		{
 			READ_NSTRING(in, buf, nameBase);
 		}
+		else if (buf == "isActive")
+		{
+			READ_NBOOL(in, buf, isActive);
+		}
 		else if (buf == "pos_y")
 		{
 			READ_NINTEGER(in, buf, pos_y);
+		}
+		else if (buf == "tol_y")
+		{
+			READ_NDOUBLE(in, buf, tol_y);
 		}
 		else if (buf == "isExtremum")
 		{
@@ -553,6 +562,8 @@ Solver1D_1posConf::Solver1D_1posConf()
 	nameBase = "none";
 	pos_y = 0;
 	isExtremum = true;
+	tol_y = -1.0;
+	isActive = true;
 }
 
 
@@ -588,11 +599,11 @@ unsigned int Solver1D_1posConf::Initialize_Solver1D_1posConf()
 			nameBase += "_crossing";
 	}
 	vec_name.resize(sz);
-	for (int i = 0; i < sz; ++i)
+	for (unsigned int i = 0; i < sz; ++i)
 		vec_name[i] = nameBase;
 	if (isExtremum)
 	{
-		for (int i = 0; i < sz; ++i)
+		for (unsigned int i = 0; i < sz; ++i)
 		{
 			if (isMins[i])
 				vec_name[i] += "_min";
@@ -602,7 +613,7 @@ unsigned int Solver1D_1posConf::Initialize_Solver1D_1posConf()
 	}
 	else if (sz > 1)
 	{
-		for (int i = 0; i < sz; ++i)
+		for (unsigned int i = 0; i < sz; ++i)
 		{
 			string ser;
 			toString(i, ser);
@@ -622,6 +633,8 @@ unsigned int Solver1D_1posConf::Initialize_Solver1D_1posConf()
 		isMins.resize(sz);
 		fill(isMins.begin(), isMins.end(), true);
 	}
+	tol_ys.resize(sz);
+	fill(tol_ys.begin(), tol_ys.end(), tol_y);
 	return sz;
 }
 
@@ -640,6 +653,10 @@ Solver1D::Solver1D()
 	maxNumIter = 100;
 	maxNumIterExtremumNotChanging = 8;
 	del_secondary_x = -1;
+
+	do_posConfs_first_notAddPtSolve = true;
+	do_posConfs_AddPtSolve = true;
+	do_posConfs_second_notAddPtSolve = true;
 }
 
 Solver1D::~Solver1D()
@@ -666,6 +683,18 @@ void Solver1D::Read_Solver1D(istream& in)
 		if (buf == "baseName")
 		{
 			READ_NSTRING(in, buf, baseName);
+		}
+		else if (buf == "do_posConfs_first_notAddPtSolve")
+		{
+			READ_NBOOL(in, buf, do_posConfs_first_notAddPtSolve);
+		}
+		else if (buf == "do_posConfs_AddPtSolve")
+		{
+			READ_NBOOL(in, buf, do_posConfs_AddPtSolve);
+		}
+		else if (buf == "do_posConfs_second_notAddPtSolve")
+		{
+			READ_NBOOL(in, buf, do_posConfs_second_notAddPtSolve);
 		}
 		else if (buf == "maxNumIter")
 		{
@@ -700,6 +729,8 @@ void Solver1D::Read_Solver1D(istream& in)
 			for (unsigned int i = 0; i < sz_v; ++i)
 				indices4paras1D[i] = v_tmpi[i];
 		}
+		else if (buf == "str_map")
+			ReadMapString2String(in, str_map);
 		else if (buf == "posConfs2Solve")
 		{
 			posConfs2Solve.clear();
@@ -714,7 +745,8 @@ void Solver1D::Read_Solver1D(istream& in)
 				Solver1D_1posConf spc;
 				if (spc.Read_Solver1D_1posConf(in) == false)
 					break;
-				posConfs2Solve.push_back(spc);
+				if (spc.isActive)
+					posConfs2Solve.push_back(spc);
 			}
 		}
 		else
@@ -744,7 +776,7 @@ void Solver1D::InitializeFunction(gFx2y * functionIn)
 
 	function = functionIn;
 	genIndexVal_DB::g_genIndexVal_DB_equality_by_x = equality_by_x;
-	function->InitializeValues(indices4paras1D, paras1D, xMin, xMax, tol_x, tol_ys, primary_xs, secondary_xs, num_y);
+	function->InitializeValues(str_map, indices4paras1D, paras1D, xMin, xMax, tol_x, primary_xs, secondary_xs, num_y, tol_ys);
 	tol_x_eq_check = 1e-5 * tol_x;
 	genIndexVal_DB::g_genIndexVal_DB_tol_x = tol_x_eq_check;
 
@@ -774,12 +806,16 @@ void Solver1D::InitializeFunction(gFx2y * functionIn)
 }
 
 
-ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos)
+ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y)
 {
 	ConvergenceLog cl;
-	double tol_y = tol_x;
-	if (tol_ys.size() > y_pos)
-		tol_y = tol_ys[y_pos];
+	if (tol_y < 0)
+	{
+		if (tol_ys.size() > y_pos)
+			tol_y = tol_ys[y_pos];
+		else
+			tol_y = tol_x;
+	}
 	double tol_y_zero = 0.01 * tol_y;
 
 	sgnT sgnjCrossing;
@@ -1004,13 +1040,17 @@ bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double cross
 	return true;
 }
 
-ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos)
+ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y)
 {
 	ConvergenceLog cl;
 
-	double tol_y = tol_x;
-	if (tol_ys.size() > y_pos)
-		tol_y = tol_ys[y_pos];
+	if (tol_y < 0)
+	{
+		if (tol_ys.size() > y_pos)
+			tol_y = tol_ys[y_pos];
+		else
+			tol_y = tol_x;
+	}
 	double tol_y_zero = 0.01 * tol_y;
 
 	pts.Sort(true, tol_x_eq_check);
@@ -1110,12 +1150,16 @@ ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double
 	return cl;
 }
 
-ConvergenceLog Solver1D::Solve_x4_Extremum(genIndexVal& sln, bool isMin, unsigned int y_pos)
+ConvergenceLog Solver1D::Solve_x4_Extremum(genIndexVal& sln, bool isMin, unsigned int y_pos, double tol_y)
 {
 	ConvergenceLog cl;
-	double tol_y = tol_x;
-	if (tol_ys.size() > y_pos)
-		tol_y = tol_ys[y_pos];
+	if (tol_y < 0)
+	{
+		if (tol_ys.size() > y_pos)
+			tol_y = tol_ys[y_pos];
+		else
+			tol_y = tol_x;
+	}
 	double tol_x_denom = tol_x * tol_x;
 	tol_x_denom *= (3.0 * tol_x_denom);
 	unsigned int cntrAddedOnSides = 0;
@@ -1533,7 +1577,7 @@ void Solver1D::Restore_pts(bool read_dbAsIs, bool compute_ys_not_computed)
 	{
 		unsigned int index_main = pts.db[i].index_main;
 		unsigned int index_sec = pts.db[i].index_sec;
-		startInds[index_main] = MAX(startInds[index_main], index_sec + 1);
+		startInds[index_main] = MAX((unsigned int)startInds[index_main], index_sec + 1);
 	}
 	if (!compute_ys_not_computed)
 		return;
@@ -1594,34 +1638,34 @@ void Solver1D::MAIN_ProcessConfigFile(gFx2y* functionIn, string confName)
 	SolveAllSolveMode_AfterReadingConfig(functionIn);
 }
 
-ConvergenceLog Solver1D::SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, bool doInitialization)
+ConvergenceLog Solver1D::SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, double tol_y, bool doInitialization)
 {
 	if (isExtremum)
-		return SolveYExtremum(functionIn, sln, isMin, y_pos, addAdditionalPoints, doInitialization);
-	return SolveYCrossing(functionIn, sln, crossing_y, y_pos, addAdditionalPoints, doInitialization);
+		return SolveYExtremum(functionIn, sln, isMin, y_pos, addAdditionalPoints, tol_y, doInitialization);
+	return SolveYCrossing(functionIn, sln, crossing_y, y_pos, addAdditionalPoints, tol_y, doInitialization);
 }
 
-ConvergenceLog Solver1D::SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, bool doInitialization)
+ConvergenceLog Solver1D::SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization)
 {
 	if (doInitialization)
 		InitializeFunction(functionIn);
 	ConvergenceLog cl;
 	if (addAdditionalPoints)
-		cl = Solve_x4_Crossing(sln, crossing_y);
+		cl = Solve_x4_Crossing(sln, crossing_y, y_pos, tol_y);
 	else
-		cl = Solve_x4_Crossing_NoPointAdded(sln, crossing_y);
+		cl = Solve_x4_Crossing_NoPointAdded(sln, crossing_y, y_pos, tol_y);
 	if (doInitialization)
 		Store_pts_unsorted_SlnEnd(y_pos);
 	return cl;
 }
 
-ConvergenceLog Solver1D::SolveYExtremum(gFx2y* functionIn, genIndexVal& sln, bool isMin, unsigned int y_pos, bool addAdditionalPoints, bool doInitialization)
+ConvergenceLog Solver1D::SolveYExtremum(gFx2y* functionIn, genIndexVal& sln, bool isMin, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization)
 {
 	if (doInitialization)
 		InitializeFunction(functionIn);
 	ConvergenceLog cl;
 	if (addAdditionalPoints)
-		cl = Solve_x4_Extremum(sln, isMin, y_pos);
+		cl = Solve_x4_Extremum(sln, isMin, y_pos, tol_y);
 	else
 		cl = Solve_x4_Extremum_NoPointAdded(sln, isMin, y_pos);
 	if (doInitialization)
@@ -1690,11 +1734,12 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 
 	for (unsigned int pci = 0; pci < sz_posConfs2Solve; ++pci)
 	{
+		cout << "ST: mode_counter\t" << mode_counter << "\tpci\t" << pci << "\ttsz_posConfs2Solve\t" << sz_posConfs2Solve << '\n';
 		string fileName = baseName + addedName + "_solveNum_", ser;
 		toString(pci, ser);
 		fileName += ser;
 		Solver1D_1posConf spc = posConfs2Solve[pci];
-		for (int j = 0; j < spc.sz; ++j)
+		for (unsigned int j = 0; j < spc.sz; ++j)
 		{
 			fstream out_pt_x(fileName_pt_x_sorted.c_str(), ios::out);
 			fstream out_pt_i(fileName_pt_i_sorted.c_str(), ios::out);
@@ -1722,7 +1767,7 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 				out.open(nm.c_str(), ios::app);
 			}
 			genIndexVal sln;
-			ConvergenceLog cl = SolveYCrossingOrExtremum(sln, functionIn, spc.pos_y, spc.isExtremum, spc.vec_isExtremum[j], spc.crossing_ys[j], addAdditionalPoints, false);
+			ConvergenceLog cl = SolveYCrossingOrExtremum(sln, functionIn, spc.pos_y, spc.vec_isExtremum[j], spc.isMins[j], spc.crossing_ys[j], addAdditionalPoints, spc.tol_ys[j], false);
 			slns.push_back(sln);
 			cls.push_back(cl);
 
@@ -1734,6 +1779,7 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 			out_pt_i << setprecision(22);
 			pts.Write_genIndexVal_DB(out_pt_i, false, false, tol_x_eq_check);
 		}
+		cout << "EN: mode_counter\t" << mode_counter << "\tpci\t" << pci << "\ttsz_posConfs2Solve\t" << sz_posConfs2Solve << '\n';
 	}
 }
 
@@ -1743,9 +1789,11 @@ void Solver1D::SolveAllSolveMode_AfterReadingConfig(gFx2y* functionIn)
 	InitializeFunction(functionIn);
 	for (unsigned int i = 0; i < sz_solve_mode; ++i)
 	{
+		cout << "ST slnMode\t" << i << "\tsz_solve_mode\t" << sz_solve_mode << '\n';
 		vector<genIndexVal> slns;
 		vector<ConvergenceLog> cls;
 		SolveOneSolveMode_AfterInitialization(slns, cls, functionIn, solve_mode_addAdditionalPoints[i], solve_mode_counter[i]);
+		cout << "EN slnMode\t" << i << "\tsz_solve_mode\t" << sz_solve_mode << '\n';
 	}
 }
 
@@ -1798,8 +1846,9 @@ void Test_SolveYCrossing()
 	Solver1D s1d;
 	genIndexVal sln;
 	double crossing_y = 0.0;
-	unsigned int y_pos = 0;
-	ConvergenceLog cl = s1d.SolveYCrossing(function, sln, crossing_y, y_pos, addAdditionalPoints);
+	unsigned int y_pos = 1;
+	double tol_y = -1.0;
+	ConvergenceLog cl = s1d.SolveYCrossing(function, sln, crossing_y, y_pos, tol_y, addAdditionalPoints);
 	bool success = (cl.convType == ct1d_yes);
 	cout << "success\t" << success;
 	cout << "cl\n" << cl << '\n';
@@ -1816,7 +1865,8 @@ void Test_SolveYExtremum()
 	genIndexVal sln;
 	bool isMin = true;
 	unsigned int y_pos = 1;
-	ConvergenceLog cl = s1d.SolveYExtremum(function, sln, isMin, y_pos, addAdditionalPoints);
+	double tol_y = -1.0;
+	ConvergenceLog cl = s1d.SolveYExtremum(function, sln, isMin, y_pos, tol_y, addAdditionalPoints);
 	bool success = (cl.convType == ct1d_yes);
 	cout << "success\t" << success;
 	cout << "cl\n" << cl << '\n';

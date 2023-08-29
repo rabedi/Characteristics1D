@@ -166,6 +166,66 @@ istream& operator>>(istream& in, PITSS& dat)
 	return in;
 }
 
+/////////////////
+string getName(FragmentSizeT dat)
+{
+	if (dat == fst_dilute)
+		return "dilute";
+	if (dat == fst_dilute_approx)
+		return "dilute_approx";
+	if (dat == fst_zhu6a)
+		return "zhu6a";
+	if (dat == fst_zhu6b)
+		return "zhu6b";
+	if (dat == fst_Glenn)
+		return "Glenn";
+	if (dat == fst_Grady)
+		return "Grady";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+void name2Type(string& name, FragmentSizeT& typeVal)
+{
+	int num;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= FragmentSizeT_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (FragmentSizeT)num;
+		return;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < FragmentSizeT_SIZE; ++i)
+	{
+		typeVal = (FragmentSizeT)i; // casting integer to FragmentSizeT, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return;
+	}
+	cout << "name\t" << name << '\n';
+	THROW("wrong name reading FragmentSizeT\n");
+}
+
+//operator for output
+ostream& operator<<(ostream& out, FragmentSizeT dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, FragmentSizeT& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	name2Type(name, dat);
+	return in;
+}
+
 SL_interface_Temp_PPtData::SL_interface_Temp_PPtData()
 {
 	interfacePropPtr = NULL;
@@ -1104,7 +1164,20 @@ bool SL_Interface1DPtSeq_Short::GetPt(double time, double& vL, double& vR, doubl
 	return true;
 }
 
-SL_Interface1DPtSeq_Short g_seq_short;
+int SL_Interface1DPtSeq_Short::GetPt(unsigned int index, double& time, double& vL, double& vR, double& sigma)
+{
+	if (index < 0)
+		index = ptHistory.size() + index;
+
+	SL_Interface1DPt_Short* ptr = &ptHistory[index];
+	time = ptr->time;
+	vL = ptr->vL;
+	vR = ptr->vR;
+	sigma = ptr->sigma;
+	return index;
+}
+
+SL_Interface1DPtSeq_Short* g_seq_short = NULL;
 
 Pt_Error_Data::Pt_Error_Data()
 {

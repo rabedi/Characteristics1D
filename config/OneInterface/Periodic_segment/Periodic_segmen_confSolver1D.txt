@@ -1,0 +1,129 @@
+{
+baseName
+_Solver1D_pfragment
+
+
+
+# 1. Solve after main and secondary points are added. No solution for extremum or crossing points is done at this stage
+do_posConfs_first_notAddPtSolve
+1
+
+# 2. Actual solution for adding new points for crossing or extremum are done
+do_posConfs_AddPtSolve
+1
+
+# 3. After all solutions are done, yet, another time no new point is added and extremum / crossings are obtained
+do_posConfs_second_notAddPtSolve
+1
+
+str_map
+{
+#	tsr_Xu_Needleman		tsr_Ortiz
+(	tsrModel	,	tsr_Ortiz	)
+#(	tsrModel	,	tsr_Xu_Needleman	)
+
+# if true,		para0 =	log10(a)
+# else			para0 = log10(a_p), where a_p = a / 2
+# a is nondimensional strain rate. a_p is the version used by Zhu, Drugan, etc, mine is a
+(	para0_is_la	,	1	)
+#(	para0_is_la	,	0	)
+}
+
+# 0: do not read previous solutions, 1 reads restart files 
+read_Results 
+1
+
+# write solution logs (e.g. every point added, the log file is written so that restart can happen)
+write_Results
+1
+
+# in checking if points are the same either the coordinate of the points are used (recommended - equality_by_x = 1) or indexMain, indexSecondary are used (equality_by_x = 0)
+equality_by_x 
+1
+
+# sample set of parameters for this solve
+# log10(a)
+paras1D
+{
+#1.0
+-4.0
+#2.0	3.2
+}
+
+# sample 
+indices4paras1D
+{
+140
+#3	4
+}
+
+
+### instructions for what to solve for (min, max, crossing), values of crossings, etc.
+posConfs2Solve
+{
+
+	# maximum energy dissipation at dilute level
+	{
+		isActive	1
+		nameBase	etd_max_eneD_dilute_time
+		pos_y		46
+		isExtremum	1
+		isMins	{ 	0	}
+		# crossing_ys	{	0.0		}
+	}
+
+	# time final, relative  energy dissipation by real source term energy
+	{
+		isActive	1
+		nameBase	etf_max_rel_eneD_real_src_ene_tF
+		pos_y		51
+		isExtremum	1
+		isMins	{ 	0	}
+		# crossing_ys	{	0.0		}
+	}
+
+	# time final, relative  energy dissipation by max source term energy
+	{
+		isActive	1
+		nameBase	etf_max_rel_eneD_,ax_src_ene_tF
+		pos_y		54
+		isExtremum	1
+		isMins	{ 	0	}
+		# crossing_ys	{	0.0		}
+	}
+	
+	# vs = 0, Drugan's criterion
+	{
+		isActive	1
+		nameBase	uv_vsDrugan
+		pos_y		57
+		isExtremum	0
+		# isMins	{ 	1	}
+		crossing_ys	{	0.0		}
+		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
+	}
+
+	# relus = 0, Solid back to original size
+	{
+		isActive	1
+		nameBase	uv_relus0
+		pos_y		60
+		isExtremum	0
+		# isMins	{ 	1	}
+		crossing_ys	{	0.0		}
+		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
+	}
+	
+	# relus = -1, Solid effective nondimnesional strain = -1
+	{
+		isActive	1
+		nameBase	uv_relusm1
+		pos_y		63
+		isExtremum	0
+		# isMins	{ 	1	}
+		crossing_ys	{	0.0		}
+		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
+	}
+}
+
+}

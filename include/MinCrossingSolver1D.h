@@ -108,15 +108,18 @@ class gFx2y
 {
 public:
 	// num_y is the number of y's the class returns
-	virtual void InitializeValues(const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& tol_ys, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y);
+	// tol_ys need not to be set, if stays empty, they are set outside (e.g. from Solver1D_1posConf)
+	virtual void InitializeValues(const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys);
 	// x and indices of giv are set, y is sought
 	// returns true if the solution is successful
 	virtual bool ComputeValue(genIndexVal& giv);
 	// calls the function below
-	virtual void Print_Header(ostream& out, int num_y = -1) const;
+	void Print_Header(ostream& out, int num_y = -1) const;
 	virtual void Print_YHeader(ostream& out, int num_y = -1) const;
 	vector<unsigned int> indices4Paras;
 	vector<double> paras;
+	// this map helps to read any other kind of data that gFx2y needs
+	map<string, string> str_map;
 };
 
 class Solver1D_1posConf
@@ -129,6 +132,8 @@ public:
 
 	string nameBase;
 	unsigned int pos_y;
+	double tol_y;
+	bool isActive;
 	bool isExtremum; // if true, extremum values are solved, else crossing values
 	vector<bool> isMins;
 	vector<double> crossing_ys;
@@ -138,6 +143,7 @@ public:
 	unsigned int sz;
 	vector <bool> vec_isExtremum;
 	vector<string> vec_name;
+	vector<double> tol_ys;
 };
 
 class Solver1D
@@ -152,10 +158,10 @@ public:
 	void MAIN_ProcessConfigFile(gFx2y* functionIn, string confName = "none");
 
 	// addAdditionalPoints: beyond initial points computed (e.g. mainIndex = 0, 1 provided by the function) no additional points are added and the best point in the data is chosen
-	ConvergenceLog SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, bool doInitialization = false);
+	ConvergenceLog SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, double tol_y, bool doInitialization = false);
 
-	ConvergenceLog SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y = 0.0, unsigned int y_pos = 0, bool addAdditionalPoints = true, bool doInitialization = true);
-	ConvergenceLog SolveYExtremum(gFx2y* functionIn, genIndexVal& sln, bool isMin = true, unsigned int y_pos = 0, bool addAdditionalPoints = true, bool doInitialization = true);
+	ConvergenceLog SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization = true);
+	ConvergenceLog SolveYExtremum(gFx2y* functionIn, genIndexVal& sln, bool isMin, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization = true);
 
 	vector<Solver1D_1posConf> posConfs2Solve;
 	// for each combination in "posConfs2Solve", there are 3 possible solve sequences:
@@ -169,6 +175,7 @@ public:
 
 	vector<double> paras1D; // like loading rate for the fragmentation problem
 	vector<unsigned int> indices4paras1D;
+	map<string, string> str_map;
 	string baseName;
 	// in extremum search is extremum stays the same for "maxNumIterExtremumNotChanging" number of iterations, the point is reported as extremmum
 	unsigned int maxNumIter, maxNumIterExtremumNotChanging;
@@ -183,12 +190,12 @@ public:
 	// functions called after InitializeFunction
 	// solve crossing for the function
 	// these two functions search for the crossing and extremum and potentially add to the point set
-	ConvergenceLog Solve_x4_Crossing(genIndexVal& sln, double crossing_y = 0.0, unsigned int y_pos = 0);
-	ConvergenceLog Solve_x4_Extremum(genIndexVal& sln, bool isMin = true, unsigned int y_pos = 0);
+	ConvergenceLog Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y);
+	ConvergenceLog Solve_x4_Extremum(genIndexVal& sln, bool isMin, unsigned int y_pos, double tol_y);
 
 	// similar to above, but no point is added
-	ConvergenceLog Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y = 0.0, unsigned int y_pos = 0);
-	ConvergenceLog Solve_x4_Extremum_NoPointAdded(genIndexVal& sln, bool isMin = true, unsigned int y_pos = 0);
+	ConvergenceLog Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y);
+	ConvergenceLog Solve_x4_Extremum_NoPointAdded(genIndexVal& sln, bool isMin, unsigned int y_pos);
 
 private:
 	void Store_pts(bool print_dbAsIs = true);

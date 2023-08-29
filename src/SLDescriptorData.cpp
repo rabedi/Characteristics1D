@@ -8,6 +8,11 @@ SLDescriptorData g_SL_desc_data;
 
 SLDescriptorData::SLDescriptorData()
 {
+	Reset_SLDescriptorData();
+}
+
+void SLDescriptorData::Reset_SLDescriptorData()
+{
 	setValue(a_xt_prob, 0.0);
 	ring_p0 = 1.0;
 	load_number = AXT_LN;
@@ -81,6 +86,13 @@ void SLDescriptorData::Read(istream & in)
 		else if (buf == "a_xt_prob")
 		{
 			ReadV(a_xt_prob, in);
+			fstream inla("l10a.txt", ios::in);
+			if (inla.is_open())
+			{
+				double tmp;
+				inla >> tmp;
+				a_xt_prob[0] = pow(10.0, tmp);
+			}
 		}
 		else if (buf == "ring_p0")
 		{
@@ -160,6 +172,7 @@ void SLDescriptorData::Read(istream & in)
 
 void SLDescriptorData::Read(string configNameIn)
 {
+	Reset_SLDescriptorData();
 	fstream in(configNameIn.c_str(), ios::in);
 	if (!in.is_open())
 	{
@@ -711,6 +724,11 @@ double CyclicLoading::getValue(double time)
 }
 
 DiracLoading::DiracLoading()
+{
+	Reset_DiracLoading();
+}
+
+void DiracLoading::Reset_DiracLoading()
 {
 	maxTime = 1.0;
 	numTimeSteps2Cover = 2;

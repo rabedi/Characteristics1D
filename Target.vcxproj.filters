@@ -99,6 +99,9 @@
     <ClInclude Include="include\MinCrossingSolver1D.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\Header.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Domain_AllInterfacesAllTimes.cpp">
@@ -181,6 +184,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\MinCrossingSolver1D.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MinCrossingSolver1DPeriodicDFragment.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

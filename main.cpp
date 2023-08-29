@@ -19,10 +19,17 @@ bool Solve_1_serialNumber(unsigned int serNumIn, int versionNumIn);
 void Solve_all_serialNumbers();
 void Print_slscript(unsigned int numParallelRuns);
 
+#include "MinCrossingSolver1DPeriodicDFragment.h"
+
 int main(int argc, char *argv[])
 {
-
-
+#if 0
+	Test_SolveYCrossing();
+//	MAIN_SolvePeriodicFragmentSize();
+	getchar();
+	getchar();
+	return 0;
+#endif
 //	Test_TSR_Ortiz_1D();
 //	return 0;
 
@@ -136,7 +143,20 @@ int main(int argc, char *argv[])
 	getchar();
 #endif
 	if (g_slf_conf != NULL)
+	{
 		delete g_slf_conf;
+		g_slf_conf = NULL;
+	}
+	if (g_slf_conf != NULL)
+	{
+		delete g_slf_conf;
+		g_slf_conf = NULL;
+	}
+	if (per_if != NULL)
+	{
+		delete per_if;
+		per_if = NULL;
+	}
 	return 0;
 }
 

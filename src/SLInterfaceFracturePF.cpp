@@ -271,6 +271,13 @@ void SLFractureGlobal_Configuration::Read(istream& in)
 		else if (buf == "periodic_1Fragment_size")
 		{
 			READ_NDOUBLE(in, buf, periodic_1Fragment_size);
+			fstream inll("l10l.txt", ios::in);
+			if (inll.is_open())
+			{
+				double tmp;
+				inll >> tmp;
+				periodic_1Fragment_size = pow(10.0, tmp);
+			}
 		}
 		else
 		{
@@ -546,7 +553,12 @@ void SL_Interface_Fracture_PF::Read_SL_Interface_Fracture_PF(istream& in, int in
 		else if (buf == "damageTractionModel")
 			in >> damageTractionModel;
 		else if (buf == "tsrModel")
+		{
 			in >> tsrModel;
+			fstream intest("tsr.txt");
+			if (intest.is_open())
+				intest >> tsrModel;
+		}
 		else if (buf == "c0")
 		{
 			READ_NDOUBLE(in, buf, c0);

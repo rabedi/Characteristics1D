@@ -67,8 +67,15 @@ void name2Type(string& name, PITSS& typeVal);
 ostream& operator<<(ostream& out, PITSS dat);
 istream& operator>>(istream& in, PITSS& dat);
 
-// the first 3 are also used for labeling target values
+typedef enum {fst_dilute, fst_dilute_approx, fst_zhu6a, fst_zhu6b, fst_Glenn, fst_Grady, FragmentSizeT_SIZE} FragmentSizeT;
+string getName(FragmentSizeT dat);
+void name2Type(string& name, FragmentSizeT& typeVal);
+ostream& operator<<(ostream& out, FragmentSizeT dat);
+istream& operator>>(istream& in, FragmentSizeT& dat);
 
+
+
+// the first 3 are also used for labeling target values
 // stores main properties of one side of the interface.
 //		
 //							downstream_final -> these are final star values obtained by combination of Riemann values
@@ -235,11 +242,12 @@ class SL_Interface1DPtSeq_Short
 public:
 	void AddPt(double time, double vL, double vR, double sigma, double delT2Keep);
 	bool GetPt(double time, double& vL, double& vR, double& sigma) const;
+	int GetPt(unsigned int index, double& time, double& vL, double& vR, double& sigma);
 private:
 	deque<SL_Interface1DPt_Short> ptHistory;
 };
 
-extern SL_Interface1DPtSeq_Short g_seq_short;
+extern SL_Interface1DPtSeq_Short* g_seq_short;
 
 
 // this class stores errors (see SLFractureGlobal_Configuration items 1 and 2 for further discussion and relevant tolerances)

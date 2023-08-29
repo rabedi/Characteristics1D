@@ -418,6 +418,7 @@ void ReadSetInteger(istream& in, std::set<int>& dat);
 void ReadVectorInteger(istream& in, vector<int>& dat);
 void ReadVectorString(istream& in, vector<string>& dat);
 void ReadMapInteger2Integer(istream& in, std::map<int, int>& dat);
+void ReadMapString2String(istream& in, std::map<string, string>& dat);
 void ReadSetDouble(istream& in, std::set<double>& dat);
 void ReadVectorDouble(istream& in, vector<double>& dat);
 void ReadMapInteger2Double(istream& in, std::map<int, double>& dat);

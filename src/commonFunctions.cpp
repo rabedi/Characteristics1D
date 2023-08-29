@@ -688,6 +688,7 @@ void ReadMapInteger2Integer(istream& in, std::map<int, int>& dat)
 	{
 		if (buf != "(")
 			THROW("Entry for map should be enclosed in (\n");
+		READ_NSTRING(in, buf, buf);
 		if (fromString(buf, key) == false)
 		{
 			cout << "buf\t" << buf << '\n';
@@ -696,6 +697,7 @@ void ReadMapInteger2Integer(istream& in, std::map<int, int>& dat)
 		READ_NSTRING(in, buf, buf);
 		if (buf != ",")
 			THROW("Entries must be separated by , (\n");
+		READ_NSTRING(in, buf, buf);
 		if (fromString(buf, val) == false)
 		{
 			cout << "buf\t" << buf << '\n';
@@ -704,6 +706,45 @@ void ReadMapInteger2Integer(istream& in, std::map<int, int>& dat)
 		READ_NSTRING(in, buf, buf);
 		if (buf != ")")
 			THROW("Entry for map should be enclosed in )\n");
+		dat[key] = val;
+		READ_NSTRING(in, buf, buf);
+	}
+}
+
+void ReadMapString2String(istream& in, std::map<string, string>& dat)
+{
+	dat.clear();
+	string key;
+	string val;
+	string buf;
+	READ_NSTRING(in, buf, buf);
+	dat.clear();
+	if (buf != "{")
+		THROW("istream should start with {");
+	READ_NSTRING(in, buf, buf);
+	while (buf != "}")
+	{
+		if (buf != "(")
+		{
+			cout << "buf\t" << buf << '\n';
+			THROW("Entry for map should be enclosed in (\n");
+		}
+		READ_NSTRING(in, buf, buf);
+		key = buf;
+		READ_NSTRING(in, buf, buf);
+		if (buf != ",")
+		{
+			cout << "buf\t" << buf << '\n';
+			THROW("Entries must be separated by , (\n");
+		}
+		READ_NSTRING(in, buf, buf);
+		val = buf;
+		READ_NSTRING(in, buf, buf);
+		if (buf != ")")
+		{
+			cout << "buf\t" << buf << '\n';
+			THROW("Entry for map should be enclosed in )\n");
+		}
 		dat[key] = val;
 		READ_NSTRING(in, buf, buf);
 	}

@@ -42,6 +42,7 @@ class SLDescriptorData
 public:
 	SLDescriptorData();
 	~SLDescriptorData();
+	void Reset_SLDescriptorData();
 	void Finalize_SLDescriptorData();
 	void Read(string configNameIn);
 
@@ -143,6 +144,7 @@ class DiracLoading
 public:
 	// main functions
 	DiracLoading();
+	void Reset_DiracLoading();
 	void Read_DiracLoading(istream& in);
 	void Write_DiracLoading(ostream& out);
 	inline bool IsActive() const {		return isActive;	}
