@@ -354,6 +354,16 @@ void genIndexVal::Write_genIndexVal(ostream& out) const
 	out << '\n';
 }
 
+void genIndexVal::Write_genIndexVal_JustVals(ostream& out) const
+{
+	out << index_main << '\t';
+	out << index_sec << '\t';
+	out << x << '\t';
+	for (unsigned int i = 0; i < ys.size(); ++i)
+		out << ys[i] << '\t';
+	out << '\n';
+}
+
 bool genIndexVal::Read_genIndexVal(istream& in)
 {
 	string buf;
@@ -417,6 +427,29 @@ void genIndexVal_DB::Write_genIndexVal_DB(ostream& out, bool print_dbAsIs, bool 
 	unsigned int sz = db2Print->size();
 	for (unsigned int i = 0; i < sz; ++i)
 		(*db2Print)[i].Write_genIndexVal(out);
+}
+
+void genIndexVal_DB::Write_genIndexVal_DB_WithHeader(gFx2y* functionIn, ostream& out, bool print_dbAsIs, bool equality_by_x, double tolx)
+{
+	vector<genIndexVal>* db2Print = &db;
+	vector<genIndexVal> dbOut;
+	if (!print_dbAsIs)
+	{
+		CopySort(dbOut, equality_by_x, tolx);
+		db2Print = &dbOut;
+	}
+	// printing the header
+	out << "index_main\t";
+	out << "index_sec\t";
+	out << "x\t";
+	unsigned int num_y = 0;
+	unsigned int sz = db2Print->size();
+	if (sz > 0)
+		num_y = db[0].ys.size();
+	functionIn->Print_YHeader(out, num_y);
+	out << '\n';
+	for (unsigned int i = 0; i < sz; ++i)
+		(*db2Print)[i].Write_genIndexVal_JustVals(out);
 }
 
 void genIndexVal_DB::Read_genIndexVal_DB(istream& in, bool read_dbAsIs, bool equality_by_x, double tolx)
@@ -547,6 +580,10 @@ bool Solver1D_1posConf::Read_Solver1D_1posConf(istream& in)
 		{
 			ReadVectorDouble(in, crossing_ys);
 		}
+		else if (buf == "x0s")
+		{
+			ReadVectorDouble(in, x0s);
+		}
 		else
 		{
 			cout << "buf:\t" << buf << '\n';
@@ -635,6 +672,12 @@ unsigned int Solver1D_1posConf::Initialize_Solver1D_1posConf()
 	}
 	tol_ys.resize(sz);
 	fill(tol_ys.begin(), tol_ys.end(), tol_y);
+	unsigned int sz_x0s = x0s.size();
+	if (sz_x0s < sz)
+	{
+		for (unsigned int i = sz_x0s; i < sz; ++i)
+			x0s.push_back(-1e15);
+	}
 	return sz;
 }
 
@@ -657,6 +700,7 @@ Solver1D::Solver1D()
 	do_posConfs_first_notAddPtSolve = true;
 	do_posConfs_AddPtSolve = true;
 	do_posConfs_second_notAddPtSolve = true;
+	b_print_PrimaryPoints = true;
 }
 
 Solver1D::~Solver1D()
@@ -683,6 +727,10 @@ void Solver1D::Read_Solver1D(istream& in)
 		if (buf == "baseName")
 		{
 			READ_NSTRING(in, buf, baseName);
+		}
+		else if (buf == "b_print_PrimaryPoints")
+		{
+			READ_NBOOL(in, buf, b_print_PrimaryPoints);
 		}
 		else if (buf == "do_posConfs_first_notAddPtSolve")
 		{
@@ -795,6 +843,8 @@ void Solver1D::InitializeFunction(gFx2y * functionIn)
 		genIndexVal giv(0, x);
 		Compute_Add_pt_value(giv, checkIfPtExists);
 	}
+	if (b_print_PrimaryPoints)
+		Print_PrimaryPoints();
 	for (unsigned int i = 0; i < sz_secondary_xSet; ++i)
 	{
 		double x = secondary_xs[i];
@@ -805,8 +855,7 @@ void Solver1D::InitializeFunction(gFx2y * functionIn)
 		del_secondary_x = secondary_xs[1] - secondary_xs[0];
 }
 
-
-ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y)
+ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos, double x0, double tol_y)
 {
 	ConvergenceLog cl;
 	if (tol_y < 0)
@@ -816,14 +865,14 @@ ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, 
 		else
 			tol_y = tol_x;
 	}
-	double tol_y_zero = 0.01 * tol_y;
+	double tol_y_zero = MIN(0.01 * tol_y, 0.01 * tol_x);
 
 	sgnT sgnjCrossing;
 	unsigned int cntrAddedOnSides = 0;
 	int jCrossing = -1, jCrossingm1 = -1;
 	while (jCrossing < 0)
 	{
-		bool pointAddedOrCrossingHappened = Solve_x4_Crossing_Aux(cntrAddedOnSides++, crossing_y, y_pos, tol_y_zero, jCrossingm1, jCrossing, sgnjCrossing, cl);
+		bool pointAddedOrCrossingHappened = Solve_x4_Crossing_Aux(cntrAddedOnSides++, crossing_y, y_pos, x0, tol_y_zero, jCrossingm1, jCrossing, sgnjCrossing, cl);
 		if (!pointAddedOrCrossingHappened && (jCrossing < 0))
 			return cl;
 		if (jCrossing >= 0)
@@ -934,54 +983,148 @@ ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, 
 	return cl;
 }
 
-bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double crossing_y, unsigned int y_pos, double tol_y_zero, int& jCrossingm1, int& jCrossing, sgnT& sgnjCrossing, ConvergenceLog& cl)
+unsigned int Solver1D::Cross_Helper(double crossing_y, unsigned int y_pos, double tol_y_zero,
+	vector<int>& poss, vector<sgnT>& signs, vector<cross_optimal_helper>& helpers)
 {
 	pts.Sort(true, tol_x_eq_check);
-	vector<int> poss;
 	unsigned int szPos = getValidValues(y_pos, poss);
 	if (szPos < 2)
 	{
 		THROW("not enough points\n");
 	}
 
-	vector<sgnT> signs(szPos);
+	signs.resize(szPos);
 
 	for (unsigned int ii = 0; ii < szPos; ++ii)
 	{
 		unsigned int i = poss[ii];
 		signs[ii] = Sgn(pts.db[i].ys[y_pos] - crossing_y, tol_y_zero);
-	}
-	sgnT sgni0 = signs[0];
-	sgnT sgn2Look4;
-	if (sgni0 == sgn_0)
-	{
-		sgnjCrossing = sgn_0;
-		jCrossingm1 = poss[0];
-		jCrossing = jCrossingm1;
-		return true;
-	}
-	else if (sgni0 == sgn_m)
-		sgn2Look4 = sgn_p;
-	else
-		sgn2Look4 = sgn_m;
-	unsigned jjCrossing = -1;
-	for (jjCrossing = 1; jjCrossing < szPos; ++jjCrossing)
-	{
-		sgnjCrossing = signs[jjCrossing];
-		jCrossing = poss[jjCrossing];
-		if (sgnjCrossing == sgn_0)
+		if (signs[ii] == sgn_0)
 		{
-			jCrossingm1 = jCrossing;
+			cross_optimal_helper h;
+			h.x = pts.db[i].x;
+			h.xnext = h.x;
+			h.i = i;
+			h.ii = ii;
+			h.signi = signs[ii];
+			h.signinext = sgnT_none;
+			helpers.push_back(h);
+		}
+	}
+	// now see if there are other points after which the sign changes
+	unsigned int szPosm1 = szPos - 1;
+	sgnT signi, signinext;
+	for (unsigned int ii = 0; ii < szPosm1; ++ii)
+	{
+		signi = signs[ii], signinext = signs[ii + 1];
+		if ((signi == sgn_0) || (signinext == sgn_0) || (signi == signinext))
+			continue;
+		cross_optimal_helper h;
+		h.i = poss[ii], h.ii = ii, h.inext = poss[ii + 1];
+		h.signi = signi, h.signinext = signinext;
+		h.x = pts.db[h.i].x;
+		h.xnext = pts.db[h.inext].x;
+		helpers.push_back(h);
+	}
+	return szPos;
+}
+
+void Solver1D::Print_PrimaryPoints()
+{
+	pts.Sort(false);
+	for (unsigned int i = 0; i < pts.size(); ++i)
+	{
+		genIndexVal* giv = &pts.db[i];
+		if (giv->index_main != 0)
+			return;
+		string ser;
+		toString(giv->index_sec, ser);
+		string fileName = baseName + "_PrimaryPt_" + ser + ".txt";
+		fstream in(fileName.c_str(), ios::in);
+		fstream out;
+		if (!in.is_open())
+		{
+			out.open(fileName.c_str(), ios::app);
+			PrintSln_Header(out);
+		}
+		else
+		{
+			in.close();
+			out.open(fileName.c_str(), ios::app);
+		}
+		ConvergenceLog cl;
+		cl.convType = ct1d_yes;
+		PrintSln_Values(out, *giv, cl, false);
+	}
+}
+
+bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double crossing_y, unsigned int y_pos, double x0, double tol_y_zero, int& jCrossingm1, int& jCrossing, sgnT& sgnjCrossing, ConvergenceLog& cl)
+{
+	vector<int> poss;
+	vector<sgnT> signs;
+	vector<cross_optimal_helper> helpers;
+
+	unsigned int szPos = Cross_Helper(crossing_y, y_pos, tol_y_zero,
+		poss, signs, helpers);
+
+	unsigned int sz_helpers = helpers.size();
+	if (sz_helpers == 1)
+	{
+		cross_optimal_helper h = helpers[0];
+		if (h.signi == sgn_0)
+		{
+			sgnjCrossing = sgn_0;
+			jCrossingm1 = h.i;
+			jCrossing = jCrossingm1;
 			return true;
 		}
-		if (sgnjCrossing == sgn2Look4)
-			break;
-	}
-	if (jjCrossing < szPos)
-	{
-		jCrossingm1 = poss[jjCrossing - 1];
+		sgnjCrossing = h.signinext;
+		jCrossing = h.inext;
+		jCrossingm1 = h.i;
 		return true;
 	}
+	int state = 2; // 2: x0 between xMin and xMax;		 0, x0 < xMin;		1 x0 > xMax
+	if (x0 < xMin)
+	{
+		x0 = xMin;
+		state = 0;
+	}
+	if (x0 > xMax)
+	{
+		x0 = xMax;
+		state = 1;
+	}
+	// now find whih the cloest point
+	if (sz_helpers > 1)
+	{
+		unsigned int index_helper = 0;
+		if (state == 1)
+			index_helper = sz_helpers - 1;
+		else if (state == 2)
+		{
+			map<double, int> dist2x0Map;
+			double dist;
+			for (unsigned int i = 0; i < sz_helpers; ++i)
+			{
+				dist = fabs(helpers[i].x - x0);
+				dist2x0Map[dist] = i;
+			}
+			index_helper = dist2x0Map.begin()->second;
+		}
+		cross_optimal_helper h = helpers[index_helper];
+		if (h.signi == sgn_0)
+		{
+			sgnjCrossing = sgn_0;
+			jCrossingm1 = h.i;
+			jCrossing = jCrossingm1;
+			return true;
+		}
+		sgnjCrossing = h.signinext;
+		jCrossing = h.inext;
+		jCrossingm1 = h.i;
+		return true;
+	}
+	/// now the size is zero and no crossing is found
 	jCrossingm1 = -1;
 	jCrossing = -1; // means crossing has not fonud
 	unsigned int posL = poss[0], posR = poss[szPos - 1];
@@ -1040,7 +1183,7 @@ bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double cross
 	return true;
 }
 
-ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y)
+ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos, double x0, double tol_y)
 {
 	ConvergenceLog cl;
 
@@ -1051,67 +1194,109 @@ ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double
 		else
 			tol_y = tol_x;
 	}
-	double tol_y_zero = 0.01 * tol_y;
+	double tol_y_zero = MIN(0.01 * tol_y, 0.01 * tol_x);
 
 	pts.Sort(true, tol_x_eq_check);
 	vector<int> poss;
 	unsigned int szPos = getValidValues(y_pos, poss);
-	unsigned int posL = poss[0], posR = poss[szPos - 1];
+	if (szPos < 2)
+	{
+		THROW("not enough points\n");
+	}
+
 	vector<sgnT> signs(szPos);
 	vector<double> vals(szPos);
+	vector<cross_optimal_helper> helpers;
 
 	for (unsigned int ii = 0; ii < szPos; ++ii)
 	{
 		unsigned int i = poss[ii];
-		double val = pts.db[i].ys[y_pos] - crossing_y;
-		vals[ii] = val;
-		signs[ii] = Sgn(val, tol_y_zero);
-	}
-	sgnT sgni0 = signs[0];
-	sgnT sgn2Look4, sgnjCrossing;
-	if (sgni0 == sgn_0)
-	{
-		sln = pts.db[posL];
-		cl.delxs.push_back(0.0);
-		cl.delys.push_back(0.0);
-		return cl;
-	}
-	else if (sgni0 == sgn_m)
-		sgn2Look4 = sgn_p;
-	else
-		sgn2Look4 = sgn_m;
-	unsigned jjCrossing = -1, jCrossing = -1;
-	for (jjCrossing = 1; jjCrossing < szPos; ++jjCrossing)
-	{
-		sgnjCrossing = signs[jjCrossing];
-		jCrossing = poss[jjCrossing];
-		if (sgnjCrossing == sgn_0)
+		vals[ii] = pts.db[i].ys[y_pos] - crossing_y;
+		signs[ii] = Sgn(vals[ii], tol_y_zero);
+		if (signs[ii] == sgn_0)
 		{
-			sln = pts.db[jCrossing];
+			cross_optimal_helper h;
+			h.x = pts.db[i].x;
+			h.xnext = h.x;
+			h.i = i;
+			h.ii = ii;
+			h.signi = signs[ii];
+			h.signinext = sgnT_none;
+			helpers.push_back(h);
+		}
+	}
+	// now see if there are other points after which the sign changes
+	unsigned int szPosm1 = szPos - 1;
+	sgnT signi, signinext;
+	for (unsigned int ii = 0; ii < szPosm1; ++ii)
+	{
+		signi = signs[ii], signinext = signs[ii + 1];
+		if ((signi == sgn_0) || (signinext == sgn_0) || (signi == signinext))
+			continue;
+		cross_optimal_helper h;
+		h.i = poss[ii], h.ii = ii, h.inext = poss[ii + 1];
+		h.signi = signi, h.signinext = signinext;
+		h.x = pts.db[h.i].x;
+		h.xnext = pts.db[h.inext].x;
+		helpers.push_back(h);
+	}
+	unsigned int sz_helpers = helpers.size();
+	cross_optimal_helper h;
+	if (sz_helpers == 1)
+		h = helpers[0];
+	int state = 2; // 2: x0 between xMin and xMax;		 0, x0 < xMin;		1 x0 > xMax
+	if (x0 < xMin)
+	{
+		x0 = xMin;
+		state = 0;
+	}
+	if (x0 > xMax)
+	{
+		x0 = xMax;
+		state = 1;
+	}
+	// now find whih the cloest point
+	if (sz_helpers > 1)
+	{
+		unsigned int index_helper = 0;
+		if (state == 1)
+			index_helper = sz_helpers - 1;
+		else if (state == 2)
+		{
+			map<double, int> dist2x0Map;
+			double dist;
+			for (unsigned int i = 0; i < sz_helpers; ++i)
+			{
+				dist = fabs(helpers[i].x - x0);
+				dist2x0Map[dist] = i;
+			}
+			index_helper = dist2x0Map.begin()->second;
+		}
+		h = helpers[index_helper];
+	}
+	if (sz_helpers > 0) // crossing is found
+	{
+		if (h.signi == sgn_0)
+		{
+			sln = pts.db[h.i];
 			cl.delxs.push_back(0.0);
 			cl.delys.push_back(0.0);
 			return cl;
 		}
-		if (sgnjCrossing == sgn2Look4)
-			break;
-	}
-	if (jjCrossing < szPos)
-	{
-		// sign change between jm1 and j
-		int jCrossingm1 = poss[jjCrossing - 1];
-		double valjm1 = pts.db[jCrossingm1].ys[y_pos] - crossing_y;
-		double valj = pts.db[jCrossing].ys[y_pos] - crossing_y;
-		int j = jCrossing;
-		if (fabs(valjm1) < fabs(valj))
-			j = jCrossingm1;
-		double delx = pts.db[jCrossing].x - pts.db[jCrossingm1].x;
-		double dely = pts.db[j].ys[y_pos]; // valj - valjm1;
+		double vali = pts.db[h.i].ys[y_pos] - crossing_y;
+		double valinext = pts.db[h.inext].ys[y_pos] - crossing_y;
+		unsigned int j = h.i;
+		if (fabs(valinext) < fabs(vali))
+			j = h.inext;
+		double delx = h.xnext - h.x;
+		double dely = pts.db[j].ys[y_pos];
 		sln = pts.db[j];
 		cl.delxs.push_back(delx);
 		cl.delys.push_back(dely);
 		return cl;
 	}
 
+	// no crossing is found, so find the minimum value
 	double absValMin = fabs(vals[0]), tmp;
 	unsigned int index_absValMin = 0;
 	for (unsigned int ii = 0; ii < szPos; ++ii)
@@ -1638,22 +1823,22 @@ void Solver1D::MAIN_ProcessConfigFile(gFx2y* functionIn, string confName)
 	SolveAllSolveMode_AfterReadingConfig(functionIn);
 }
 
-ConvergenceLog Solver1D::SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, double tol_y, bool doInitialization)
+ConvergenceLog Solver1D::SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, double x0, double tol_y, bool doInitialization)
 {
 	if (isExtremum)
 		return SolveYExtremum(functionIn, sln, isMin, y_pos, addAdditionalPoints, tol_y, doInitialization);
-	return SolveYCrossing(functionIn, sln, crossing_y, y_pos, addAdditionalPoints, tol_y, doInitialization);
+	return SolveYCrossing(functionIn, sln, crossing_y, y_pos, addAdditionalPoints, x0, tol_y, doInitialization);
 }
 
-ConvergenceLog Solver1D::SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization)
+ConvergenceLog Solver1D::SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double x0, double tol_y, bool doInitialization)
 {
 	if (doInitialization)
 		InitializeFunction(functionIn);
 	ConvergenceLog cl;
 	if (addAdditionalPoints)
-		cl = Solve_x4_Crossing(sln, crossing_y, y_pos, tol_y);
+		cl = Solve_x4_Crossing(sln, crossing_y, y_pos, x0, tol_y);
 	else
-		cl = Solve_x4_Crossing_NoPointAdded(sln, crossing_y, y_pos, tol_y);
+		cl = Solve_x4_Crossing_NoPointAdded(sln, crossing_y, y_pos, x0, tol_y);
 	if (doInitialization)
 		Store_pts_unsorted_SlnEnd(y_pos);
 	return cl;
@@ -1671,6 +1856,38 @@ ConvergenceLog Solver1D::SolveYExtremum(gFx2y* functionIn, genIndexVal& sln, boo
 	if (doInitialization)
 		Store_pts_unsorted_SlnEnd(y_pos);
 	return cl;
+}
+
+unsigned int Solver1D::SolveYCrossings(gFx2y* functionIn, vector<genIndexVal>& slns, vector<ConvergenceLog>& cls, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization)
+{
+	if (doInitialization)
+		InitializeFunction(functionIn);
+	if (tol_y < 0)
+	{
+		if (tol_ys.size() > y_pos)
+			tol_y = tol_ys[y_pos];
+		else
+			tol_y = tol_x;
+	}
+	double tol_y_zero = MIN(0.01 * tol_y, 0.01 * tol_x);
+	vector<int> poss;
+	vector<sgnT> signs;
+	vector<cross_optimal_helper> helpers;
+	Cross_Helper(crossing_y, y_pos, tol_y_zero, poss, signs, helpers);
+	vector<double> x0s;
+	unsigned numXs = helpers.size();
+	for (unsigned int i = 0; i < numXs; ++i)
+	{
+		if (helpers[i].signi == sgn_0)
+			x0s.push_back(helpers[i].x);
+		else
+			x0s.push_back(0.5 * (helpers[i].x + helpers[i].xnext));
+	}
+	slns.resize(numXs);
+	cls.resize(numXs);
+	for (unsigned int i = 0; i < numXs; ++i)
+		cls[i] = SolveYCrossing(functionIn, slns[i], crossing_y, y_pos, addAdditionalPoints, x0s[i], tol_y, false);
+	return numXs;
 }
 
 void Solver1D::Initialize_AfterReading()
@@ -1767,7 +1984,7 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 				out.open(nm.c_str(), ios::app);
 			}
 			genIndexVal sln;
-			ConvergenceLog cl = SolveYCrossingOrExtremum(sln, functionIn, spc.pos_y, spc.vec_isExtremum[j], spc.isMins[j], spc.crossing_ys[j], addAdditionalPoints, spc.tol_ys[j], false);
+			ConvergenceLog cl = SolveYCrossingOrExtremum(sln, functionIn, spc.pos_y, spc.vec_isExtremum[j], spc.isMins[j], spc.crossing_ys[j], addAdditionalPoints, spc.x0s[j], spc.tol_ys[j], false);
 			slns.push_back(sln);
 			cls.push_back(cl);
 
@@ -1775,9 +1992,9 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 			PrintSln_Values(outSln, sln, cl, spc.vec_isExtremum[j]);
 
 			out_pt_x << setprecision(22);
-			pts.Write_genIndexVal_DB(out_pt_x, false, true, tol_x_eq_check);
+			pts.Write_genIndexVal_DB_WithHeader(functionIn, out_pt_x, false, true, tol_x_eq_check);
 			out_pt_i << setprecision(22);
-			pts.Write_genIndexVal_DB(out_pt_i, false, false, tol_x_eq_check);
+			pts.Write_genIndexVal_DB_WithHeader(functionIn, out_pt_i, false, false, tol_x_eq_check);
 		}
 		cout << "EN: mode_counter\t" << mode_counter << "\tpci\t" << pci << "\ttsz_posConfs2Solve\t" << sz_posConfs2Solve << '\n';
 	}
@@ -1848,12 +2065,29 @@ void Test_SolveYCrossing()
 	double crossing_y = 0.0;
 	unsigned int y_pos = 1;
 	double tol_y = -1.0;
-	ConvergenceLog cl = s1d.SolveYCrossing(function, sln, crossing_y, y_pos, tol_y, addAdditionalPoints);
-	bool success = (cl.convType == ct1d_yes);
-	cout << "success\t" << success;
-	cout << "cl\n" << cl << '\n';
-	cout << "sln\n";
-	sln.Write_genIndexVal(cout);
+	double x0 = -100.0;
+	if (false)
+	{
+		ConvergenceLog cl = s1d.SolveYCrossing(function, sln, crossing_y, y_pos, x0, tol_y, addAdditionalPoints);
+		bool success = (cl.convType == ct1d_yes);
+		cout << "success\t" << success;
+		cout << "cl\n" << cl << '\n';
+		cout << "sln\n";
+		sln.Write_genIndexVal(cout);
+	}
+	else
+	{
+		vector<genIndexVal> slns;
+		vector<ConvergenceLog> cls;
+		unsigned int sz = s1d.SolveYCrossings(function, slns, cls, crossing_y, y_pos, addAdditionalPoints, tol_y, true);
+
+		for (unsigned int i = 0; i < sz; ++i)
+		{
+			cout << "cl" << i << "\n" << cls[i] << '\n';
+			cout << "sln" << i << "\n";
+			slns[i].Write_genIndexVal(cout);
+		}
+	}
 	delete function;
 }
 

@@ -28,6 +28,7 @@ bool name2Type(string& name, convergeT1D& typeVal);
 ostream& operator<<(ostream& out, convergeT1D dat);
 istream& operator>>(istream& in, convergeT1D& dat);
 
+class gFx2y;
 class ConvergenceLog
 {
 	friend ostream& operator<<(ostream& out, const ConvergenceLog& dat);
@@ -54,6 +55,7 @@ public:
 	bool operator<(const genIndexVal &other) const;
 	bool operator==(const genIndexVal &other) const;
 	void Write_genIndexVal(ostream& out) const;
+	void Write_genIndexVal_JustVals(ostream& out) const;
 	bool Read_genIndexVal(istream& in);
 
 	int index_main;
@@ -83,6 +85,7 @@ public:
 	//		== true, prints db as is
 	//		== fasle, creates a copy and prints based on the next two bools
 	void Write_genIndexVal_DB(ostream& out, bool print_dbAsIs = true, bool equality_by_x = false, double tolx = -1);
+	void Write_genIndexVal_DB_WithHeader(gFx2y* functionIn, ostream& out, bool print_dbAsIs = true, bool equality_by_x = false, double tolx = -1);
 	// read_dbAsIs is similar to above but just for the reading
 	void Read_genIndexVal_DB(istream& in, bool read_dbAsIs = true, bool equality_by_x = false, double tolx = -1);
 	// adding point
@@ -98,6 +101,16 @@ public:
 	static double g_genIndexVal_DB_tol_x;
 
 	vector<genIndexVal> db;
+};
+
+// used to find best point closest to an x0 for crossing or optimal value
+
+class cross_optimal_helper
+{
+public:
+	unsigned int ii, i, inext;
+	double x, xnext;
+	sgnT signi, signinext;
 };
 
 // a general function that goes from x to y
@@ -137,6 +150,7 @@ public:
 	bool isExtremum; // if true, extremum values are solved, else crossing values
 	vector<bool> isMins;
 	vector<double> crossing_ys;
+	vector<double> x0s;
 
 	///// set-up after initialization
 	string namep0;
@@ -158,10 +172,11 @@ public:
 	void MAIN_ProcessConfigFile(gFx2y* functionIn, string confName = "none");
 
 	// addAdditionalPoints: beyond initial points computed (e.g. mainIndex = 0, 1 provided by the function) no additional points are added and the best point in the data is chosen
-	ConvergenceLog SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, double tol_y, bool doInitialization = false);
+	ConvergenceLog SolveYCrossingOrExtremum(genIndexVal& sln, gFx2y* functionIn, unsigned int y_pos, bool isExtremum, bool isMin, double crossing_y, bool addAdditionalPoints, double x0, double tol_y, bool doInitialization = false);
 
-	ConvergenceLog SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization = true);
+	ConvergenceLog SolveYCrossing(gFx2y* functionIn, genIndexVal& sln, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double x0, double tol_y, bool doInitialization = true);
 	ConvergenceLog SolveYExtremum(gFx2y* functionIn, genIndexVal& sln, bool isMin, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization = true);
+	unsigned int SolveYCrossings(gFx2y* functionIn, vector<genIndexVal>& slns, vector<ConvergenceLog>& cls, double crossing_y, unsigned int y_pos, bool addAdditionalPoints, double tol_y, bool doInitialization);
 
 	vector<Solver1D_1posConf> posConfs2Solve;
 	// for each combination in "posConfs2Solve", there are 3 possible solve sequences:
@@ -172,6 +187,9 @@ public:
 	bool do_posConfs_AddPtSolve;
 	// 3. After all solutions are done, yet, another time no new point is added and extremum / crossings are obtained
 	bool do_posConfs_second_notAddPtSolve;
+
+	// print primary points of different options into one file
+	bool b_print_PrimaryPoints;
 
 	vector<double> paras1D; // like loading rate for the fragmentation problem
 	vector<unsigned int> indices4paras1D;
@@ -190,11 +208,11 @@ public:
 	// functions called after InitializeFunction
 	// solve crossing for the function
 	// these two functions search for the crossing and extremum and potentially add to the point set
-	ConvergenceLog Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y);
+	ConvergenceLog Solve_x4_Crossing(genIndexVal& sln, double crossing_y, unsigned int y_pos, double x0, double tol_y);
 	ConvergenceLog Solve_x4_Extremum(genIndexVal& sln, bool isMin, unsigned int y_pos, double tol_y);
 
 	// similar to above, but no point is added
-	ConvergenceLog Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos, double tol_y);
+	ConvergenceLog Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double crossing_y, unsigned int y_pos, double x0, double tol_y);
 	ConvergenceLog Solve_x4_Extremum_NoPointAdded(genIndexVal& sln, bool isMin, unsigned int y_pos);
 
 private:
@@ -203,7 +221,10 @@ private:
 
 	void Restore_pts(bool read_dbAsIs = true, bool compute_ys_not_computed = true);
 	genIndexVal_DBH Compute_Add_pt_value(genIndexVal& giv, bool checkIfPtExists = true);
-	bool Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double crossing_y, unsigned int y_pos, double tol_y_zero, int& jCrossingm1, int& jCrossing, sgnT& sgnjCrossing, ConvergenceLog& cl);
+	// x0: is the location we want to find the solution closest to. Sometimes there are multiple crossings and want to choose the solution closes to x0
+	// if x0 > xM (below) x0 = xM
+	// if x0 < xm (bel0w) x0 = xm
+	bool Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double crossing_y, unsigned int y_pos, double x0, double tol_y_zero, int& jCrossingm1, int& jCrossing, sgnT& sgnjCrossing, ConvergenceLog& cl);
 	bool Solve_x4_Extremum_Aux(unsigned int cntrAddedOnSides, bool isMin, unsigned int y_pos, int& jExtremum, int& jExtremumm1, int& jExtremump1, ConvergenceLog& cl);
 
 	unsigned int getValidValues(unsigned int y_pos, vector<int>& poss);
@@ -230,7 +251,12 @@ private:
 
 	void PrintSln_Header(ostream& out);
 	void PrintSln_Values(ostream& out, const genIndexVal& sln, ConvergenceLog& cl, bool isExtremum);
+	unsigned int Cross_Helper(double crossing_y, unsigned int y_pos, double tol_y_zero,
+		vector<int>& poss, vector<sgnT>& signs, vector<cross_optimal_helper>& helpers);
+
+	void Print_PrimaryPoints();
 };
+
 
 void MAIN_Solver1D(string confName = "default", gFx2y* functionIn = NULL);
 void Test_SolveYCrossing();

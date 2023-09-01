@@ -16,6 +16,10 @@ do_posConfs_AddPtSolve
 do_posConfs_second_notAddPtSolve
 1
 
+# prints primary points (e.g. in this case specific segment length from Zhu06, Grady) as individual files that compile results for different a
+b_print_PrimaryPoints
+1
+
 str_map
 {
 #	tsr_Xu_Needleman		tsr_Ortiz
@@ -53,7 +57,7 @@ paras1D
 # sample 
 indices4paras1D
 {
-140
+6
 #3	4
 }
 
@@ -100,6 +104,8 @@ posConfs2Solve
 		isExtremum	0
 		# isMins	{ 	1	}
 		crossing_ys	{	0.0		}
+		# position(s) around which find the crossing (large value -> start from xMax [GOOD here], small value -> start from xMin, other value between xMin, xMax -> find the root closest to this
+		x0s			{	1000.0	}
 		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
 	}
 
@@ -111,6 +117,8 @@ posConfs2Solve
 		isExtremum	0
 		# isMins	{ 	1	}
 		crossing_ys	{	0.0		}
+		# position(s) around which find the crossing (large value -> start from xMax [GOOD here], small value -> start from xMin, other value between xMin, xMax -> find the root closest to this
+		x0s			{	1000.0	}
 		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
 	}
 	
@@ -122,6 +130,8 @@ posConfs2Solve
 		isExtremum	0
 		# isMins	{ 	1	}
 		crossing_ys	{	0.0		}
+		# position(s) around which find the crossing (large value -> start from xMax [GOOD here], small value -> start from xMin, other value between xMin, xMax -> find the root closest to this
+		x0s			{	1000.0	}
 		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
 	}
 }
