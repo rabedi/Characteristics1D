@@ -49,15 +49,14 @@ equality_by_x
 # log10(a)
 paras1D
 {
-#1.0
--4.0
+4.0
 #2.0	3.2
 }
 
 # sample 
 indices4paras1D
 {
-6
+14
 #3	4
 }
 
@@ -89,7 +88,7 @@ posConfs2Solve
 	# time final, relative  energy dissipation by max source term energy
 	{
 		isActive	1
-		nameBase	etf_max_rel_eneD_,ax_src_ene_tF
+		nameBase	etf_max_rel_eneD_max_src_ene_tF
 		pos_y		54
 		isExtremum	1
 		isMins	{ 	0	}
