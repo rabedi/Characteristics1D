@@ -23,14 +23,14 @@ b_print_PrimaryPoints
 str_map
 {
 #	tsr_Xu_Needleman		tsr_Ortiz
-(	tsrModel	,	tsr_Ortiz	)
-#(	tsrModel	,	tsr_Xu_Needleman	)
+#(	tsrModel	,	tsr_Ortiz	)
+(	tsrModel	,	tsr_Xu_Needleman	)
 
 # if true,		para0 =	log10(a)
 # else			para0 = log10(a_p), where a_p = a / 2
 # a is nondimensional strain rate. a_p is the version used by Zhu, Drugan, etc, mine is a
-(	para0_is_la	,	1	)
-#(	para0_is_la	,	0	)
+#(	para0_is_la	,	1	)
+(	para0_is_la	,	0	)
 }
 
 # 0: do not read previous solutions, 1 reads restart files 
@@ -49,14 +49,14 @@ equality_by_x
 # log10(a)
 paras1D
 {
-4.0
+-2.0
 #2.0	3.2
 }
 
 # sample 
 indices4paras1D
 {
-14
+8
 #3	4
 }
 
