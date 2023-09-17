@@ -1,13 +1,69 @@
 #include "MinCrossingSolver1DPeriodicDFragment.h"
 #include "SL_OneInterfaceAllTimes.h"
 
+string getName(la_NormalizationType dat)
+{
+	if (dat == la_noNormalization)
+		return "normalization_no";
+	if (dat == la_2Normalization)
+		return "normalization_2";
+	if (dat == la_GNormalization)
+		return "normalization_G";
+	cout << (int)dat << '\n';
+	THROW("invalid dat");
+}
+
+bool name2Type(string& name, la_NormalizationType& typeVal)
+{
+	int num = -1;
+	bool success = fromString(name, num);
+	if (success)
+	{
+		if (num >= la_NormalizationType_SIZE)
+			THROW("too large of a number\n");
+		typeVal = (la_NormalizationType)num;
+		return true;
+	}
+	// at this point we know that name is not an integer ...
+	for (int i = 0; i < la_NormalizationType_SIZE; ++i)
+	{
+		typeVal = (la_NormalizationType)i; // casting integer to la_NormalizationType, if we don't cast it C++ gives a compile error
+		string nameI = getName(typeVal);
+		if (name == nameI)
+			return true;
+	}
+	return false;
+}
+
+//operator for output
+ostream& operator<<(ostream& out, la_NormalizationType dat)
+{
+	string name = getName(dat);
+	out << name;
+	return out;
+}
+
+//operator for input
+istream& operator>>(istream& in, la_NormalizationType& dat)
+{
+	string name;
+	string buf;
+	READ_NSTRING(in, buf, name);
+	if (name2Type(name, dat) == false)
+	{
+		cout << name << '\n';
+		THROW("Invalid name\n");
+	}
+	return in;
+}
+
 gFx2yPDF::gFx2yPDF()
 {
 	tsrModel = tsr_Ortiz;
-	para0_is_la = true;
+	laNormT = la_noNormalization;
 }
 
-void gFx2yPDF::InitializeValues(const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys)
+void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys)
 {
 	indices4Paras = indices4ParasIn;
 	str_map = str_mapIn;
@@ -18,14 +74,20 @@ void gFx2yPDF::InitializeValues(const map<string, string>& str_mapIn, const vect
 		cout << "it->second\t" << it->second << '\n';
 		THROW("Cannot find the appropriate cohesive model for solution\n");
 	}
-	it = str_map.find("para0_is_la");
-	int i_para0_is_la = (int)para0_is_la;
-	if ((it != str_map.end()) && (!fromString(it->second, i_para0_is_la)))
+	if (IsExtrinsic(tsrModel))
+	{
+		for (unsigned int i = 0; i < conf->posConfs2Solve.size(); ++i)
+		{
+			if (conf->posConfs2Solve[i].nameBase == "uv_vsDruganMax")
+				conf->posConfs2Solve[i].isActive = false;
+		}
+	}
+	it = str_map.find("laNormT");
+	if ((it != str_map.end()) && (!name2Type(it->second, laNormT)))
 	{
 		cout << "it->second\t" << it->second << '\n';
 		THROW("Boolean not successfully read!\n");
 	}
-	para0_is_la = (bool)i_para0_is_la;
 
 	paras = parasIn;
 	Periodic1IntrFrag p1Conf;
@@ -70,7 +132,7 @@ void gFx2yPDF::InitializeValues(const map<string, string>& str_mapIn, const vect
 	xMin = xm - 0.5;
 	xMax = xM + 0.5;
 
-	num_y = 105;
+	num_y = 118;
 }
 
 bool gFx2yPDF::ComputeValue(genIndexVal& giv)
@@ -136,13 +198,26 @@ void gFx2yPDF::Print_YHeader(ostream& out, int num_y) const
 void gFx2yPDF::Writel10_al_TSR_file(double l10l, int index_primary_l, int index_secondary_l)
 {
 	static double log10_2 = log(2.0) / log(10.0);
+	static double log10_e = 1.0 / log(10.0);
 	double l10a = 2.0;
 	int index_primary_a = 0, index_secondary_a = 0;
 	if (paras.size() > 0)
 	{
 		l10a = paras[0];
-		if (!para0_is_la)
-			l10a += log10_2;
+		if (laNormT != la_noNormalization)
+		{
+			if ((tsrModel == tsr_Ortiz) || (laNormT == la_2Normalization))
+				l10a += log10_2;
+			else
+			{
+				if (tsrModel == tsr_Xu_Needleman)
+					l10a -= log10_e;
+				else
+				{
+					THROW("Invalid option\n");
+				}
+			}
+		}
 		if (indices4Paras.size() > 0)
 			index_primary_a = indices4Paras[0];
 	}

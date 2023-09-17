@@ -365,7 +365,8 @@ public:
 	// Drugan reference:
 	// Xu-Needleman	: REF = MAX : correponds to max stress in TSR, l_Drugan is the length for which solid speed is zero
 	// Ortiz		: REF = FIN : correponds to final stress in TSR (delta = 1, sigma = 0) as for initial stage vSolid is always going to be > 0
-	double l_SigmaRef_Drugan_Dilute;
+	double l_SigmaRef_DruganMax_Dilute; // original Drugan's idea -> only applies to intrinsic models (Xu-Needleman) -> at sigmaMax vs = 0
+	double l_SigmaRef_DruganFinal_Dilute; // my modification -> applies to both models: at final stage (sigmaC = 0) vs is 0
 	bool diluteFractureModel; // l >= l_dilute
 	double a_p, l_p; // zhu6_a, zhu6_l; // epsilonDotNonDimensional; // (11)
 	double zhu6_epsilonDotScale; // (13)
@@ -425,7 +426,8 @@ public:
 	PITSS terminateState;
 
 	/// Crossers and time differences for other fracture criteria
-	double delt_vs0, crosser_vs0;		  // vs becomes negative (Drugan's idea)
+	double delt_vs0Max, crosser_vs0Max;		  // vs becomes negative (Drugan's idea - original idea, sigma = sigmaMax)
+	double delt_vs0Final, crosser_vs0Final;		  // vs becomes negative (Drugan's idea - my version, final stage sigma = 0)
 	double delt_relus_0, crosser_relus_0; // solid bar reaches its original length
 	double delt_relus_m1, crosser_relus_m1; // relus = -1 criterion (mine, bar goes to nondimensional strain = -1 (eps/(sigma_C/E) = -1)
 

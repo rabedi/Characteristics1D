@@ -765,6 +765,7 @@ TSR_XuNeedleman::TSR_XuNeedleman()
 {
 	a = 10.0;
 	Z = 1.0;
+	E = 1.0;
 	deltaC = 1.0;
 	sigmaC = 1.0;
 	delTFactor = 0.0001;
@@ -779,8 +780,9 @@ void TSR_XuNeedleman::Compute(ostream* outPtr)
 	// sigma(delta) + Z/2 * deltaDot = at -> 
 	// deltaDot = At - B delta exp(1.0 - delta/deltaC)
 	double ZInv2 = 2.0 / Z;
+	double halfZ = 0.5 * Z;
 	double deltaCInv = 1.0 / deltaC, deln;
-	double A = ZInv2 * a;
+	double A = ZInv2 * a * E;
 	double B = ZInv2 * sigmaC * deltaCInv;
 	double time = 0.0;
 	double delta = 0.0;
@@ -789,8 +791,8 @@ void TSR_XuNeedleman::Compute(ostream* outPtr)
 	bool b_print = (outPtr != NULL);
 	if (b_print)
 	{
-		*outPtr << "time\tdelta\tsigma\tdeltaDot\n";
-		*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\n";
+		*outPtr << "time\tdelta\tsigma\tdeltaDot\tat\terror\n";
+		*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\t" << 0.0 << '\t' << 0.0 << "\n";
 	}
 	double h = delT, hd2 = 0.5 * delT, h6 = h / 6.0;
 	double k1, k2, k3, k4, del, t;
@@ -820,7 +822,11 @@ void TSR_XuNeedleman::Compute(ostream* outPtr)
 			tSigmaMax = time;
 		}
 		if (b_print)
-			*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\n";
+		{
+			double at = time * a;
+			double error = a * E * t - sigma - halfZ * deltaDot;
+			*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\t" << at << "\t" << error << "\n";
+		}
 		if ((deltaCPassed) && (sigma < sigTol))
 		{
 			delnSigmaZero = deln;

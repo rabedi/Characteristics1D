@@ -58,3 +58,4 @@ _log/__logInhomogeneous_axt_fracture_Coh_Ring_openedpCheck.txt
 *.pyc
 .vs/Target/v15/ipch/AutoPCH/4fd076c61bc8ff85/SLFRACTYPES.ipch
 *.ipch
+*.asv

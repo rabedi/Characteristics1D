@@ -60,6 +60,10 @@ istream& operator>>(istream& in, OneSegmentPFT& dat);
 // pit_reluSolid0,  relative solid displacement = 0,  e.g. solid bar regains its initial length
 // pit_reluSolidm1, relative solid displacement = -1, e.g. solid bar length becomes zero!
 
+// pit_sigmaMax: cohesive stress is max: Initial stage for Extrinsic, sigmaMaxCohesive for intrinsic -> useful for Drugan criterion
+// pit_timeSigmaAveMax: bulk average sigma is Max
+// pit_timeSigmaPWMax: bulk stress in the middle of the segment is maximum
+
 typedef enum {PITSS_none = -1, pit_sigma0, pit_sigmaMax, pit_timeDilute, pit_timeInteraction, pit_timeSigmaAveMax, pit_timeSigmaPWMax,
 pit_vSolidNegative, pit_reluSolid1, pit_reluSolid0, pit_reluSolidm1, PITSS_SIZE} PITSS;
 string getName(PITSS dat);

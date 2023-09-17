@@ -2923,13 +2923,10 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		l_dilute_approx = zhu6_sBarScale * l_dilute_approx_p;
 		l_dilute = zhu6_sBarScale * l_dilute_p;
 
-		if (prematureExit)
-			return;
-
 		t_dilute_zeroStressCheck = l_dilute + aInv - t0;
 
-		t_dilute = 0.5 * t_dilute_p;
-		t_dilute_approx = 0.5 * t_dilute_approx_p;
+		t_dilute = energyScale * t_dilute_p;
+		t_dilute_approx = energyScale * t_dilute_approx_p;
 		if (diluteFractureModel)
 			tFailure = l_dilute + aInv;
 
@@ -2937,8 +2934,8 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		t_dilute += aInv;
 		t_dilute_approx += aInv;
 
-		t_dilute_p += 2.0 * aInv;
-		t_dilute_approx_p += 2.0 * aInv;
+		t_dilute_p += aInv / energyScale;
+		t_dilute_approx_p += aInv / energyScale;
 
 		// f(delta) + 0.5 deltaDot = at
 		// vsolid = 0 -> al/2 - deltaDot/2 = 0
@@ -2947,7 +2944,10 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		// t = 1/a, f(delta) = 1 -> l = 2/a - 2/a = 0 ! Not appropriate! This is similar to what Drugan does for XuNeedleman at max load but it does not apply here
 		// B) final stage  (delta = 1, sigma = 0)
 		// -> l = 2 t_final - 2 * 0 / a = 2 * t final
-		l_SigmaRef_Drugan_Dilute = 2.0 * t_dilute;
+		l_SigmaRef_DruganFinal_Dilute = 2.0 * t_dilute;
+		l_SigmaRef_DruganMax_Dilute = std::numeric_limits<double>::quiet_NaN();
+		if (prematureExit)
+			return;
 	}
 	else // intrinsic Xu-Needleman, Drugan, eqn (36) and also (31)
 	{
@@ -2955,8 +2955,8 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		tsr_xn.Z = 1.0;
 		tsr_xn.sigmaC = 1.0;
 		tsr_xn.deltaC = 1.0;
-		tsr_xn.sigmaCFactor4Zero = 0.01; // 0.001
-		tsr_xn.delTFactor = 0.0001;
+		tsr_xn.sigmaCFactor4Zero = 0.001; // 0.01
+		tsr_xn.delTFactor = 0.00001; // 0.0001;
 		string name = nameOne_a_One_l + "_TSR_XuNeedleman.txt";
 		fstream out(name.c_str(), ios::out);
 		tsr_xn.Compute(&out);
@@ -2966,12 +2966,10 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		
 		l_dilute = t_dilute;
 		l_dilute_approx = t_dilute_approx;
-		if (prematureExit)
-			return;
 
 		// other normalization
-		t_dilute_p = 2.0 * t_dilute;
-		t_dilute_approx_p = 2.0 * t_dilute_approx;
+		t_dilute_p = t_dilute / energyScale;
+		t_dilute_approx_p = t_dilute_approx / energyScale;
 
 		l_dilute_p = l_dilute / zhu6_sBarScale;
 		l_dilute_approx_p = l_dilute_approx / zhu6_sBarScale;
@@ -2991,9 +2989,15 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		// at tR, delta = 1 -> sigma = 1; Moreover we have Z = 1.0 ->
 		// 1 + 0.5 deltaDot = at -> 
 		// 1 + 0.5 al = a tR -> l = 2(a tR - 1)/a = 2 tR - 2/a // Drugan equation (27)
-		l_SigmaRef_Drugan_Dilute = 2.0 * t_SigmaMax_dilute - 2.0 / a;
+		l_SigmaRef_DruganMax_Dilute = 2.0 * t_SigmaMax_dilute - 2.0 / a;
+		l_SigmaRef_DruganFinal_Dilute = 2.0 * t_dilute;
+
 		if (diluteFractureModel)
 			tFailure = t_dilute;
+
+		if (prematureExit)
+			return;
+
 #if 0
 		// Drugan (31), (36) a_p(e(-t_p) + t_p - 1) = 1  NOTE: t' is measured fro mtime zero NOT time of sigmaC
 		// Eventually time to sigmaC is subtracted
@@ -3440,10 +3444,31 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 
 	out << "a" << '\t';
 	out << "l" << '\t';
+	out << "t_SigmaMax_real" << '\t';
 	out << "log10(a)" << '\t';
 	out << "log10(l)" << '\t';
-	out << "t_SigmaMax_real" << '\t';
-	out << "t_SigmaZero_real" << '\t';
+	out << "log10(t_SigmaMax_real)" << '\t';
+
+	// dp base on value of 2 difference which is the normalization for both Zhu and Drugan
+	// ap and bp is more reasonable as they use G. These used in Zhu06 and match b2 values for Ortiz model
+	// but for Xu-Needleman a' = e * a, l' = l / e | whereas ab2 = 0.5 * a, lb2 = l / 0.5 = 2 l
+
+	// 2: factors of two used for tau, a, ... regardless
+	// G: G is used (e.g. 0.5 for Ortiz, e for Xu-Needleman)
+	out << "a2p" << '\t';
+	out << "l2p" << '\t';
+	out << "t_SigmaZero_real_2p" << '\t';
+	out << "log10(a2p)" << '\t';
+	out << "log10(l2p)" << '\t';
+	out << "log10(t_SigmaZero_real_2p)" << '\t';
+
+	out << "aGp" << '\t';
+	out << "lGp" << '\t';
+	out << "t_SigmaZero_real_Gp" << '\t';
+	out << "log10(aGp)" << '\t';
+	out << "log10(lGp)" << '\t';
+	out << "log10(t_SigmaZero_real_Gp)" << '\t';
+
 	out << "t_SigmaZero_minus_SigmaMax_real" << '\t';
 	out << "t_SigmaMax_dilute" << '\t';
 	out << "t_SigmaZero_dilute" << '\t';
@@ -3453,32 +3478,29 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 	out << "t_dilute" << '\t';
 	out << "l_dilute_approx" << '\t';
 	out << "l_dilute" << '\t';
-	out << "l_SigmaRef_Drugan_Dilute" << '\t';
+	out << "l_SigmaRef_DruganMax_Dilute" << '\t';
+	out << "l_SigmaRef_DruganFinal_Dilute" << '\t';
 	out << "l_Zhu6a" << '\t';
 	out << "l_Zhu6b" << '\t';
 	out << "l_Grady" << '\t';
 	out << "l_Glenn" << '\t';
 
-	out << "a_p" << '\t';
-	out << "l_p" << '\t';
-	out << "log10(a_p)" << '\t';
-	out << "log10(l_p)" << '\t';
-	out << "t_SigmaMax_real_p" << '\t';
-	out << "t_SigmaZero_real_p" << '\t';
-	out << "t_SigmaZero_minus_SigmaMax_real_p" << '\t';
-	out << "t_SigmaMax_dilute_p" << '\t';
-	out << "t_dilute_p" << '\t';
-	out << "t_SigmaZero_minus_SigmaMax_dilute_p" << '\t';
+	out << "t_SigmaMax_real_Gp" << '\t';
+	out << "t_SigmaZero_minus_SigmaMax_real_Gp" << '\t';
+	out << "t_SigmaMax_dilute_Gp" << '\t';
+	out << "t_dilute_Gp" << '\t';
+	out << "t_SigmaZero_minus_SigmaMax_dilute_Gp" << '\t';
 
-	out << "t_dilute_approx_p" << '\t';
-	out << "t_dilute_p" << '\t';
-	out << "l_dilute_approx_p" << '\t';
-	out << "l_dilute_p" << '\t';
-	out << "l_SigmaRef_Drugan_Dilute_p" << '\t';
-	out << "l_Zhu6a_p" << '\t';
-	out << "l_Zhu6b_p" << '\t';
-	out << "l_Grady_p" << '\t';
-	out << "l_Glenn_p" << '\t';
+	out << "t_dilute_approx_Gp" << '\t';
+	out << "t_dilute_Gp" << '\t';
+	out << "l_dilute_approx_Gp" << '\t';
+	out << "l_dilute_Gp" << '\t';
+	out << "l_SigmaRef_DruganMax_Dilute_Gp" << '\t';
+	out << "l_SigmaRef_DruganFinal_Dilute_Gp" << '\t';
+	out << "l_Zhu6a_Gp" << '\t';
+	out << "l_Zhu6b_Gp" << '\t';
+	out << "l_Grady_Gp" << '\t';
+	out << "l_Glenn_Gp" << '\t';
 
 	out << "energy_diss_per_length_At_t_dilute" << '\t';
 	out << "log10(energy_diss_per_length_At_t_dilute)" << '\t';
@@ -3494,14 +3516,17 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 	out << "log10(energy_diss_max_inp_E_t_final)" << '\t';
 
 	out << "t_vs0" << '\t';
-	out << "delt_vs0" << '\t';
-	out << "crosser_vs0" << '\t';
+	out << "delt_vs0Final" << '\t';
+	out << "crosser_vs0Final" << '\t';
 	out << "t_relus_0" << '\t';
 	out << "delt_relus_0" << '\t';
 	out << "crosser_relus_0" << '\t';
 	out << "t_relus_m1" << '\t';
 	out << "delt_relus_m1" << '\t';
 	out << "crosser_relus_m1" << '\t';
+	out << "tSigmaCMax" << '\t';
+	out << "delt_vs0Max" << '\t';
+	out << "crosser_vs0Max" << '\t';
 
 	out << "diluteFractureModel" << '\t';
 	out << "isExtrinsic" << '\t';
@@ -3534,6 +3559,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 
 	// v solid zero
 	out << "vs0_time" << '\t';
+	out << "vs0_timex2" << '\t';
 	out << "vs0_Ncylce" << '\t';
 	out << "vs0_relus" << '\t';
 	out << "vs0_vs" << '\t';
@@ -3574,9 +3600,31 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	double tF_minus_tOFC, crosserValue, vF = 0.0, vtOFCbar = 0.0, tOFC = -1;
 	double t_vs0 = nand, t_relus_0 = nand, t_relus_m1 = nand;
 	bool OFC_v_decreasing = true;
-	// vs = 0 criterion (Drugan)
 	pit = pit_vSolidNegative;
 	stageSln = &stageSlns[pit];
+
+	// vs = 0 criterion (Drugan - max time)
+	delt_vs0Max = std::numeric_limits<double>::quiet_NaN(), crosser_vs0Max = std::numeric_limits<double>::quiet_NaN();
+	double tSigmaCMax = aInv;
+	if (!isExtrinsic)
+	{
+		Periodic1IntrFrag_TimeStageStorage *stageSlnMax = &stageSlns[pit_sigmaMax];
+		if (stageSlnMax->b_set)
+		{
+			double tF = stageSlnMax->vals[pft_time];
+			tSigmaCMax = tF;
+			vF = stageSlnMax->vals[pft_ivsolid];
+			if (stageSln->b_set == 1)
+			{
+				tOFC = stageSln->vals[pft_time];
+				t_vs0 = tOFC;
+			}
+			GetZeroCrosserValue(tF, tOFC, vF, vtOFCbar, tF_minus_tOFC, crosserValue, OFC_v_decreasing);
+			delt_vs0Max = tF_minus_tOFC, crosser_vs0Max = crosserValue;
+		}
+	}
+
+	// vs = 0 criterion (Drugan - final time)
 	vF = stageSlnF->vals[pft_ivsolid];
 	if (stageSln->b_set == 1)
 	{
@@ -3584,7 +3632,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 		t_vs0 = tOFC;
 	}
 	GetZeroCrosserValue(t_SigmaZero_real, tOFC, vF, vtOFCbar, tF_minus_tOFC, crosserValue, OFC_v_decreasing);
-	delt_vs0 = tF_minus_tOFC, crosser_vs0 = crosserValue;
+	delt_vs0Final = tF_minus_tOFC, crosser_vs0Final = crosserValue;
 
 	// relus = 0 criterion (mine, bar back to its original length)
 	pit = pit_reluSolid0;
@@ -3635,10 +3683,32 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 
 	out << a << '\t';
 	out << l << '\t';
+	out << t_SigmaZero_real << '\t';
 	out << rlog10(a) << '\t';
 	out << rlog10(l) << '\t';
-	out << t_SigmaMax_real << '\t';
-	out << t_SigmaZero_real << '\t';
+	out << rlog10(t_SigmaZero_real) << '\t';
+
+	double timeFactor = 1.0 / energyScale;
+
+	// b2 base on value of 2 difference which is the normalization for both Zhu and Drugan
+	// ap and bp is more reasonable as they use G. These used in Zhu06 and match b2 values for Ortiz model
+	// but for Xu-Needleman a' = e * a, l' = l / e | whereas ab2 = 0.5 * a, lb2 = l / 0.5 = 2 l
+	double ab2 = 0.5 * a;
+	double lb2 = 2.0 * l;
+	out << ab2 << '\t';
+	out << lb2 << '\t';
+	out << 2.0 * t_SigmaZero_real << '\t';
+	out << rlog10(ab2) << '\t';
+	out << rlog10(lb2) << '\t';
+	out << rlog10(2.0 * t_SigmaZero_real) << '\t';
+
+	out << a_p << '\t';
+	out << l_p << '\t';
+	out << timeFactor * t_SigmaZero_real << '\t';
+	out << rlog10(a_p) << '\t';
+	out << rlog10(l_p) << '\t';
+	out << rlog10(timeFactor * t_SigmaZero_real) << '\t';
+
 	out << t_SigmaZero_minus_SigmaMax_real << '\t';
 	out << t_SigmaMax_dilute << '\t';
 	out << t_dilute << '\t';
@@ -3647,28 +3717,25 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << t_dilute << '\t';
 	out << l_dilute_approx << '\t';
 	out << l_dilute << '\t';
-	out << l_SigmaRef_Drugan_Dilute << '\t';
+	out << l_SigmaRef_DruganMax_Dilute << '\t';
+	out << l_SigmaRef_DruganFinal_Dilute << '\t';
 	out << l_Zhu6a << '\t';
 	out << l_Zhu6b << '\t';
 	out << l_Grady << '\t';
 	out << l_Glenn << '\t';
 
-	out << a_p << '\t';
-	out << l_p << '\t';
-	out << rlog10(a_p) << '\t';
-	out << rlog10(l_p) << '\t';
-	out << 2.0 * t_SigmaMax_real << '\t';
-	out << 2.0 * t_SigmaZero_real << '\t';
-	out << 2.0 * t_SigmaZero_minus_SigmaMax_real << '\t';
-	out << 2.0 * t_SigmaMax_dilute << '\t';
-	out << 2.0 * t_dilute << '\t';
-	out << 2.0 * t_SigmaZero_minus_SigmaMax_dilute << '\t';
+	out << timeFactor * t_SigmaMax_real << '\t';
+	out << timeFactor * t_SigmaZero_minus_SigmaMax_real << '\t';
+	out << timeFactor * t_SigmaMax_dilute << '\t';
+	out << timeFactor * t_dilute << '\t';
+	out << timeFactor * t_SigmaZero_minus_SigmaMax_dilute << '\t';
 	out << t_dilute_approx_p << '\t';
 	out << t_dilute_p << '\t';
 	out << l_dilute_approx_p << '\t';
 	out << l_dilute_p << '\t';
 	double factor = 1.0 / zhu6_sBarScale;
-	out << factor * l_SigmaRef_Drugan_Dilute << '\t';
+	out << factor * l_SigmaRef_DruganMax_Dilute << '\t';
+	out << factor * l_SigmaRef_DruganFinal_Dilute << '\t';
 	out << factor * l_Zhu6a << '\t';
 	out << factor * l_Zhu6b << '\t';
 	out << factor * l_Grady << '\t';
@@ -3688,14 +3755,17 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << rlog10(energy_diss_max_inp_E_t_final) << '\t';
 
 	out << t_vs0 << '\t';
-	out << delt_vs0 << '\t';
-	out << crosser_vs0 << '\t';
+	out << delt_vs0Final << '\t';
+	out << crosser_vs0Final << '\t';
 	out << t_relus_0 << '\t';
 	out << delt_relus_0 << '\t';
 	out << crosser_relus_0 << '\t';
 	out << t_relus_m1 << '\t';
 	out << delt_relus_m1 << '\t';
 	out << crosser_relus_m1 << '\t';
+	out << tSigmaCMax << '\t';
+	out << delt_vs0Max << '\t';
+	out << crosser_vs0Max << '\t';
 
 	out << diluteFractureModel << '\t';
 	out << isExtrinsic << '\t';
@@ -3736,6 +3806,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	{
 		stageSln = &stageSlns[pit];
 		out << stageSln->vals[pft_time] << '\t';
+		out << 2.0 * stageSln->vals[pft_time] << '\t';
 		out << stageSln->vals[pft_numCyclesAfterCrackOpening] << '\t';
 		out << stageSln->vals[pft_irelusolid] << '\t';
 		out << stageSln->vals[pft_ivsolid] << '\t';

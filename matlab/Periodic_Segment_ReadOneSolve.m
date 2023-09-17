@@ -1,10 +1,14 @@
-function [dat, names, num_pts, la, lap] = Periodic_Segment_ReadOneSolve(fileName)
+function [dat, names, num_pts, la, la2p, laGp] = Periodic_Segment_ReadOneSolve(fileName)
 
 if nargin < 1
     fileName = '../_Solver1D_pfragment__SlnCntr_2_AddedPts0_solveNum_0.txt';
 end
 fid = fopen(fileName, 'r');
-num_c = 117;
+if (fid < 0)
+    fprintf(1, 'fileName %s cannot be opened\n', fileName);
+end
+
+num_c = 130; %117;
 offset = 20;
 len = num_c - offset;
 for i = 1:num_c
@@ -19,7 +23,8 @@ end
 dat = [];
 num_pts = 0;
 la = [];
-lap = [];
+la2p = [];
+laGp = [];
 str = [];
 for i = 1:num_c
     str{i} = fscanf(fid, '%s', 1);
@@ -38,8 +43,9 @@ while (length(str) == num_c)
         end
         dat(num_pts, i) = val;
     end
-    la(num_pts) = str2num(str{22});
-    lap(num_pts) = str2num(str{41});
+    la(num_pts) = str2num(str{23}); %22
+    la2p(num_pts) = str2num(str{29}); %41
+    laGp(num_pts) = str2num(str{35});
     if (~valid)
         for i = 1:len
             dat(num_pts, i) = nan;
@@ -53,5 +59,27 @@ while (length(str) == num_c)
         end
     end
 end
+
 fclose('all');
 close('all');
+
+[la, inds] = sort(la);
+b_ordered = 1;
+for i = 1:num_pts
+    if (inds(i) ~= i)
+        b_ordered = 0;
+        break;
+    end
+end
+if (b_ordered == 1)
+    return;
+end
+la2pBK = la2p;
+laGpBK = laGp;
+datBK = dat;
+for i = 1:num_pts
+    ind = inds(i);
+    la2p(i) = la2pBK(ind);
+    laGp(i) = laGpBK(ind);
+    dat(i, :) = datBK(ind, :);
+end

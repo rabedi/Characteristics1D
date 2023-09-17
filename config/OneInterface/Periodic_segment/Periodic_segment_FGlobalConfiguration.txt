@@ -3,7 +3,8 @@
 # segment size
 periodic_1Fragment_size
 # la = 2
-0.0681679
+3.17053
+###0.0681679
 # la = 1
 #0.2200
 #0.1

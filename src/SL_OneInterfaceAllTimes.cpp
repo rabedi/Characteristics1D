@@ -839,7 +839,12 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem_Aux()
 	double maxTime;
 	Set1DOrtizType();
 	if (g_slf_conf->isPeriodic_1Fragment)
-		g_seq_short->AddPt(0.0, 0.0, 0.0, 1.0, 2.0 * per_if->aInv);
+	{
+		double sigma0 = 0.0;
+		if (per_if->isExtrinsic)
+			sigma0 = 1.0;
+		g_seq_short->AddPt(0.0, 0.0, 0.0, sigma0, 2.0 * per_if->aInv);
+	}
 
 	long cntr = 0;
 	while (cntr < 1000000000000)
@@ -848,6 +853,7 @@ int SL_OneInterfaceAllTimes::Main_One_InterfaceProblem_Aux()
 			cout << cntr << '\n';
 		SLInterfaceCalculator slic;
 		as = NonInitialStep(as.a_delt, accept_point, maxTime, cntr, slic);
+
 		if (per_if != NULL)
 		{
 			double maxDelU = slic.pPtSlns->maxEffDelU;

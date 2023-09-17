@@ -29,6 +29,8 @@ ostream& operator<<(ostream& out, convergeT1D dat);
 istream& operator>>(istream& in, convergeT1D& dat);
 
 class gFx2y;
+class Solver1D;
+
 class ConvergenceLog
 {
 	friend ostream& operator<<(ostream& out, const ConvergenceLog& dat);
@@ -57,6 +59,7 @@ public:
 	void Write_genIndexVal(ostream& out) const;
 	void Write_genIndexVal_JustVals(ostream& out) const;
 	bool Read_genIndexVal(istream& in);
+	void MakeNaN();
 
 	int index_main;
 	int index_sec;
@@ -122,7 +125,7 @@ class gFx2y
 public:
 	// num_y is the number of y's the class returns
 	// tol_ys need not to be set, if stays empty, they are set outside (e.g. from Solver1D_1posConf)
-	virtual void InitializeValues(const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys);
+	virtual void InitializeValues(Solver1D* conf, const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys);
 	// x and indices of giv are set, y is sought
 	// returns true if the solution is successful
 	virtual bool ComputeValue(genIndexVal& giv);

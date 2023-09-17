@@ -136,6 +136,7 @@ public:
 	TSR_XuNeedleman();
 	double a; 
 	double Z;
+	double E;
 	double deltaC;
 	double sigmaC;
 	double delTFactor; // as a factor of tauC

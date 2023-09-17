@@ -23,14 +23,15 @@ b_print_PrimaryPoints
 str_map
 {
 #	tsr_Xu_Needleman		tsr_Ortiz
-#(	tsrModel	,	tsr_Ortiz	)
-(	tsrModel	,	tsr_Xu_Needleman	)
+(	tsrModel	,	tsr_Ortiz	)
+#(	tsrModel	,	tsr_Xu_Needleman	)
 
-# if true,		para0 =	log10(a)
-# else			para0 = log10(a_p), where a_p = a / 2
-# a is nondimensional strain rate. a_p is the version used by Zhu, Drugan, etc, mine is a
-#(	para0_is_la	,	1	)
-(	para0_is_la	,	0	)
+# normalization_no: actual values of log(a)		is read
+# normalization_2:  tauC = 0.5 is used log(a'), a' = a * 0.5,		is read
+# normalization_G: normalization based on G, a' = a * G, log(a') is read; G = 0.5 for Ortiz, exp(1) for Xu-Needleman
+( 	laNormT	,	normalization_no	)
+#(	laNormT	,	normalization_2	)
+#(	laNormT	,	normalization_G	)
 }
 
 # 0: do not read previous solutions, 1 reads restart files 
@@ -49,14 +50,19 @@ equality_by_x
 # log10(a)
 paras1D
 {
--2.0
+-1.000000
+#-1.096910013008056
+#-0.698970004336019
+#2.301029995663981
 #2.0	3.2
 }
 
 # sample 
 indices4paras1D
 {
-8
+#8
+9
+#12
 #3	4
 }
 
@@ -69,7 +75,7 @@ posConfs2Solve
 	{
 		isActive	1
 		nameBase	etd_max_eneD_dilute_time
-		pos_y		46
+		pos_y		55
 		isExtremum	1
 		isMins	{ 	0	}
 		# crossing_ys	{	0.0		}
@@ -79,7 +85,7 @@ posConfs2Solve
 	{
 		isActive	1
 		nameBase	etf_max_rel_eneD_real_src_ene_tF
-		pos_y		51
+		pos_y		60
 		isExtremum	1
 		isMins	{ 	0	}
 		# crossing_ys	{	0.0		}
@@ -89,17 +95,17 @@ posConfs2Solve
 	{
 		isActive	1
 		nameBase	etf_max_rel_eneD_max_src_ene_tF
-		pos_y		54
+		pos_y		63
 		isExtremum	1
 		isMins	{ 	0	}
 		# crossing_ys	{	0.0		}
 	}
 	
-	# vs = 0, Drugan's criterion
+	# vs = 0, Drugan's criterion - my version at tFinal
 	{
 		isActive	1
-		nameBase	uv_vsDrugan
-		pos_y		57
+		nameBase	uv_vsDruganFinal
+		pos_y		66
 		isExtremum	0
 		# isMins	{ 	1	}
 		crossing_ys	{	0.0		}
@@ -112,7 +118,7 @@ posConfs2Solve
 	{
 		isActive	1
 		nameBase	uv_relus0
-		pos_y		60
+		pos_y		69
 		isExtremum	0
 		# isMins	{ 	1	}
 		crossing_ys	{	0.0		}
@@ -125,7 +131,20 @@ posConfs2Solve
 	{
 		isActive	1
 		nameBase	uv_relusm1
-		pos_y		63
+		pos_y		72
+		isExtremum	0
+		# isMins	{ 	1	}
+		crossing_ys	{	0.0		}
+		# position(s) around which find the crossing (large value -> start from xMax [GOOD here], small value -> start from xMin, other value between xMin, xMax -> find the root closest to this
+		x0s			{	1000.0	}
+		tol_y 		1e6	# large value deactivates checking del_y because the crosser does not have a smooth derivative
+	}
+
+	# vs = 0, Drugan's criterion - original idea at tMax
+	{
+		isActive	1
+		nameBase	uv_vsDruganMax
+		pos_y		75
 		isExtremum	0
 		# isMins	{ 	1	}
 		crossing_ys	{	0.0		}

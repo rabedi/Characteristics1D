@@ -213,7 +213,7 @@ ConvergenceLog::ConvergenceLog()
 	iterExtremumNotChanged = 0;
 }
 
-void gFx2y::InitializeValues(const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys)
+void gFx2y::InitializeValues(Solver1D* conf, const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys)
 {
 	double tol = 1e-2;
 	str_map = str_mapIn;
@@ -383,6 +383,13 @@ bool genIndexVal::Read_genIndexVal(istream& in)
 	}
 	return true;
 }
+
+void genIndexVal::MakeNaN()
+{
+	x = std::numeric_limits<double>::quiet_NaN();
+	for (unsigned int i = 0; i < ys.size(); ++i)
+		ys[i] = std::numeric_limits<double>::quiet_NaN();
+ }
 
 genIndexVal_DBH::genIndexVal_DBH()
 {
@@ -824,7 +831,7 @@ void Solver1D::InitializeFunction(gFx2y * functionIn)
 
 	function = functionIn;
 	genIndexVal_DB::g_genIndexVal_DB_equality_by_x = equality_by_x;
-	function->InitializeValues(str_map, indices4paras1D, paras1D, xMin, xMax, tol_x, primary_xs, secondary_xs, num_y, tol_ys);
+	function->InitializeValues(this, str_map, indices4paras1D, paras1D, xMin, xMax, tol_x, primary_xs, secondary_xs, num_y, tol_ys);
 	tol_x_eq_check = 1e-5 * tol_x;
 	genIndexVal_DB::g_genIndexVal_DB_tol_x = tol_x_eq_check;
 
@@ -873,6 +880,12 @@ ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, 
 	while (jCrossing < 0)
 	{
 		bool pointAddedOrCrossingHappened = Solve_x4_Crossing_Aux(cntrAddedOnSides++, crossing_y, y_pos, x0, tol_y_zero, jCrossingm1, jCrossing, sgnjCrossing, cl);
+		if (cl.convType == ct1d_nanSln)
+		{
+			sln = pts.db[0];
+			sln.MakeNaN();
+			return cl;
+		}
 		if (!pointAddedOrCrossingHappened && (jCrossing < 0))
 			return cl;
 		if (jCrossing >= 0)
@@ -990,7 +1003,8 @@ unsigned int Solver1D::Cross_Helper(double crossing_y, unsigned int y_pos, doubl
 	unsigned int szPos = getValidValues(y_pos, poss);
 	if (szPos < 2)
 	{
-		THROW("not enough points\n");
+		return szPos;
+//		THROW("not enough points\n");
 	}
 
 	signs.resize(szPos);
@@ -1066,6 +1080,11 @@ bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double cross
 
 	unsigned int szPos = Cross_Helper(crossing_y, y_pos, tol_y_zero,
 		poss, signs, helpers);
+	if (szPos < 2)
+	{
+		cl.convType = ct1d_nanSln;
+		return false;
+	}
 
 	unsigned int sz_helpers = helpers.size();
 	if (sz_helpers == 1)
@@ -1201,7 +1220,9 @@ ConvergenceLog Solver1D::Solve_x4_Crossing_NoPointAdded(genIndexVal& sln, double
 	unsigned int szPos = getValidValues(y_pos, poss);
 	if (szPos < 2)
 	{
-		THROW("not enough points\n");
+		cl.convType = ct1d_nanSln;
+		return cl;
+//		THROW("not enough points\n");
 	}
 
 	vector<sgnT> signs(szPos);
@@ -1352,6 +1373,12 @@ ConvergenceLog Solver1D::Solve_x4_Extremum(genIndexVal& sln, bool isMin, unsigne
 	while (jExtremum < 0)
 	{
 		bool pointAddedOrExtremum = Solve_x4_Extremum_Aux(cntrAddedOnSides++, isMin, y_pos, jExtremum, jExtremumm1, jExtremump1, cl);
+		if (cl.convType == ct1d_nanSln)
+		{
+			sln = pts.db[0];
+			sln.MakeNaN();
+			return cl;
+		}
 		if ((cl.convType == ct1d_xmin_lim) || (cl.convType == ct1d_xmax_lim))
 		{
 			sln = pts.db[jExtremum];
@@ -1549,7 +1576,9 @@ bool Solver1D::Solve_x4_Extremum_Aux(unsigned int cntrAddedOnSides, bool isMin, 
 	unsigned int szPos = getValidValues(y_pos, poss);
 	if (szPos < 2)
 	{
-		THROW("not enough points\n");
+		cl.convType = ct1d_nanSln;
+		return false;
+//		THROW("not enough points\n");
 	}
 	double fact = 1.0;
 	if (!isMin)
@@ -1873,7 +1902,9 @@ unsigned int Solver1D::SolveYCrossings(gFx2y* functionIn, vector<genIndexVal>& s
 	vector<int> poss;
 	vector<sgnT> signs;
 	vector<cross_optimal_helper> helpers;
-	Cross_Helper(crossing_y, y_pos, tol_y_zero, poss, signs, helpers);
+	unsigned int szPos = Cross_Helper(crossing_y, y_pos, tol_y_zero, poss, signs, helpers);
+	if (szPos < 2)
+		return 0;
 	vector<double> x0s;
 	unsigned numXs = helpers.size();
 	for (unsigned int i = 0; i < numXs; ++i)
