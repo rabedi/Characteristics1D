@@ -745,10 +745,11 @@ AdaptivityS SL_OneInterfaceAllTimes::NonInitialStep(double deltaT, bool &accept_
 		t0 = L / ws;
 		if (currentTime > t0)
 		{
+			static unsigned int cntr = 0;
 			compute_w_from_IC = false;
 			double timePrev = currentTime - t0;
 			double vL, vR, sigma;
-			bool found = g_seq_short->GetPt(timePrev, vL, vR, sigma);
+			bool found = g_seq_short->GetPt(timePrev, vL, vR, sigma);	// safer but slow GetPt -> GetPtSlow
 			if (!found)
 			{
 				THROW("Previous point cannot be found\n");

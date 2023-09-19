@@ -23,7 +23,7 @@ void Print_slscript(unsigned int numParallelRuns);
 
 int main(int argc, char *argv[])
 {
-#if 1
+#if 0
 //	Test_SolveYCrossing();
 	MAIN_SolvePeriodicFragmentSize();
 	getchar();

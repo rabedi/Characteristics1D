@@ -1130,6 +1130,43 @@ void SL_Interface1DPtSeq_Short::AddPt(double time, double vL, double vR, double 
 
 bool SL_Interface1DPtSeq_Short::GetPt(double time, double& vL, double& vR, double& sigma) const
 {
+	unsigned int indexBase = 0, i;
+	bool ti_equal_time = false;
+	double time_i, time_ip1, factor_i, factor_ip1;
+	int retStat = -1;
+	bool found = false;
+	unsigned int cntr = 0;
+	while (!found & (cntr++ < 10))
+	{
+		retStat = Get_timeIndex(time, indexBase, i, ti_equal_time, time_i, time_ip1, factor_i, factor_ip1);
+		if (retStat == 0)
+		{
+			found = true;
+			break;
+		}
+		else if (retStat == -2) // out of bound
+			return false;
+	}
+	if (found)
+	{
+		const SL_Interface1DPt_Short* ptr = &ptHistory[i];
+		if (ti_equal_time)
+		{
+			vL = ptr->vL, vR = ptr->vR, sigma = ptr->sigma;
+			return true;
+		}
+		const SL_Interface1DPt_Short* ptrN = &ptHistory[i + 1];
+		vL = factor_i * ptr->vL + factor_ip1 * ptrN->vL;
+		vR = factor_i * ptr->vR + factor_ip1 * ptrN->vR;
+		sigma = factor_i * ptr->sigma + factor_ip1 * ptrN->sigma;
+		return true;
+	}
+	return GetPtSlow(time, vL, vR, sigma);
+
+}
+
+bool SL_Interface1DPtSeq_Short::GetPtSlow(double time, double& vL, double& vR, double& sigma) const
+{
 	unsigned int sz = ptHistory.size();
 	unsigned int i;
 	bool found = false;
@@ -1175,6 +1212,68 @@ int SL_Interface1DPtSeq_Short::GetPt(unsigned int index, double& time, double& v
 	vR = ptr->vR;
 	sigma = ptr->sigma;
 	return index;
+}
+
+int SL_Interface1DPtSeq_Short::Get_timeIndex(double time, unsigned int& indexBase, unsigned int& i, bool& ti_equal_time, double& time_i, double& time_ip1, double& factor_i, double& factor_ip1) const
+{
+	double timeBase = ptHistory[indexBase].time;
+	double delT;
+	unsigned int lastInd = ptHistory.size() - 1;
+	if (indexBase > 0)
+		delT = timeBase - ptHistory[indexBase - 1].time;
+	else if (indexBase < lastInd)
+		delT = ptHistory[indexBase + 1].time - timeBase;
+	else
+		return -2; // out of bound
+
+	static double relTol = 1e-5;
+	double tolAbs = relTol * delT;
+	double t0 = ptHistory[0].time - tolAbs;
+	double tLast = ptHistory[lastInd].time + tolAbs;
+	if ((time < t0) || (time > tLast)) // out of bound
+		return -2;
+	if (time > timeBase + tolAbs) // (time > timeBase)
+		i = MAX(0, (int)floor(indexBase + (time - timeBase) / delT + relTol));
+	else if (time < timeBase - tolAbs)
+		i = MAX(0, (int)floor(indexBase - (timeBase - time) / delT + relTol));
+	else
+	{
+		i = indexBase;
+		ti_equal_time = true;
+		time_i = timeBase;
+		time_ip1 = timeBase;
+		factor_i = 1.0;
+		factor_ip1 = 0.0;
+		return 0;
+	}
+	time_i = ptHistory[i].time;
+	double timeChange = time - time_i;
+	if (fabs(timeChange) < tolAbs)
+	{
+		ti_equal_time = true;
+		time_ip1 = time_i;
+		factor_i = 1.0;
+		factor_ip1 = 0.0;
+		return 0;
+	}
+	if (timeChange < 0.0) // time must be >= time_i for acceptable solution, so this signs an unacceptable solution
+	{
+		indexBase = i;
+		return -1;
+	}
+	int ip1 = i + 1;
+	if (ip1 > lastInd)
+		return -2;
+	ti_equal_time = false;
+	time_ip1 = ptHistory[ip1].time;
+	if (time - time_ip1 > tolAbs)
+	{
+		indexBase = ip1;
+		return 1;
+	}
+	factor_i = MIN(MAX((time_ip1 - time) / (time_ip1 - time_i), 0.0), 1.0);
+	factor_ip1 = 1.0 - factor_i;
+	return 0;
 }
 
 SL_Interface1DPtSeq_Short* g_seq_short = NULL;

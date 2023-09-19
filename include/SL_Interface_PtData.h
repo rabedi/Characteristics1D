@@ -246,8 +246,17 @@ class SL_Interface1DPtSeq_Short
 public:
 	void AddPt(double time, double vL, double vR, double sigma, double delT2Keep);
 	bool GetPt(double time, double& vL, double& vR, double& sigma) const;
+	bool GetPtSlow(double time, double& vL, double& vR, double& sigma) const;
 	int GetPt(unsigned int index, double& time, double& vL, double& vR, double& sigma);
 private:
+	// return: status
+	//	-1:		time < t_i -> make a new attemp
+	//	 1:		time > t_(i + 1) -> make a new attemp for index > i + 1
+	//	 0:		t_i <= time < t_(i + 1)			-> in this case ti_equal_time -> means time is actually equal to t_i
+
+	// indexBase -> is the time index based on which search happens (e.g. sz - 1, or 0)
+	// indexBase is changed if the interval is not found
+	int Get_timeIndex(double time, unsigned int& indexBase, unsigned int& i, bool& ti_equal_time, double& time_i, double& time_ip1, double& factor_i, double& factor_ip1) const;
 	deque<SL_Interface1DPt_Short> ptHistory;
 };
 
