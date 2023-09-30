@@ -236,14 +236,20 @@ void SLFractureGlobal_Configuration::Read(istream& in)
 		else if (buf == "print_Scalars")
 		{
 			READ_NBOOL(in, buf, print_Scalars);
+			if (g_1_interface_low_disk_space == 1)
+				print_Scalars = false;
 		}
 		else if (buf == "print_Adaptivity")
 		{
 			READ_NBOOL(in, buf, print_Adaptivity);
+			if (g_1_interface_low_disk_space == 1)
+				print_Adaptivity = false;
 		}
 		else if (buf == "print_outIterationConv")
 		{
 			READ_NBOOL(in, buf, print_outIterationConv);
+			if (g_1_interface_low_disk_space == 1)
+				print_Adaptivity = false;
 		}
 		else if (buf == "terminate_run_target_time")
 		{

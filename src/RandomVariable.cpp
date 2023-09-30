@@ -769,13 +769,13 @@ void Triangle_RandVar::Finalize_Read()
 double GenSymTriangle_RandVar::getCDF(double x) const
 {
 	x /= paras.mean;
-	if (x < 1.0 - delta)
+	if (x < (1.0 - delta))
 		return 0.0;
-	if (x > 1.0 + delta)
+	if (x > (1.0 + delta))
 		return 1.0;
 	if (x < 1.0)
 		return inv_2_delta_pow_alpha * pow(x - (1.0 - delta), alpha);
-	return inv_2_delta_pow_alpha * pow((1.0 + delta) - x, alpha);
+	return 1.0 - inv_2_delta_pow_alpha * pow((1.0 + delta) - x, alpha);
 }
 
 double GenSymTriangle_RandVar::getInverseCDF(double p) const

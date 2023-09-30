@@ -130,6 +130,7 @@ extern double gt0;
 
 // if 1, it does not generate large files, 0 it does, 2 -> only prints fixed space data
 extern int g_low_disk_space;
+extern int g_1_interface_low_disk_space;
 
 #define DB_ON 0
 extern fstream dbout;

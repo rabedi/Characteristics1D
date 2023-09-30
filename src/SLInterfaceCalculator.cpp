@@ -2802,6 +2802,8 @@ void Periodic1IntrFrag::setEmpty_Periodic1IntrFrag()
 	delvsZeroObserved = false;
 	nameBase = "periodic1IntrFrag";
 	step4_segment_vsigma_output = 1;
+	if (g_1_interface_low_disk_space)
+		step4_segment_vsigma_output = 10000;
 	terminateState = PITSS_none;
 	isExtrinsic = true;
 	energyScale = 0.5;
@@ -2956,10 +2958,13 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		tsr_xn.sigmaC = 1.0;
 		tsr_xn.deltaC = 1.0;
 		tsr_xn.sigmaCFactor4Zero = 0.001; // 0.01
-		tsr_xn.delTFactor = 0.00001; // 0.0001;
+		tsr_xn.delTFactor = 0.0001; // 0.00001;
 		string name = nameOne_a_One_l + "_TSR_XuNeedleman.txt";
 		fstream out(name.c_str(), ios::out);
-		tsr_xn.Compute(&out);
+		unsigned int step = 1;
+		if (a < 1)
+			step = 100;
+		tsr_xn.Compute(&out, 100);
 
 		t_dilute = tsr_xn.tSigmaZero;
 		t_dilute_approx = t_dilute;
@@ -3288,11 +3293,13 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 	// currentStepVals[pft_bEneSource] = is total energy from stress source (from vR term)
 	// K(t) + U(t) - K(0) - U(0) = -EneD + EneSource - EneN
 
-	outAllVals << timeIndexNew++;
-	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
-		outAllVals << '\t' << currentStepVals[i];
-	outAllVals << '\n';
-
+	if (!g_1_interface_low_disk_space)
+	{
+		outAllVals << timeIndexNew++;
+			for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
+				outAllVals << '\t' << currentStepVals[i];
+			outAllVals << '\n';
+	}
 	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
 		stat4Vals[i].update(currentStepVals[i], timeNewAbsolute);
 

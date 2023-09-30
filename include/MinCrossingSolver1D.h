@@ -256,7 +256,7 @@ private:
 	void PrintSln_Values(ostream& out, const genIndexVal& sln, ConvergenceLog& cl, bool isExtremum);
 	unsigned int Cross_Helper(double crossing_y, unsigned int y_pos, double tol_y_zero,
 		vector<int>& poss, vector<sgnT>& signs, vector<cross_optimal_helper>& helpers);
-
+ 
 	void Print_PrimaryPoints();
 };
 

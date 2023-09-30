@@ -772,7 +772,7 @@ TSR_XuNeedleman::TSR_XuNeedleman()
 	sigmaCFactor4Zero = 0.01;
 }
 
-void TSR_XuNeedleman::Compute(ostream* outPtr)
+void TSR_XuNeedleman::Compute(ostream* outPtr, unsigned int step)
 {
 	tauC = deltaC * Z / sigmaC;
 	delT = tauC * delTFactor;
@@ -798,6 +798,7 @@ void TSR_XuNeedleman::Compute(ostream* outPtr)
 	double k1, k2, k3, k4, del, t;
 	bool deltaCPassed = false;
 	bool cont = true;
+	unsigned int cntr = 0;
 	while (cont)
 	{
 		t = time;
@@ -821,7 +822,7 @@ void TSR_XuNeedleman::Compute(ostream* outPtr)
 			deltaCPassed = true;
 			tSigmaMax = time;
 		}
-		if (b_print)
+		if (b_print && (cntr % step == 0))
 		{
 			double at = time * a;
 			double error = a * E * t - sigma - halfZ * deltaDot;
@@ -833,6 +834,7 @@ void TSR_XuNeedleman::Compute(ostream* outPtr)
 			tSigmaZero = time;
 			cont = false;
 		}
+		++cntr;
 	}
 	if (b_print)
 		outPtr->flush();

@@ -1261,7 +1261,7 @@ int SL_Interface1DPtSeq_Short::Get_timeIndex(double time, unsigned int& indexBas
 		indexBase = i;
 		return -1;
 	}
-	int ip1 = i + 1;
+	unsigned int ip1 = i + 1;
 	if (ip1 > lastInd)
 		return -2;
 	ti_equal_time = false;

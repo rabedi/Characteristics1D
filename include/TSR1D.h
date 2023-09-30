@@ -143,7 +143,7 @@ public:
 	double sigmaCFactor4Zero; // sigma never becomes zero, but a fraction like 0.01 or 0.001 is taken as value considered zero past peak
 	// loading rate: problem sigma(delta) + Z/2 * deltaDot = at
 	// sigma(delta) = sigmaC * ndel exp(-ndel), ndel = delta/deltaC
-	void Compute(ostream* outPtr = NULL);
+	void Compute(ostream* outPtr, unsigned int step);
 	void OutMain(ostream& out);
 
 	// computed

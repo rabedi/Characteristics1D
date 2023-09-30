@@ -23,8 +23,8 @@ b_print_PrimaryPoints
 str_map
 {
 #	tsr_Xu_Needleman		tsr_Ortiz
-(	tsrModel	,	tsr_Ortiz	)
-#(	tsrModel	,	tsr_Xu_Needleman	)
+#(	tsrModel	,	tsr_Ortiz	)
+(	tsrModel	,	tsr_Xu_Needleman	)
 
 # normalization_no: actual values of log(a)		is read
 # normalization_2:  tauC = 0.5 is used log(a'), a' = a * 0.5,		is read
@@ -50,7 +50,9 @@ equality_by_x
 # log10(a)
 paras1D
 {
--1.000000
+-2.5
+#0.301029995663981
+#-2.0
 #-1.096910013008056
 #-0.698970004336019
 #2.301029995663981
@@ -60,8 +62,10 @@ paras1D
 # sample 
 indices4paras1D
 {
+#116
+86
 #8
-9
+#9
 #12
 #3	4
 }

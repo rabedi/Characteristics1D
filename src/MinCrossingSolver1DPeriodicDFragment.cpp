@@ -65,6 +65,8 @@ gFx2yPDF::gFx2yPDF()
 
 void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_mapIn, const vector<unsigned int>& indices4ParasIn, const vector<double>& parasIn, double& xMin, double& xMax, double& tol_x, vector<double>& primary_xs, vector<double>& secondary_xs, int& num_y, vector<double>& tol_ys)
 {
+	paras = parasIn;
+
 	indices4Paras = indices4ParasIn;
 	str_map = str_mapIn;
 	map<string, string>::iterator it;
@@ -82,6 +84,11 @@ void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_m
 				conf->posConfs2Solve[i].isActive = false;
 		}
 	}
+	else
+	{
+		if (paras[0] < 0)
+			g_1_interface_low_disk_space = true;
+	}
 	it = str_map.find("laNormT");
 	if ((it != str_map.end()) && (!name2Type(it->second, laNormT)))
 	{
@@ -89,7 +96,6 @@ void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_m
 		THROW("Boolean not successfully read!\n");
 	}
 
-	paras = parasIn;
 	Periodic1IntrFrag p1Conf;
 	Writel10_al_TSR_file();
 	p1Conf.Set_TSR_Model(tsrModel);
