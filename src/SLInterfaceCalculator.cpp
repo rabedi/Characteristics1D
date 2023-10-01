@@ -3038,8 +3038,7 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 	diluteFractureModel = (l >= 0.9999 * l_dilute);
 	//t0 = aInv;
 	double suggested_delt_a = aInv;
-//	double suggested_delt_l = 1.0 / l;
-//	double suggested_delt_dilute_l = 1.0 / l_dilute;
+//	double suggested_delt_l = 1.0 / l;	//	double suggested_delt_dilute_l = 1.0 / l_dilute;
 //	double del_t = MIN(MIN(suggested_delt_a, suggested_delt_l), suggested_delt_dilute_l);
 	double del_t = MIN(suggested_delt_a, 1.0);
 	suggeste_delt = relTol * del_t;
