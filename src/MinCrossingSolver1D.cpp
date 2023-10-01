@@ -708,6 +708,7 @@ Solver1D::Solver1D()
 	do_posConfs_AddPtSolve = true;
 	do_posConfs_second_notAddPtSolve = true;
 	b_print_PrimaryPoints = true;
+	b_recalculate_solutions = false;
 }
 
 Solver1D::~Solver1D()
@@ -738,6 +739,10 @@ void Solver1D::Read_Solver1D(istream& in)
 		else if (buf == "b_print_PrimaryPoints")
 		{
 			READ_NBOOL(in, buf, b_print_PrimaryPoints);
+		}
+		else if (buf == "b_recalculate_solutions")
+		{
+			READ_NBOOL(in, buf, b_recalculate_solutions);
 		}
 		else if (buf == "do_posConfs_first_notAddPtSolve")
 		{
@@ -848,15 +853,17 @@ void Solver1D::InitializeFunction(gFx2y * functionIn)
 	{
 		double x = primary_xs[i];
 		genIndexVal giv(0, x);
-		Compute_Add_pt_value(giv, checkIfPtExists);
+		bool pointWasComputed;
+		genIndexVal_DBH ind = Compute_Add_pt_value(giv, pointWasComputed, checkIfPtExists);
+		if (!pointWasComputed)
+			Print_PrimaryPoints(giv, i);
 	}
-	if (b_print_PrimaryPoints)
-		Print_PrimaryPoints();
+	bool pointWasComputed = false;
 	for (unsigned int i = 0; i < sz_secondary_xSet; ++i)
 	{
 		double x = secondary_xs[i];
 		genIndexVal giv(1, x);
-		Compute_Add_pt_value(giv, checkIfPtExists);
+		Compute_Add_pt_value(giv, pointWasComputed, checkIfPtExists);
 	}
 	if ((del_secondary_x < 0.0) && (sz_secondary_xSet > 1))
 		del_secondary_x = secondary_xs[1] - secondary_xs[0];
@@ -911,6 +918,7 @@ ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, 
 	
 	double prev_xNew = 0.5 * (xL + xR);
 	bool delx_good = true, dely_good = true;
+	bool pointWasComputed = false;
 	while (cl.iterCnt < maxNumIter)
 	{
 		double xNew = (vR * xL - vL * xR) / (vR - vL);
@@ -918,7 +926,7 @@ ConvergenceLog Solver1D::Solve_x4_Crossing(genIndexVal& sln, double crossing_y, 
 		sln.x = xNew;
 		sln.index_main = 3;
 //		sln.index_sec = cl.iterCnt;
-		genIndexVal_DBH retVal = Compute_Add_pt_value(sln, checkIfPtExists);
+		genIndexVal_DBH retVal = Compute_Add_pt_value(sln, pointWasComputed, checkIfPtExists);
 		if (isnan(sln.ys[y_pos]))
 		{
 			cl.convType = ct1d_nanSln;
@@ -1043,33 +1051,26 @@ unsigned int Solver1D::Cross_Helper(double crossing_y, unsigned int y_pos, doubl
 	return szPos;
 }
 
-void Solver1D::Print_PrimaryPoints()
+void Solver1D::Print_PrimaryPoints(genIndexVal& giv, unsigned int secondaryPos)
 {
-	pts.Sort(false);
-	for (unsigned int i = 0; i < pts.size(); ++i)
+	string ser;
+	toString(secondaryPos, ser);
+	string fileName = baseName + "_PrimaryPt_" + ser + ".txt";
+	fstream in(fileName.c_str(), ios::in);
+	fstream out;
+	if (!in.is_open())
 	{
-		genIndexVal* giv = &pts.db[i];
-		if (giv->index_main != 0)
-			return;
-		string ser;
-		toString(giv->index_sec, ser);
-		string fileName = baseName + "_PrimaryPt_" + ser + ".txt";
-		fstream in(fileName.c_str(), ios::in);
-		fstream out;
-		if (!in.is_open())
-		{
-			out.open(fileName.c_str(), ios::app);
-			PrintSln_Header(out);
-		}
-		else
-		{
-			in.close();
-			out.open(fileName.c_str(), ios::app);
-		}
-		ConvergenceLog cl;
-		cl.convType = ct1d_yes;
-		PrintSln_Values(out, *giv, cl, false);
+		out.open(fileName.c_str(), ios::app);
+		PrintSln_Header(out);
 	}
+	else
+	{
+		in.close();
+		out.open(fileName.c_str(), ios::app);
+	}
+	ConvergenceLog cl;
+	cl.convType = ct1d_yes;
+	PrintSln_Values(out, giv, cl, false);
 }
 
 bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double crossing_y, unsigned int y_pos, double x0, double tol_y_zero, int& jCrossingm1, int& jCrossing, sgnT& sgnjCrossing, ConvergenceLog& cl)
@@ -1188,7 +1189,8 @@ bool Solver1D::Solve_x4_Crossing_Aux(unsigned int cntrAddedOnSides, double cross
 	else
 		giv.x = xRProposed;
 	bool checkIfPtExists = true;
-	genIndexVal_DBH retVal = Compute_Add_pt_value(giv, checkIfPtExists);
+	bool pointWasComputed = false;
+	genIndexVal_DBH retVal = Compute_Add_pt_value(giv, pointWasComputed, checkIfPtExists);
 	if (isnan(giv.ys[y_pos]))
 	{
 		cl.convType = ct1d_nanSln;
@@ -1468,7 +1470,8 @@ ConvergenceLog Solver1D::Solve_x4_Extremum(genIndexVal& sln, bool isMin, unsigne
 		sln.x = xNew;
 		sln.index_main = 3;
 //		sln.index_sec = cl.iterCnt;
-		genIndexVal_DBH retVal = Compute_Add_pt_value(sln, checkIfPtExists);
+		bool pointWasComputed = false;
+		genIndexVal_DBH retVal = Compute_Add_pt_value(sln, pointWasComputed, checkIfPtExists);
 		if (isnan(sln.ys[y_pos]))
 		{
 			cl.convType = ct1d_nanSln;
@@ -1662,8 +1665,8 @@ bool Solver1D::Solve_x4_Extremum_Aux(unsigned int cntrAddedOnSides, bool isMin, 
 		giv.x = xLProposed;
 	else
 		giv.x = xRProposed;
-	bool checkIfPtExists = true;
-	genIndexVal_DBH retVal = Compute_Add_pt_value(giv, checkIfPtExists);
+	bool checkIfPtExists = true, pointWasComputed = false;
+	genIndexVal_DBH retVal = Compute_Add_pt_value(giv, pointWasComputed, checkIfPtExists);
 	if (isnan(giv.ys[y_pos]))
 	{
 		cl.convType = ct1d_nanSln;
@@ -1795,15 +1798,17 @@ void Solver1D::Restore_pts(bool read_dbAsIs, bool compute_ys_not_computed)
 	}
 	if (!compute_ys_not_computed)
 		return;
+	bool pointComputed;
 	for (unsigned int i = 0; i < sz; ++i)
 	{
 		if (pts.db[i].getSize_y() == 0)
-			Compute_Add_pt_value(pts.db[i], true);
+			Compute_Add_pt_value(pts.db[i], pointComputed, true);
 	}
 }
 
-genIndexVal_DBH Solver1D::Compute_Add_pt_value(genIndexVal& giv, bool checkIfPtExists)
+genIndexVal_DBH Solver1D::Compute_Add_pt_value(genIndexVal& giv, bool& pointWasComputed, bool checkIfPtExists)
 {
+	pointWasComputed = true;
 	genIndexVal_DBH retVal = pts.Add_Pt(giv, checkIfPtExists, equality_by_x, tol_x_eq_check);
 	unsigned int sz_y = retVal.y_size;
 	if (sz_y > 0)
@@ -1834,6 +1839,7 @@ genIndexVal_DBH Solver1D::Compute_Add_pt_value(genIndexVal& giv, bool checkIfPtE
 	bool print_dbAsIs = false;
 	Store_pts(print_dbAsIs);
 	giv = pts.db[retVal.pos];
+	pointWasComputed = false;
 	return retVal;
 }
 
@@ -1977,9 +1983,23 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 	string fileName_pt_i_sorted = fileNameAllSlns + "_pts_i_sorted.out";
 	fileNameAllSlns += ".txt";//"_slns.txt";
 
-	fstream outSln(fileNameAllSlns.c_str(), ios::out);
-	PrintSln_Header(outSln);
-
+	fstream outSln;
+	fstream inSln(fileNameAllSlns.c_str(), ios::in);
+	bool fileSlnExists = false;
+	if (inSln.is_open())
+	{
+		string buf;
+		inSln >> buf;
+		if (!inSln.eof())
+			fileSlnExists = true;
+	}
+	if (fileSlnExists)
+		outSln.open(fileNameAllSlns.c_str(), ios::app);
+	else
+	{
+		outSln.open(fileNameAllSlns.c_str(), ios::out);
+		PrintSln_Header(outSln);
+	}
 	for (unsigned int pci = 0; pci < sz_posConfs2Solve; ++pci)
 	{
 		cout << "ST: mode_counter\t" << mode_counter << "\tpci\t" << pci << "\ttsz_posConfs2Solve\t" << sz_posConfs2Solve << '\n';
@@ -1989,9 +2009,6 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 		Solver1D_1posConf spc = posConfs2Solve[pci];
 		for (unsigned int j = 0; j < spc.sz; ++j)
 		{
-			fstream out_pt_x(fileName_pt_x_sorted.c_str(), ios::out);
-			fstream out_pt_i(fileName_pt_i_sorted.c_str(), ios::out);
-
 			string nm = fileName;
 			if (spc.sz > 1)
 			{
@@ -2000,7 +2017,29 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 				toString(j, ser2);
 				nm += ser2;
 			}
+			string namesc = nm + ".success";
+			bool cont = true;
+//			if ((mode_counter == 1) && (b_recalculate_solutions == false))
+			if (b_recalculate_solutions == false)
+			{
+				fstream insc(namesc.c_str(), ios::in);
+				if (insc.is_open())
+				{
+					bool success = false;
+					string buf;
+					insc >> buf;
+					if (!insc.eof())
+						insc >> success;
+					if (success == true)
+						cont = false;
+				}
+			}
+			if (cont == false)
+				continue;
 			nm += ".txt";
+
+			fstream out_pt_x(fileName_pt_x_sorted.c_str(), ios::out);
+			fstream out_pt_i(fileName_pt_i_sorted.c_str(), ios::out);
 
 			fstream in(nm.c_str(), ios::in);
 			fstream out;
@@ -2026,6 +2065,12 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 			pts.Write_genIndexVal_DB_WithHeader(functionIn, out_pt_x, false, true, tol_x_eq_check);
 			out_pt_i << setprecision(22);
 			pts.Write_genIndexVal_DB_WithHeader(functionIn, out_pt_i, false, false, tol_x_eq_check);
+
+			//if (mode_counter == 1)
+			{
+				fstream outsc(namesc.c_str(), ios::out);
+				outsc << "success\t1\n";
+			}
 		}
 		cout << "EN: mode_counter\t" << mode_counter << "\tpci\t" << pci << "\ttsz_posConfs2Solve\t" << sz_posConfs2Solve << '\n';
 	}

@@ -194,6 +194,12 @@ public:
 	// print primary points of different options into one file
 	bool b_print_PrimaryPoints;
 
+	// for mode 1 solution where extremum and crossings are calculated in a restart of the general solve, 
+	// often resolution of the underlying grid (delx) is not changing but a new solution is sought.
+	// If resolution is not going to change (often the case) --> use			b_recalculate_solutions = false
+	// else b_recalculate_solutions = true
+	bool b_recalculate_solutions;
+
 	vector<double> paras1D; // like loading rate for the fragmentation problem
 	vector<unsigned int> indices4paras1D;
 	map<string, string> str_map;
@@ -223,7 +229,7 @@ private:
 	void Store_pts_unsorted_SlnEnd(int y_pos = -1);
 
 	void Restore_pts(bool read_dbAsIs = true, bool compute_ys_not_computed = true);
-	genIndexVal_DBH Compute_Add_pt_value(genIndexVal& giv, bool checkIfPtExists = true);
+	genIndexVal_DBH Compute_Add_pt_value(genIndexVal& giv, bool& pointWasComputed, bool checkIfPtExists);
 	// x0: is the location we want to find the solution closest to. Sometimes there are multiple crossings and want to choose the solution closes to x0
 	// if x0 > xM (below) x0 = xM
 	// if x0 < xm (bel0w) x0 = xm
@@ -257,7 +263,7 @@ private:
 	unsigned int Cross_Helper(double crossing_y, unsigned int y_pos, double tol_y_zero,
 		vector<int>& poss, vector<sgnT>& signs, vector<cross_optimal_helper>& helpers);
  
-	void Print_PrimaryPoints();
+	void Print_PrimaryPoints(genIndexVal& giv, unsigned int secondaryPos);
 };
 
 

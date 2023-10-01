@@ -20,6 +20,14 @@ do_posConfs_second_notAddPtSolve
 b_print_PrimaryPoints
 1
 
+
+# for mode 1 solution where extremum and crossings are calculated in a restart of the general solve, 
+# often resolution of the underlying grid (delx) is not changing but a new solution is sought.
+# If resolution is not going to change (often the case) --> use			b_recalculate_solutions = false
+# else b_recalculate_solutions = true
+b_recalculate_solutions
+0
+
 str_map
 {
 #	tsr_Xu_Needleman		tsr_Ortiz
@@ -50,6 +58,7 @@ equality_by_x
 # log10(a)
 paras1D
 {
+#0.0
 -2.5
 #0.301029995663981
 #-2.0
@@ -62,8 +71,9 @@ paras1D
 # sample 
 indices4paras1D
 {
-#116
-86
+#123
+116
+#86
 #8
 #9
 #12
