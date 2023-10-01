@@ -32,7 +32,7 @@ public:
 	void Writel10_al_TSR_file(double l10l = 1.0, int index_primary_l = 0, int index_secondary_l = 0);
 };
 
-void MAIN_SolvePeriodicFragmentSize(string confSolve = "config/OneInterface/Periodic_segment/Periodic_segmen_confSolver1D.txt");
+void MAIN_SolvePeriodicFragmentSize(string confSolve = "config/OneInterface/Periodic_segment/Periodic_segment_confSolver1D.txt");
 
 #endif
 

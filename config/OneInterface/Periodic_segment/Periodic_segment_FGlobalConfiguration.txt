@@ -88,9 +88,9 @@ uniform_del_t
 -0.001
 #-0.02
 #-0.1
-#0.2
-#0.7
-#0.99
+#-0.2
+#-0.7
+#-0.99
 
 # minimum allowable time step, smaller than this the run terminates. We can get to such small sizes if successive refinements are needed
 min_del_t
