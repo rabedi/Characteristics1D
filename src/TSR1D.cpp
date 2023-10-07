@@ -777,7 +777,7 @@ void TSR_XuNeedleman::Compute(ostream* outPtr, unsigned int step)
 	tauC = deltaC * Z / sigmaC;
 	delT = tauC * delTFactor;
 	double sigTol = sigmaCFactor4Zero * sigmaC;
-	// sigma(delta) + Z/2 * deltaDot = at -> 
+	// sigma(delta) + Z/2 * deltaDot = aEt -> 
 	// deltaDot = At - B delta exp(1.0 - delta/deltaC)
 	double ZInv2 = 2.0 / Z;
 	double halfZ = 0.5 * Z;
@@ -791,29 +791,31 @@ void TSR_XuNeedleman::Compute(ostream* outPtr, unsigned int step)
 	bool b_print = (outPtr != NULL);
 	if (b_print)
 	{
-		*outPtr << "time\tdelta\tsigma\tdeltaDot\tat\terror\n";
-		*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\t" << 0.0 << '\t' << 0.0 << "\n";
+		*outPtr << "time\tdelta\tsigma\tdeltaDot\tat\terror\terror2\n";
+		*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\t" << 0.0 << '\t' << 0.0 << '\t' << 0.0 << "\n";
 	}
-	double h = delT, hd2 = 0.5 * delT, h6 = h / 6.0;
+	double h = delT, hd2 = 0.5 * delT, o6 = 1.0 / 6.0;
 	double k1, k2, k3, k4, del, t;
 	bool deltaCPassed = false;
 	bool cont = true;
 	unsigned int cntr = 0;
+	double delDot2;
 	while (cont)
 	{
 		t = time;
 		del = delta;
 		k1 = A * t - B * del * exp(1.0 - del * deltaCInv);
 		t = time + hd2;
-		del = delta + 0.5 * k1;
+		del = delta + hd2 * k1;
 		k2 = A * t - B * del * exp(1.0 - del * deltaCInv);
-		del = delta + 0.5 * k2;
+		del = delta + hd2 * k2;
 		k3 = A * t - B * del * exp(1.0 - del * deltaCInv);
 		t = time + h;
-		del = delta + k3;
+		del = delta + k3 * h;
 		k4 = A * t - B * del * exp(1.0 - del * deltaCInv);
 		time += h;
-		delta += h6 * (k1 + 2.0 * (k2 + k3) + k4);
+		delDot2 = o6 * (k1 + 2.0 * (k2 + k3) + k4);
+		delta += h * delDot2;
 		deln = delta * deltaCInv;
 		sigma = sigmaC * deln * exp(1.0 - deln);
 		deltaDot = ZInv2 * (a * time - sigma);
@@ -826,7 +828,8 @@ void TSR_XuNeedleman::Compute(ostream* outPtr, unsigned int step)
 		{
 			double at = time * a;
 			double error = a * E * t - sigma - halfZ * deltaDot;
-			*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\t" << at << "\t" << error << "\n";
+			double error2 = a * E * t - sigma - halfZ * delDot2;
+			*outPtr << time << "\t" << delta << "\t" << sigma << "\t" << deltaDot << "\t" << at << "\t" << error << "\t" << error2 << "\n";
 		}
 		if ((deltaCPassed) && (sigma < sigTol))
 		{

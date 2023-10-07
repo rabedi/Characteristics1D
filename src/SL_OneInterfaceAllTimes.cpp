@@ -269,7 +269,7 @@ void SL_OneInterfaceAllTimes::Open_fixed_x_files_SL_OneInterfaceAllTimes(IOF_typ
 #endif
 	string ext, outName;
 	bool genFile = getExt(iofFinalSolution, ext);
-	if (g_1_interface_low_disk_space)
+	if (g_1_interface_low_disk_space != 0)
 		genFile = false;
 	if (genFile)
 	{

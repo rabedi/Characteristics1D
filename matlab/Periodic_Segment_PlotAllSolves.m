@@ -1,7 +1,7 @@
 isOrtiz = 0;
 plot_laMode = 0; % 0 actual a, 1 a*2 is used, 2 a/G is used 
 add_dilute_approx = 0; %0;
-add_Grady = 0;
+add_Grady = 1;
 add_Glenn = 1;
 add_max_ene_real = 1;
 add_max_ene_max = 0; %0;

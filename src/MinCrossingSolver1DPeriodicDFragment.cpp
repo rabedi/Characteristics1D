@@ -87,7 +87,7 @@ void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_m
 	else
 	{
 		if (paras[0] < 0)
-			g_1_interface_low_disk_space = true;
+			g_1_interface_low_disk_space = 2;
 	}
 	it = str_map.find("laNormT");
 	if ((it != str_map.end()) && (!name2Type(it->second, laNormT)))
@@ -125,8 +125,8 @@ void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_m
 	xM = MAX(xM, l10_l_Zhu6b);
 	xM = MAX(xM, l10_l_Glenn);
 	xM += 1.5; //0.04;//*= 1.1;
-	xm -= 0.04; //*= 0.9;
-	unsigned int numSeg = 20; // 10;
+	xm -= 1.5; // 0.04; //*= 0.9;
+	unsigned int numSeg = 30; // 20; // 10;
 	double dx = (xM - xm) / (double)numSeg;
 	secondary_xs.resize(numSeg + 1);
 	for (unsigned int i = 0; i <= numSeg; ++i)

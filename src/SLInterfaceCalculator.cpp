@@ -2802,7 +2802,7 @@ void Periodic1IntrFrag::setEmpty_Periodic1IntrFrag()
 	delvsZeroObserved = false;
 	nameBase = "periodic1IntrFrag";
 	step4_segment_vsigma_output = 1;
-	if (g_1_interface_low_disk_space)
+	if (g_1_interface_low_disk_space != 0)
 		step4_segment_vsigma_output = 10000;
 	terminateState = PITSS_none;
 	isExtrinsic = true;
@@ -3041,6 +3041,7 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 //	double suggested_delt_l = 1.0 / l;	//	double suggested_delt_dilute_l = 1.0 / l_dilute;
 //	double del_t = MIN(MIN(suggested_delt_a, suggested_delt_l), suggested_delt_dilute_l);
 	double del_t = MIN(suggested_delt_a, 1.0);
+	del_t = MIN(del_t, l);
 	suggeste_delt = relTol * del_t;
 	double fact = 10.0;
 	if (!isExtrinsic)
@@ -3293,13 +3294,14 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 	// currentStepVals[pft_bEneSource] = is total energy from stress source (from vR term)
 	// K(t) + U(t) - K(0) - U(0) = -EneD + EneSource - EneN
 
-	if (!g_1_interface_low_disk_space)
+	if ((g_1_interface_low_disk_space == 0) || ((g_1_interface_low_disk_space == 2) && (timeIndexNew % 1000 == 0)))
 	{
-		outAllVals << timeIndexNew++;
+		outAllVals << timeIndexNew;
 			for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
 				outAllVals << '\t' << currentStepVals[i];
 			outAllVals << '\n';
 	}
+	++timeIndexNew;
 	for (unsigned int i = 0; i < OneSegmentPFT_SIZE; ++i)
 		stat4Vals[i].update(currentStepVals[i], timeNewAbsolute);
 

@@ -2026,10 +2026,35 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 				if (insc.is_open())
 				{
 					bool success = false;
-					string buf;
-					insc >> buf;
-					if (!insc.eof())
-						insc >> success;
+					unsigned int szPara = paras1D.size();
+					vector<vector<double> > paras;
+					while (true)
+					{
+						vector<double> para(szPara);
+						for (unsigned int j = 0; j < szPara; ++j)
+							insc >> para[j];
+						if (insc.eof())
+							break;
+						else
+							paras.push_back(para);
+					}
+					unsigned int szParaVec = paras.size();
+					for (unsigned int k = 0; k < szParaVec; ++k)
+					{
+						double diff = 0.0, tmp, norm2 = 0.0;
+						vector<double> para;
+						para = paras[k];
+						for (unsigned int j = 0; j < szPara; ++j)
+						{
+							tmp = para[j] - paras1D[j];
+							diff += tmp * tmp;
+							tmp = MAX(fabs(para[j]), fabs(paras1D[j]));
+							norm2 += tmp * tmp;
+						}
+						diff = sqrt(diff) / MAX(sqrt(norm2), 1.0);
+						if (diff < 1e-3)
+							success = true;
+					}
 					if (success == true)
 						cont = false;
 				}
@@ -2068,8 +2093,11 @@ void Solver1D::SolveOneSolveMode_AfterInitialization(vector<genIndexVal>& slns, 
 
 			//if (mode_counter == 1)
 			{
-				fstream outsc(namesc.c_str(), ios::out);
-				outsc << "success\t1\n";
+				fstream outsc(namesc.c_str(), ios::app);
+				unsigned int szPara = paras1D.size();
+				for (unsigned int j = 0; j < szPara; ++j)
+					outsc << paras1D[j] << '\t';
+				outsc << '\n';
 			}
 		}
 		cout << "EN: mode_counter\t" << mode_counter << "\tpci\t" << pci << "\ttsz_posConfs2Solve\t" << sz_posConfs2Solve << '\n';
