@@ -7,6 +7,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import shutil
+import time
 
 import rmulti_index as rmi 
 from rmulti_index import SMIndex as SMIndex
@@ -17,7 +18,28 @@ import rutil as rutil
 from characteristics_data import Characteristics_data as Characteristics_data 
 import characteristics_data as charDat 
 
-from rstats import StatOfVec as StatOfVec
+from input_field import StatOfVec as StatOfVec
+from input_field import InpFsOuput as InpFsOuput
+
+# Hurst package
+import numpy as np
+import matplotlib.pyplot as plt
+from hurst import compute_Hc, random_walk
+
+# Higuchi Fractal Dimension (HFD)
+import HiguchiFractalDimension as hfd
+
+# PSD
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.mlab as mlab
+import matplotlib.gridspec as gridspec
+
+# autocorrelation function
+from scipy import signal
+
+from rstats import  Test_HD_Cor
+
 
 class plParameters:
     lineStyles = ["solid", "dashed", "dashdot", "dotted", (0, (1, 10)), (0, (1, 1)), \
@@ -689,6 +711,43 @@ def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
     return pd_data
 
 def main_function():
+
+    # from scipy.interpolate import interp1d
+    # from scipy.optimize import root_scalar
+
+    if False:
+        ifo = InpFsOuput()
+        ifo.Print()
+        # For Ali 
+        # ifo.Print_AllSerials_AllPara()
+        return
+
+    if False:
+        a1 = InpF()
+        a1.Initialize_InpF(valsAtVert = True, meshp2 = 14, serNo = 0, llc = -3.0, dd2 = 0.2, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1, shape = 2, useOriginalSN_Mesh4Raw = 1)
+        # a2 = InpF()
+        # a2.Initialize_InpF(valsAtVert = True, meshp2 = 14, serNo = 0, llc = -1.5, dd2 = 0.6, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1, shape = 2, useOriginalSN_Mesh4Raw = 1)
+        with open("test1.txt", "w") as fl:
+            print(a1.vals,file=fl)
+        with open("test1_stat.txt", "w") as fl:
+            nms = a1.stats4SimulationFld.Get_Names("inp_sx_")
+            print(nms,file=fl)
+            stats = a1.GetStatVecVals()
+            print(stats,file=fl)
+        #with open("test2.txt", "w") as fl:
+        #    print(a2.vals,file=fl)
+        return
+
+
+    if False:
+        cl = -2.5
+        fn = '../../InhomogeneousFiles/cl' + str(cl) + '_np16385/initial_values_0.txt'
+        vals = np.loadtxt(fn)[1:]
+        sov = StatOfVec()
+        sov.Compute_Vec_Stat(vals)
+        # Test_HD_Cor()
+        return
+
     # sov = StatOfVec()
     # sov.Test_Gumbel2Weibull()
     # return
@@ -735,7 +794,8 @@ def main_function():
     # root = "data/2023_03_13_x_resolution_F/_PPS3/"
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
-    option = 0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    # option 10 # la axis, delc in plot lines
+    option = 10 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
@@ -745,63 +805,72 @@ def main_function():
         readMainLineMode = 0
 
     inpColDict = {}
-
+    lasym = "la"
+    #lasym = "lap"
+    lasymXaxis = lasym
+    lasymXaxis = "lap"
     if (rateStudy):
-        # sortingFields = ["llc", "dd2", "ldelc", "la"]
+        # sortingFields = ["llc", "dd2", "ldelc", lasym]
         if (not plotFill):
             if (mainOption == mo_frac_rate_f_wShape):
                 inpColDict["shape"] = "none"
             if (option == 0):
-                inpColDict["la"] = "fillstyle" #"c" # color
+                inpColDict[lasym] = "fillstyle" #"c" # color
                 inpColDict["llc"] = "c" # line style
                 inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
             #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
                 inpColDict["dd2"] = "marker" # marker fill color
+            elif (option == 10):
+                inpColDict[lasym] = "fillstyle" #"c" # color
+                inpColDict["ldelc"] = "c" # line style
+                inpColDict["llc"] = "ls" #"fillstyle" # marker style
+            #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
+                inpColDict["dd2"] = "marker" # marker fill color
             elif (option == 1):
-                inpColDict["la"] = "marker" #"c" # color
+                inpColDict[lasym] = "marker" #"c" # color
                 inpColDict["llc"] = "fillstyle" # line style
                 inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
                 inpColDict["dd2"] = "c" # marker fill color
             elif (option == 2):
-                inpColDict["la"] = "c" #"c" # color
+                inpColDict[lasym] = "c" #"c" # color
                 inpColDict["llc"] = "fillstyle" # line style
                 inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
                 inpColDict["dd2"] = "marker" # marker fill color
             elif (option == 3): # for shape, with shape inside
                 if (mainOption == mo_frac_rate_f_wShape):
                     inpColDict["shape"] = "c"
-                    inpColDict["la"] = "fillstyle" #"c" # color
+                    inpColDict[lasym] = "fillstyle" #"c" # color
                     inpColDict["llc"] = "c" # line style
                     inpColDict["ldelc"] = "ls" #"fillstyle" # marker style
                     inpColDict["dd2"] = "marker" # marker fill color
         else:
-            inpColDict["la"] = "ls" #"c" # color
+            inpColDict[lasym] = "ls" #"c" # color
             inpColDict["llc"] = "fillstyle" # line style
             inpColDict["ldelc"] = "c" #"fillstyle" # marker style
         #    inpColDict["ssoFS"] = "mfc" #"mfc" # marker face color (not-filled, filled, other colors)
             inpColDict["dd2"] = "marker" # marker fill color
     elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
-        # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
+        # sortingFields = ["dt_resap", "ssoFS", lasym, "llc", "resolutionFactor"]
         if (option < 100): # stat files
             if (option == 0):
                 inpColDict["dt_resap"] = "fillstyle"
                 inpColDict["resolutionFactor"] = "marker"
                 inpColDict["ssoFS"] = "c"
                 inpColDict["llc"] = "ls"
-                inpColDict["la"] = "marker"
+                inpColDict[lasym] = "marker"
                 if (mainOption == mo_frac_res_x_w_delc_fact):
                     inpColDict["delc_Tf_fact"] = "c"
                     inpColDict["dt_resap"] = "fillstyle"
                     inpColDict["resolutionFactor"] = "none"
                     inpColDict["ssoFS"] = "ls"
                     inpColDict["llc"] = "none"
-                    inpColDict["la"] = "marker"
+                    inpColDict[lasym] = "marker"
             elif (option == 1):
                 inpColDict["dt_resap"] = "fillstyle"
                 inpColDict["resolutionFactor"] = "c"
                 inpColDict["ssoFS"] = "ls"
                 inpColDict["llc"] = "marker" # marker fill color
-                inpColDict["la"] = "none"
+                inpColDict[lasym] = "none"
                 if (mainOption == mo_frac_res_x_w_delc_fact):
                     inpColDict["delc_Tf_fact"] = "marker"
                     inpColDict["llc"] = "none"
@@ -812,10 +881,10 @@ def main_function():
             inpColDict["resolutionFactor"] = "fillstyle"
             inpColDict["ssoFS"] = "ls"
             inpColDict["llc"] = "lw" # marker fill color
-            inpColDict["la"] = "marker"
+            inpColDict[lasym] = "marker"
             if (mainOption == mo_frac_res_x_w_delc_fact):
                 inpColDict["delc_Tf_fact"] = "marker"
-                inpColDict["la"] = "none"
+                inpColDict[lasym] = "none"
                 inpColDict["ssoFS"] = "none"
 
     # trying to see if "runNo" is one of the entries   -> dealing with raw data
@@ -843,7 +912,7 @@ def main_function():
     splitInstructions = PlotOMISplit_Instruction()
 #    splitInstructions.out_col_nameBases.append("ssoFS")
     if (rateStudy):
-        # sortingFields = ["llc", "dd2", "ldelc", "la"]
+        # sortingFields = ["llc", "dd2", "ldelc", lasym]
         if (not plotFill):
             # default option
             if ((mainOption == mo_frac_rate_f_wShape) and (option < 3)):
@@ -851,11 +920,17 @@ def main_function():
             if (option == 0):
                 splitInstructions.out_col_nameBases.append("dd2")
                 splitInstructions.out_col_nameBases.append("ldelc")
-                #   splitInstructions.out_col_nameBases.append("la")
+                #   splitInstructions.out_col_nameBases.append(lasym)
                 #   splitInstructions.out_col_nameBases.append("llc")
-                splitInstructions.in_col_nameBase = "la"
+                splitInstructions.in_col_nameBase = lasym
+            elif (option == 10):
+                splitInstructions.out_col_nameBases.append("dd2")
+                splitInstructions.out_col_nameBases.append("llc")
+                #   splitInstructions.out_col_nameBases.append(lasym)
+                #   splitInstructions.out_col_nameBases.append("ldelc")
+                splitInstructions.in_col_nameBase = lasym
             elif (option == 1):
-                splitInstructions.out_col_nameBases.append("la")
+                splitInstructions.out_col_nameBases.append(lasym)
                 splitInstructions.out_col_nameBases.append("ldelc")
                 splitInstructions.in_col_nameBase = "llc"
             elif (option == 2):
@@ -866,22 +941,22 @@ def main_function():
                 splitInstructions.out_col_nameBases.append("dd2")
                 splitInstructions.out_col_nameBases.append("ldelc")
                 splitInstructions.out_col_nameBases.append("llc")
-                splitInstructions.in_col_nameBase = "la"
+                splitInstructions.in_col_nameBase = lasym
         else:
             splitInstructions.out_col_nameBases.append("dd2")
             #   splitInstructions.out_col_nameBases.append("ldelc")
-            #   splitInstructions.out_col_nameBases.append("la")
+            #   splitInstructions.out_col_nameBases.append(lasym)
             splitInstructions.out_col_nameBases.append("llc")
-            splitInstructions.in_col_nameBase = "la"
+            splitInstructions.in_col_nameBase = lasym
     elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
-        # sortingFields = ["dt_resap", "ssoFS", "la", "llc", "resolutionFactor"]
+        # sortingFields = ["dt_resap", "ssoFS", lasym, "llc", "resolutionFactor"]
         if (option < 100): # stat files
             if (option == 0):
                 splitInstructions.out_col_nameBases.append("dt_resap")
                 if (mainOption == mo_frac_res_x_w_delc_fact):
                     splitInstructions.out_col_nameBases.append("ssoFS")
                 splitInstructions.out_col_nameBases.append("llc")
-                splitInstructions.out_col_nameBases.append("la")
+                splitInstructions.out_col_nameBases.append(lasym)
                 splitInstructions.in_col_nameBase = "resolutionFactor"
             elif (option == 1):
                 if (mainOption == mo_frac_res_x_w_delc_fact):
@@ -889,14 +964,14 @@ def main_function():
                 splitInstructions.out_col_nameBases.append("ssoFS")
                 splitInstructions.out_col_nameBases.append("dt_resap")
                 splitInstructions.out_col_nameBases.append("llc")
-                splitInstructions.in_col_nameBase = "la"
+                splitInstructions.in_col_nameBase = lasym
         else: # raw data
             if (mainOption == mo_frac_res_x_w_delc_fact):
                 splitInstructions.out_col_nameBases.append("delc_Tf_fact")
             splitInstructions.out_col_nameBases.append("ssoFS")
             splitInstructions.out_col_nameBases.append("dt_resap") # can comment this out
             splitInstructions.out_col_nameBases.append("llc")
-            splitInstructions.out_col_nameBases.append("la")
+            splitInstructions.out_col_nameBases.append(lasym)
             splitInstructions.in_col_nameBase = "resolutionFactor" #"runNo"
 
 #    splitInstructions.in_col_nameBase = "resolutionFactor"
@@ -910,6 +985,8 @@ def main_function():
     if True:
         fj = -1 # all output fields
         fi = -1 # inner loop
+        if ((splitInstructions.in_col_nameBase == "la") and (lasymXaxis == "lap")):
+            fi = dbs.db.columns.get_loc("inp_s_lap")
         dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, plotFill)
 
     # plotting mean(min(strenth)) (or mean(strength), cov(strength)), etc. where the second operator is over space

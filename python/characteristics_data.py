@@ -12,6 +12,7 @@ import rmulti_index as rmi
 from rmulti_index import SMIndex as SMIndex
 from input_field import StatOfVec as StatOfVec
 from input_field import InpF as InpF
+import time
 
 # mainOptions
 # 0, 1: effect of llc, dd2 ldelc, la
@@ -28,6 +29,7 @@ mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to 
 
 mainOption = mo_frac_rate_f
 rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
+
 
 # Change
 if (rateStudy):
@@ -53,7 +55,14 @@ addRawStat = True
 dist_logs = {}
 
 dist_logs["time_F"] = 10
-dist_logs["phi_d_tFin"] = 10
+dist_logs["time_M"] = 10
+dist_logs["time_sigma0"] = 10
+dist_logs["time_norm_tauc_F"] = 10
+dist_logs["time_norm_tauc_M"] = 10
+dist_logs["time_sigma0_norm_tauc"] = 10
+dist_logs["time_norm_taul_F"] = 10
+dist_logs["time_norm_taul_M"] = 10
+dist_logs["time_sigma0_norm_taul"] = 10
 dist_logs["phi_d_tFin"] = 10
 dist_logs["phi_d_norm_phi0_tFin"] = 10
 dist_logs["phi_d_norm_phi_input_F"] = 10
@@ -61,16 +70,105 @@ dist_logs["psi_f"] = 10
 dist_logs["psi_f_norm_psiC"] = 10
 dist_logs["eps_f"] = 10
 dist_logs["eps_f_norm"] = 10
-#dist_logs["lbar_F"] = 10
+dist_logs["lbar_M"] = 10
+dist_logs["lbar_F"] = 10
+dist_logs["lbar_M_orig"] = 10
+dist_logs["lbar_F_orig"] = 10
 
 
 def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
     if (rateStudy):
         hasShape = (mainOption == mo_frac_rate_f_wShape)
-        return read_updata_csv_frac_rate(filename, hasShape)
+        pd = read_updata_csv_frac_rate(filename, hasShape)
     elif ((mainOption == mo_frac_res_x) or (mainOption == mo_frac_res_x_w_delc_fact)):
         has_deltaCFactor = (mainOption == mo_frac_res_x_w_delc_fact)
-        return read_updata_csv_frac_res_x(filename, has_deltaCFactor)
+        pd = read_updata_csv_frac_res_x(filename, has_deltaCFactor)
+    nondimensionLFactor = 2
+    fragmentSizeNorm_wrt_lcoh = 1
+    pd = Update4NondimensionalVals(pd, nondimensionLFactor, fragmentSizeNorm_wrt_lcoh)
+    return pd
+
+def Update4NondimensionalVals(db, nondimensionLFactor = 1, fragmentSizeNorm_wrt_lcoh = 0):
+    nondimensionLFactorInv = 1.0 / nondimensionLFactor
+    lf = np.log(nondimensionLFactor) / np.log(10)
+    c_la_v = "inp_s_la"
+    i_la_v = db.columns.get_loc(c_la_v)
+    c_lap_v = "inp_s_lap"
+    i_lap_v = -1
+    has_lap = 0
+    if (c_lap_v in db.columns):
+        i_lap_v = db.columns.get_loc(c_lap_v)
+        has_lap = 1
+    else:
+        i_lap_v = i_la_v + 1
+        db.insert(i_lap_v,c_lap_v, 0)
+
+    c_llc_v = "inp_s_llc"
+    i_llc_v = db.columns.get_loc(c_llc_v)
+    c_llcp_v = "inp_s_llcp"
+    i_llcp_v = -1
+    has_llcp = 0
+    if (c_llcp_v in db.columns):
+        i_llcp_v = db.columns.get_loc(c_llcp_v)
+        has_llcp = 1
+    else:
+        i_llcp_v = i_llc_v + 1
+        db.insert(i_llcp_v,c_llcp_v, 0)
+
+    colsNormalized_t_tauc = []
+    if (nondimensionLFactor != 1):
+        for j, coln in enumerate(db.columns):
+            if '_norm_tauc' in coln:
+                colsNormalized_t_tauc.append(j)
+
+    # figuring out which columns are related to fragments
+    cfrag_N = []
+    cfrag_len = []
+    cfrag_lbar = []
+    if (fragmentSizeNorm_wrt_lcoh == 1):
+        for j, coln in enumerate(db.columns):
+            if '_Nl_' in coln:
+                cfrag_N.append(j)
+                nmNew = coln + '_orig'
+                db[nmNew] = db[coln]
+            elif ('_lbar_' in coln): 
+                cfrag_len.append(j)
+                cfrag_lbar.append(j)
+                nmNew = coln + '_orig'
+                db[nmNew] = db[coln]
+            elif (('_lmin_' in coln) or ('_lmax_' in coln) or ('_sdiv_l_' in coln)):
+                cfrag_len.append(j)
+
+    c_lldelc_v = "inp_s_ldelc"
+    i_lldelc_v = db.columns.get_loc(c_lldelc_v)
+
+    i = 0
+    for row in db.iterrows():
+        la = db.iloc[i, i_la_v]
+        ldelc = db.iloc[i, i_lldelc_v]
+        delc = np.power(10.0, ldelc)
+        lTilde = nondimensionLFactorInv * delc
+        ldelcf = ldelc - lf
+        if not has_lap:
+            lap = la + ldelcf
+            db.iloc[i, i_lap_v] = lap
+
+        if not has_llcp:
+            llc = db.iloc[i, i_llc_v]
+            llcp = llc - ldelcf
+            db.iloc[i, i_llcp_v] = llcp
+
+        for j in colsNormalized_t_tauc:
+            db.iloc[i, j] *= nondimensionLFactor
+
+        if (fragmentSizeNorm_wrt_lcoh == 1):
+            lTildeInv = 1.0 / lTilde
+            for j in cfrag_N:
+                db.iloc[i, j] *= lTilde
+            for j in cfrag_len:
+                db.iloc[i, j] *= lTildeInv
+        i += 1
+    return db
 
 def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv", hasShape = 0):
     db = pd.read_csv(filename)
@@ -398,6 +496,7 @@ def read_updata_csv_frac_res_x(filename = "../../data/resolution_x_fracture_scal
 
 # this includes all random field realization data for 1 combination of input scalar values (e.g. dd2, ...)
 class OneScalarSetData:
+    rawName = "raw"
     def __init__(self):
         # start and end (non-inclusive) range of rows of all.csv file that correspond to this combination of values
         self.st = -1
@@ -434,9 +533,11 @@ class Characteristics_data:
 
         # initial field related data
         self.pd_data_w_iniField = []
+        self.folderSource = ''
+        self.folderDest = ''
 
     def Main_Characteristics_data(self, folderSource = "data/2023_03_22_source", folderDest = "data/Characteristics_data"):
-        self.folderSource = folderSource
+        self.folderSource = folderSource 
         self.folderDest = folderDest
         fn = self.folderDest + "/allData/mainMembers.txt"
         if os.path.isfile(fn):
@@ -488,6 +589,13 @@ class Characteristics_data:
 
             # generate One sorted file
             file_names = glob.glob(self.folderSource + "/*.{}".format('csv') )
+            # print('2')
+            # time.sleep(2)
+            # print('file_names = ', file_names)
+            # print('self.folderSource = ', self.folderSource)
+            # print(self.folderSource)
+            # time.sleep(10)
+
             cnt = 0
             for fn in file_names:
                 print(fn)
@@ -598,9 +706,11 @@ class Characteristics_data:
         self.scalar_out_field = [i for i, x in enumerate(self.pd_data.columns) if "out_f_" in x]
 
         if (self.add_spatial_field_stat == True):
-            pre_name = "inp_sfx_"
-            addRawStat = True
-            names = InpF.GetStatNames(pre_name, addRawStat)
+            pre_nameMapped = "inp_sx_sim_"
+            pre_nameRaw = "inp_sx_raw_"
+            addMapped = True
+            addRaw = True
+            names = InpF.GetStatNames(pre_nameMapped, pre_nameRaw, addMapped, addRaw) 
             sz_stat_fields = len(names)
             first_out_pos = self.scalar_out_pos[0]
             for i in range(len(self.scalar_out_pos)):
@@ -641,6 +751,8 @@ class Characteristics_data:
             # change:
             sso = reduction_sso
             shape = 2
+            useOriginalSN_Mesh4Raw = 1
+            OneScalarSetData.rawName = "origSN"
             if (mainOption == mo_frac_rate_cf):
                 if (la < 0.0): 
                     if (la < -2.4):
@@ -657,10 +769,14 @@ class Characteristics_data:
                         # -1.0 -> 2
                         # -0.5 -> 2
                         meshp2_4Simulation = 13
+                useOriginalSN_Mesh4Raw = 0 # 1 uses original mesh for "raw" mesh (i.e. instead of using a possibly a lower resolution mesh); 2 does not calculate raw/original stat altogether 
+                OneScalarSetData.rawName = "raw"
             elif ((mainOption == mo_frac_res_x) or hasDeltFactor):
                 resF = self.pd_data.iloc[i, iCol_resF]
                 meshp2_4Simulation = 14 - resF
                 sso = self.pd_data.iloc[i, iCol_sso]
+                useOriginalSN_Mesh4Raw = 0 # 1 uses original mesh for "raw" mesh (i.e. instead of using a possibly a lower resolution mesh); 2 does not calculate raw/original stat altogether 
+                OneScalarSetData.rawName = "raw"
             if (mainOption == mo_frac_rate_f_wShape):
                 shape = self.pd_data.iloc[i, iCol_shape]
     
@@ -668,7 +784,7 @@ class Characteristics_data:
             pinp = InpF()
             pinp.Initialize_InpF(valsAtVert, meshp2, serNo, llc, dd2, \
                                 isPeriodic, sso, \
-                                meshp2_4Simulation, meshp2_4Output, shape)
+                                meshp2_4Simulation, meshp2_4Output, shape, useOriginalSN_Mesh4Raw)
             if (self.add_spatial_field_stat == True):
                 stat_vals = pinp.GetStatVecVals(addRawStat)
                 for ci, fxsi in enumerate(fx_col_pos):
@@ -742,7 +858,7 @@ class Characteristics_data:
                     vecVals[ri - st_row] = self.pd_data_w_iniField.iloc[ri, cj]
                 self.pdStat_vals[cntr, cj] = vecVals
                 sov = StatOfVec()
-                sov.Compute_Vec_Stat(vecVals)
+                sov.Compute_Vec_Stat(vecVals, False)
                 statVals = sov.GetVecVals([], retVafter_std)
                 for si in range(szStat):
                     self.pdStats[si].iloc[cntr, cj] = statVals[si]
