@@ -218,13 +218,14 @@ def valReduction(valsIn, meshp2In, valsAtVert, meshp2Out = -1, reduction_sso = 3
 class InpF:
     rootIFFOlder = "../../InhomogeneousFiles/"
     def __init__(self):
-        self.valid = False
+        self.valid = True
     @staticmethod
     def setInputMeshRootFolder(rootFolderIn = "../../InhomogeneousFiles/"):
         rootIFFOlder = rootFolderIn
     # dd2 is the "span" parameter of pointwise PDF
     # sso_valStart = 0, sso_valEnd = 1, sso_min = 3, sso_max = 5, sso_mean_arithmetic = 6, sso_mean_harmonic = 10
     def Initialize_InpF(self, valsAtVert = True, meshp2 = 14, serNo = 0, llc = -3, dd2 = 0.7, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1, shape = 2, useOriginalSN_Mesh4Raw = 0):
+        self.valid = True
         nSeg = 2**meshp2
         if (meshp2_4Simulation == -1):
             meshp2_4Simulation = meshp2
@@ -246,7 +247,6 @@ class InpF:
             if not path.exists():
                 self.valid = False
                 return
-            self.valid = True
             self.vals = np.loadtxt(fn)[1:]
             minV = 1 - dd2
             maxV = 1 + dd2
@@ -416,7 +416,10 @@ class InpFsOuput:
                         pinp.Initialize_InpF(valsAtVert, meshp2, serNo, llc, dd2, \
                                             isPeriodic, reduction_sso, \
                                             meshp2_4Simulation, meshp2_4Output, shape, useOriginalSN_Mesh4Raw)
-
+                        if (self.valid == False):
+                            continue
+                        if (serNo % 100 == 0):
+                            print(f"serNo = {serNo}")
                         statVals = pinp.GetStatVecVals(addRaw, addMapped)
                         str_lab = str(shape) + ',' + str(llc) + ',' + str(dd2) + ',' + str(serNo)
                         fstat.write(str_lab)
@@ -488,8 +491,12 @@ class InpFsOuput:
         self.Print(serNos, shapes, llcs, dd2s, fileNameBase, includeStatsOfSN, includeStatsOfMappedFld, printCOVFunction, step4Cov, printFieldVals, stepFieldVals, isPeriodic, valsAtVert)
 
 
-    def Print_AllSerials_AllPara(self, serNoMax = 10, shapes = [1,2, 4, 10], llcs = [-3,-2], dd2s = [0.7], includeStatsOfSN = True, includeStatsOfMappedFld = True, printCOVFunction = True, step4Cov = 1, printFieldVals = True, stepFieldVals = 1, isPeriodic = True, valsAtVert = True):
+    def Print_AllSerials_AllPara(self, serNoMax = 1300, shapes = [1, 1.5, 2, 3, 4], llcs = [-2], dd2s = [0.5], includeStatsOfSN = True, includeStatsOfMappedFld = True, printCOVFunction = True, step4Cov = 1, printFieldVals = True, stepFieldVals = 1, isPeriodic = True, valsAtVert = True):
+
         for shape in shapes:
+            print(f"shape = {shape}\n")
             for llc in llcs:
+                print(f"llc = {llc}\n")
                 for dd2 in dd2s:
+                    print(f"dd2 = {dd2}\n")
                     self.Print_AllSerials_OnePara(serNoMax, shape, llc, dd2, includeStatsOfSN, includeStatsOfMappedFld, printCOVFunction, step4Cov, printFieldVals, stepFieldVals, isPeriodic, valsAtVert)

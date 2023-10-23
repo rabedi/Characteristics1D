@@ -717,9 +717,9 @@ def main_function():
 
     if False:
         ifo = InpFsOuput()
-        ifo.Print()
+        # ifo.Print()
         # For Ali 
-        # ifo.Print_AllSerials_AllPara()
+        ifo.Print_AllSerials_AllPara()
         return
 
     if False:
