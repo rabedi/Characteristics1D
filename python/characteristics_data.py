@@ -560,6 +560,7 @@ class Characteristics_data:
         self.PlotScatter()
 
     def WriteTextData(self):
+        print("start WriteTextData ...\n")
         fn = self.folderDest + "/allData/mainMembers.txt"
         with open(fn, "w") as fl:
             print("runNoSets_validPos\n",file=fl)
@@ -568,6 +569,7 @@ class Characteristics_data:
             self.s2mi.savetxt(fl)
 
     def GenerateOneSortedFile(self):
+        print("start GenerateOneSortedFile ...\n")
         # sortingOrder = [True, True, True, True] # Don't change this as the rest of multi-index depends on all True sorting
         self.nm_ind_sortingFields = []
         self.nm_inp_sortingFields = []
@@ -630,6 +632,7 @@ class Characteristics_data:
             self.pd_data.to_csv(fdestAll + "/all_raw.csv", index=False,header=True)
 
     def FormMultiIndexMatrix_AfterSortedMatrix(self):
+        print("start FormMultiIndexMatrix_AfterSortedMatrix ...\n")
         self.pos_ind_sortingFields = []
         for v in self.nm_ind_sortingFields:
             self.pos_ind_sortingFields.append(self.pd_data.columns.get_loc(v))
@@ -668,6 +671,7 @@ class Characteristics_data:
             self.runNoSets[linPos].en = i + 1
 
     def Add_SpatialFieldData(self):
+        print("start Add_SpatialFieldData ...\n")
         fdestAll = self.folderDest + "/allData"
         allFile = fdestAll + "/all_raw.csv"
         allFile_wxs = fdestAll + "/all_wxs.csv"
@@ -744,6 +748,8 @@ class Characteristics_data:
             iCol_sso = self.pd_data.columns.get_loc("inp_s_ssoFS")
             
         for i in range(nRows):
+            if (i % 1000 == 0):
+                print(f"i {i} / {nRows}\n")
             llc = self.pd_data.iloc[i, iCol_llc]
             dd2 = self.pd_data.iloc[i, iCol_dd2]
             la = self.pd_data.iloc[i, iCol_la]
@@ -805,6 +811,7 @@ class Characteristics_data:
 
     # calculating mean, max, ... of dataset
     def CalculateStatesOverSameInputParaSet(self):
+        print("start CalculateStatesOverSameInputParaSet ...\n")
         self.pd_data_w_iniField
         # create multiple files for
         # 0 -> mean        # 1 -> min        # 2 -> max        # 3 -> cov        # 4 -> sdiv 
