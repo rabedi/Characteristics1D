@@ -715,7 +715,7 @@ def main_function():
     # from scipy.interpolate import interp1d
     # from scipy.optimize import root_scalar
 
-    if False:
+    if True:
         ifo = InpFsOuput()
         # ifo.Print()
         # For Ali 

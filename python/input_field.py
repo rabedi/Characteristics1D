@@ -393,6 +393,7 @@ class InpFsOuput:
         fnfvSN = fileNameBase + "_fieldVal_SN.csv"
         fnfvMap = fileNameBase + "_fieldVal_mapped.csv"
         fv_includeStatsOfSN = printFieldVals and includeStatsOfSN
+        fv_includeStatsOfSN = False # attempt to reduce data generated as initial SN files already exist
         if (fv_includeStatsOfSN):
             ffvSN = open(fnfvSN, 'w')
             ffvSN.write('shape,llc,dd2,serNo,sz,vals\n')
@@ -416,7 +417,7 @@ class InpFsOuput:
                         pinp.Initialize_InpF(valsAtVert, meshp2, serNo, llc, dd2, \
                                             isPeriodic, reduction_sso, \
                                             meshp2_4Simulation, meshp2_4Output, shape, useOriginalSN_Mesh4Raw)
-                        if (self.valid == False):
+                        if (pinp.valid == False):
                             continue
                         if (serNo % 100 == 0):
                             print(f"serNo = {serNo}")
