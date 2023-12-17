@@ -102,6 +102,9 @@
     <ClInclude Include="include\Header.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\InhomogeousFieldSimple.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Domain_AllInterfacesAllTimes.cpp">
@@ -187,6 +190,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\MinCrossingSolver1DPeriodicDFragment.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\InhomogeousFieldSimple.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

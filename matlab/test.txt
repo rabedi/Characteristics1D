@@ -1,0 +1,1 @@
+cntrV	0	nameSpec	allopts	{	grp	lL	ind	0	str	0	grp	sigc	ind	0	str	1	grp	dd2	ind	0	str	0.9	grp	ldelc	ind	0	str	-2	grp	la	ind	0	str	4.0	grp	llc	ind	0	str	-4.5	grp	shape	ind	0	str	1.0	}

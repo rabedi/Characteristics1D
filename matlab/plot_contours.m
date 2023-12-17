@@ -9,7 +9,7 @@ if nargin < 2
 end
 if nargin < 3
     versionNum = -1;
-    versionNum = 0;
+%    versionNum = 0;
 %    versionNum = 14;
 end
 if nargin < 4
@@ -49,6 +49,7 @@ if nargin < 12
 end
 if nargin < 13
     dataOutside = 1;
+    dataOutside = 0;
 end
 if (dataOutside == 1)
     root = '../../visFiles/';

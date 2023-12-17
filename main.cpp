@@ -20,10 +20,12 @@ void Solve_all_serialNumbers();
 void Print_slscript(unsigned int numParallelRuns);
 
 #include "MinCrossingSolver1DPeriodicDFragment.h"
+#include "InhomogeousFieldSimple.h"
 
 int main(int argc, char *argv[])
 {
-#if 1
+#if 0
+//	Test_InhomogeneousSimple();
 //	Test_SolveYCrossing();
 	MAIN_SolvePeriodicFragmentSize();
 	getchar();

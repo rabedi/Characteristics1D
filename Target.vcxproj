@@ -23,6 +23,7 @@
     <ClCompile Include="src\globalTypesClasses.cpp" />
     <ClCompile Include="src\InhomogeneousElasticFracture.cpp" />
     <ClCompile Include="src\InhomogeousField.cpp" />
+    <ClCompile Include="src\InhomogeousFieldSimple.cpp" />
     <ClCompile Include="src\LAFuncs.cc" />
     <ClCompile Include="src\LAfuncsFinalStep.cpp" />
     <ClCompile Include="src\LAfuncsFixed.cpp" />
@@ -57,6 +58,7 @@
     <ClInclude Include="include\Header.h" />
     <ClInclude Include="include\InhomogeneousElasticFracture.h" />
     <ClInclude Include="include\InhomogeousField.h" />
+    <ClInclude Include="include\InhomogeousFieldSimple.h" />
     <ClInclude Include="include\LAFuncs.h" />
     <ClInclude Include="include\LAfuncsFinalStep.h" />
     <ClInclude Include="include\LAfuncsFixed.h" />

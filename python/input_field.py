@@ -491,8 +491,8 @@ class InpFsOuput:
         fileNameBase = "fnb_shape_" + str(shape) + "_llc_" + str(llc) + "_dd2_" + str(dd2)
         self.Print(serNos, shapes, llcs, dd2s, fileNameBase, includeStatsOfSN, includeStatsOfMappedFld, printCOVFunction, step4Cov, printFieldVals, stepFieldVals, isPeriodic, valsAtVert)
 
-
-    def Print_AllSerials_AllPara(self, serNoMax = 1300, shapes = [1, 1.5, 2, 3, 4], llcs = [-2], dd2s = [0.5], includeStatsOfSN = True, includeStatsOfMappedFld = True, printCOVFunction = True, step4Cov = 1, printFieldVals = True, stepFieldVals = 1, isPeriodic = True, valsAtVert = True):
+    # llcs done: -1, -1.5, -2, -2.5, -3, -3.5, -4
+    def Print_AllSerials_AllPara(self, serNoMax = 5000, shapes = [1, 1.5, 2, 3, 4], llcs = [-0.5], dd2s = [0.5, 0.9, 0.1], includeStatsOfSN = True, includeStatsOfMappedFld = True, printCOVFunction = True, step4Cov = 1, printFieldVals = True, stepFieldVals = 1, isPeriodic = True, valsAtVert = True):
 
         for shape in shapes:
             print(f"shape = {shape}\n")
