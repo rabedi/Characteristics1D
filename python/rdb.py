@@ -21,6 +21,7 @@ import characteristics_data as charDat
 from input_field import StatOfVec as StatOfVec
 from input_field import InpFsOuput as InpFsOuput
 
+from fragmentation import Frag1D1la
 # Hurst package
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,6 +41,8 @@ from scipy import signal
 
 from rstats import  Test_HD_Cor
 
+from fragmentation import Frag1D1la
+from fragmentation import Frag1Dlap_curves
 
 class plParameters:
     lineStyles = ["solid", "dashed", "dashdot", "dotted", (0, (1, 10)), (0, (1, 1)), \
@@ -479,14 +482,16 @@ class DataBaseSplits:
     # to generate a curve multiple lines are combined through looping over in attribute of splitInstructions
     # if fi = -1, x axis is the inner scalar parameters (e.g. la log of loading rate)
     # if >= 0 it refers to a column index of the data  set
-    def  Plot_Scalar_Per_Row_Fi_vs_Fj(self, splitInstructions = PlotOMISplit_Instruction(), allPlots = PlotOMISplit_AllPlots(), fjs = 0, fis = -1, plotFill = 0, propName4MultiField = "c"):
+    def  Plot_Scalar_Per_Row_Fi_vs_Fj(self, splitInstructions = PlotOMISplit_Instruction(), allPlots = PlotOMISplit_AllPlots(), fjs = 0, fis = -1, plotFill = 0, addExact = False, propName4MultiField = "c"):
         if (type(fjs) == int):
             fjs = [fjs]
         if (type(fis) == int):
             fis = [fis]
         if (fjs[0] == -1):
             for fj in self.col_out_indices:
-                self.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, [fj], fis, plotFill, propName4MultiField)
+                #if (fj != 140): log normalized fragment size
+                #    continue # 
+                self.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, [fj], fis, plotFill, addExact, propName4MultiField)
  
         # number of fill plot related
         num_fpr = 1
@@ -499,6 +504,13 @@ class DataBaseSplits:
         fj = fjs[0]
         fjName = "fld" + str(fj) + self.db_colnames[fj]
         fiName = splitInstructions.in_col_nameBase
+        isLog_phid = False
+        isLog_spAve = False
+        if (addExact): # (fiName == 'lap'):
+            isLog_phid = (self.db_colnames[fj] == 'log_phi_d_tFin')
+            isLog_spAve = (self.db_colnames[fj] == 'log_lbar_F')
+        use_exactSln = (isLog_phid or isLog_spAve)
+
         sz_fj = len(fjs)
         moreThan1F = (sz_fj > 1)
         if (moreThan1F and (len(fis) == 1)):
@@ -534,12 +546,26 @@ class DataBaseSplits:
             # making the plot
             fig, ax = plt.subplots()
             ax.set_adjustable('box')
-            # ax.set_box_aspect(None)
-            #ax.aspect('auto')
+
             xm = 1e10
             xM = -1e10
             ym = 1e10
             yM = -1e10
+
+            if (use_exactSln):
+                f1dc = Frag1Dlap_curves()
+                hasLines, lns, txmn, txmx, tymn, tymx = f1dc.ReturnLines(isLog_phid, isLog_spAve)
+                if (hasLines):
+                    xm = txmn
+                    xM = txmx
+                    ym = tymn
+                    yM = tymx
+                    for ln in lns:
+                        ax.add_line(ln)
+
+
+            # ax.set_box_aspect(None)
+            #ax.aspect('auto')
             pad = 0.05
             cntr_curves = 0
             yaxis_log = False
@@ -712,10 +738,17 @@ def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
 
 def main_function():
 
+    # fd = Frag1D1la()
+    # fd.ap = 1e-3
+    # fd.ComputeVals()
+
+    #fdc = Frag1Dlap_curves()
+    #fdc.Compute(doPlots = 1)
+    #return
     # from scipy.interpolate import interp1d
     # from scipy.optimize import root_scalar
 
-    if True:
+    if False:
         ifo = InpFsOuput()
         # ifo.Print()
         # For Ali 
@@ -737,7 +770,6 @@ def main_function():
         #with open("test2.txt", "w") as fl:
         #    print(a2.vals,file=fl)
         return
-
 
     if False:
         cl = -2.5
@@ -795,18 +827,18 @@ def main_function():
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
     # option 10 # la axis, delc in plot lines
-    option = 10 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
     plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
-    plotFill = False
+    plotFill = True #sFalse
     if (plotFill):
         readMainLineMode = 0
 
     inpColDict = {}
     lasym = "la"
-    #lasym = "lap"
+    #lasym = "lap" don't uncomment
     lasymXaxis = lasym
     lasymXaxis = "lap"
     if (rateStudy):
@@ -985,9 +1017,11 @@ def main_function():
     if True:
         fj = -1 # all output fields
         fi = -1 # inner loop
+        addExact = False
         if ((splitInstructions.in_col_nameBase == "la") and (lasymXaxis == "lap")):
             fi = dbs.db.columns.get_loc("inp_s_lap")
-        dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, plotFill)
+            addExact = True
+        dbs.Plot_Scalar_Per_Row_Fi_vs_Fj(splitInstructions, allPlots, fj, fi, plotFill, addExact)
 
     # plotting mean(min(strenth)) (or mean(strength), cov(strength)), etc. where the second operator is over space
     # versus all fields

@@ -286,7 +286,9 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
         db.iloc[ii, i_dd2_ind] = dd2_ind
         db.iloc[ii, i_dd2_v] = dd2_v
 
-        llc_ind = int(-2 * llc_v) - 1
+        # llc_ind = int(-2 * llc_v) - 1
+        # 2023/12/17: I am going to add llc_v = 0 to represent homogeneous field - llc_v = 0 (fake value for homogeneous field) turns to 0 now
+        llc_ind = int(-2 * llc_v)
         db.iloc[ii, i_llc_ind] = llc_ind
         ii += 1
     nRows = db.shape[0]

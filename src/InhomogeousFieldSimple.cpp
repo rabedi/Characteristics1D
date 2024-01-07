@@ -225,10 +225,10 @@ double getStatvalueSimple(const vector<double>& vals, string ssoFS, int& index)
 void Test_InhomogeneousSimple()
 {
 	int serialNoIn = 0; // use 1000 - 1240
-	double llcIn = -3.5; // -4.5 (white noise), -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5
+	double llcIn = -4.5; // -4.5 (white noise), -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5
 	double deltaIn = 0.9;
 	int shapeIn = 2; // 1, 1.5, 2, 3, 4
-	double resolutionFactorIn = 64; // Use 1 in general
+	double resolutionFactorIn = 1; // 64; // Use 1 in general
 	string ssofFSIn = "min"; // mean_arithmetic, mean_harmonic, valStart
 	int baseResolution_pIn = 14;
 

@@ -236,7 +236,7 @@ class InpF:
         if (valsAtVert):
             nVals += 1
         self.vals = np.ones(nVals)
-        if (dd2 > 1e-4):
+        if ((dd2 > 1e-4) and (abs(llc) > 1e-3)):
             str_llc = "z"
             if (llc > -4.1):
                 str_llc = "{:.1f}".format(llc)
