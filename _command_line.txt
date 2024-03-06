@@ -169,3 +169,5 @@ Windows a single run:
 
 -i -c config/OneInterface/SampleConfig_TSR_Ortiz.txt
 -i -c config/OneInterface/SampleConfig_Periodic_Segment.txt
+
+-sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt -cp config/Domain/PPS3Config_Coh.txt

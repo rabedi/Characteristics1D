@@ -20,7 +20,8 @@ version_configMakerGenName
 #elastic
 #config/ConfigMakerVersion/configMaker_axt_resolution_x_Elastic.inst
 #fracture
-config/ConfigMakerVersion/configMaker_axt_resolution_x_Fracture_New.inst
+#config/ConfigMakerVersion/configMaker_axt_resolution_x_Fracture_New.inst
+config/ConfigMakerVersion/configMaker_axt_resolution_x_Fracture_New_Giang.inst
 
 # if true, the instruction file will be regenerated regardless of if it already exists or not
 version_configMaker_forceRewrite

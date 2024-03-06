@@ -264,8 +264,22 @@ class DataBaseSplits:
             summary_std = folderDest  + "/allData/stat_std.csv"
             try:
                 self.db_std = pd.read_csv(summary_std)
-                self.db_max = self.db + self.db_std
-                self.db_min = self.db - self.db_std
+                self.db_std = self.db_std.apply(pd.to_numeric, errors='coerce')
+                self.db_max = self.db.copy()
+                self.db_min = self.db.copy()
+                columns_with_out = self.db.filter(like='out_s').columns
+                if not columns_with_out.empty:
+                    stc = self.db.columns.get_loc(columns_with_out[0])
+                    num_rows = self.db.shape[0]
+                    num_cols = self.db.shape[1]
+
+                    for i in range(num_rows):
+                        for j in range(stc, num_cols):
+                            stdv = self.db_std.iloc[i, j]
+                            if((not math.isnan(stdv)) and (stdv > 0)):
+                                self.db_max.iloc[i, j] += stdv
+                                self.db_min.iloc[i, j] -= stdv
+
             except IOError:
                 self.db_has_db_mM = 0
 
@@ -790,7 +804,7 @@ def main_function():
     mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
     mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-    mainOption = mo_frac_rate_f
+    mainOption = mo_frac_rate_f # mo_frac_rate_f_wShape # mo_frac_rate_f
     rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 
@@ -805,6 +819,7 @@ def main_function():
         folderSource = "../../data/axt_orig"
     if (mainOption == mo_frac_rate_f_wShape):    
         folderSource = "../../data/axt_shape"
+        folderSource = "../../data/axt_shape_PF"
     if (mainOption == mo_frac_res_x):    
         folderSource = "../../data/resolution_x_fracture_scalars"
     if (mainOption == mo_frac_res_x_w_delc_fact):    
@@ -815,7 +830,7 @@ def main_function():
     cd = Characteristics_data()
 
     # scatter plots
-    if (False):
+    if (True):
         cd.Main_Plot_Scatter(folderSource, folderDest)
         return
  
@@ -827,12 +842,12 @@ def main_function():
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
     # option 10 # la axis, delc in plot lines
-    option = 10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 10 #use 10 and 0; 3 #10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
     plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
-    plotFill = True #sFalse
+    plotFill = False
     if (plotFill):
         readMainLineMode = 0
 
@@ -840,7 +855,7 @@ def main_function():
     lasym = "la"
     #lasym = "lap" don't uncomment
     lasymXaxis = lasym
-    lasymXaxis = "lap"
+    # lasymXaxis = "lap"
     if (rateStudy):
         # sortingFields = ["llc", "dd2", "ldelc", lasym]
         if (not plotFill):

@@ -50,8 +50,10 @@ elseif (strcmp(CZM_model_name, 'Bilinear') == 1)
     a2 = 0.03687;
     a3 = 20.8343;
 elseif (strcmp(CZM_model_name, 'Exponential') == 1)
+    p = 2.5;    
     a2 = power(2.0, 5.0/3.0) - 3.0;
 elseif (strcmp(CZM_model_name, 'Hyperbolic') == 1)
+    p = 4;
     a2 = power(2.0, 7.0/3.0) - 4.5;
 elseif (strcmp(CZM_model_name, 'Concrete') == 1)
     a2 = 1.3868;

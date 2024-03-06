@@ -26,7 +26,7 @@ class frgT:
     names[Glenn] = 'Glenn'
     lstyle[Glenn] = "dashdot"
     Grady = 3
-    names[Grady] = 'Gray'
+    names[Grady] = 'Grady'
     lstyle[Grady] = "dotted"
 
 # one loading rate results

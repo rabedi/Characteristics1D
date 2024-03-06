@@ -27,7 +27,7 @@ mo_frac_rate_f_wShape = 2
 mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
 mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-mainOption = mo_frac_rate_f
+mainOption =mo_frac_rate_f # mo_frac_rate_f_wShape #mo_frac_rate_f
 rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 
@@ -213,8 +213,11 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
     i_dd2_v = db.columns.get_loc(c_dd2_v)
     i_llc_ind = db.columns.get_loc(c_llc_ind)
     i_llc_v = db.columns.get_loc(c_llc_v)
+    column_name = 'out_s_time_sigma0'
+    i_col_ts0 = -1
+    if column_name in db.columns:
+        i_col_ts0 = db.columns.get_loc(column_name)    
 
- 
     i_col_phidtf = db.columns.get_loc("out_s_phi_d_tFin")
     log10Inv = 1.0 / np.log(10)
 
@@ -232,6 +235,12 @@ def read_updata_csv_frac_rate(filename = "../StochasticPostprocessor/data/2023_0
  
         phidtf = row[i_col_phidtf]
         if (phidtf < 0):
+            db = db.drop(i, axis=0)
+            continue
+        timeSigma0 = 1.0
+        if (i_col_ts0 > 0):
+            timeSigma0 = row[i_col_ts0]
+        if((math.isnan(timeSigma0)) or (timeSigma0 <= 0)):
             db = db.drop(i, axis=0)
             continue
         logphid = np.log(phidtf) * log10Inv
@@ -553,12 +562,26 @@ class Characteristics_data:
     def Main_Plot_Scatter(self, folderSource = "../data/2023_03_22_source", folderDest = "../data/Characteristics_data"):
         self.folderSource = folderSource
         self.folderDest = folderDest
-        self.GenerateOneSortedFile()
-        self.FormMultiIndexMatrix_AfterSortedMatrix()
-        self.WriteTextData()
-        self.print_spatial_field_csv = True # change
-        self.add_spatial_field_stat = True
-        self.Add_SpatialFieldData()
+        self.folderSource = folderSource 
+        self.folderDest = folderDest
+        fn = self.folderDest + "/allData/mainMembers.txt"
+        if not os.path.isfile(fn):
+            self.GenerateOneSortedFile()
+            self.FormMultiIndexMatrix_AfterSortedMatrix()
+            self.WriteTextData()
+            self.print_spatial_field_csv = True # change
+            self.add_spatial_field_stat = True
+            self.Add_SpatialFieldData()
+        else:
+            fdestAll = self.folderDest + "/allData"
+            self.GenerateOneSortedFile()
+            self.FormMultiIndexMatrix_AfterSortedMatrix()
+            allFile_wxs = fdestAll + "/all_wxs.csv"
+            if (os.path.isfile(allFile_wxs)):
+                self.pd_data_w_iniField = pd.read_csv(allFile_wxs)
+            else:
+                print(f"Cannot open file {allFile_wxs}")
+
         self.PlotScatter()
 
     def WriteTextData(self):
@@ -880,15 +903,20 @@ class Characteristics_data:
             pickle.dump(self.pdStat_vals, f)            
 
     def PlotScatter(self):
-        posMean = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_mean")
-        posMin = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_mn")
-        poscov = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_cov")
-        posstd = self.pd_data_w_iniField.columns.get_loc("inp_sfx_sim_std")
-        clmns = [posMin, posMean, poscov, posstd]
-        nms = ["min", "mean", "cov", "std"]
+        posMean = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_mean")
+        posMin = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_mn")
+        poscov = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_cov")
+        posstd = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_std")
+        posD = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_hfD")
+        pos_xCorNeg = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_ac_xCorNeg")
+        pos_N = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_seg_num")
+        pos_seg_std = self.pd_data_w_iniField.columns.get_loc("inp_sx_sim_seg_std")
+        clmns = [posMin, posMean, poscov, posstd, posD, pos_xCorNeg, pos_N, pos_seg_std]
+        nms = ["min", "mean", "cov", "std", "D", "xCor0", "N", "seg_len_std"]
         # col_out_indices = [i for i, name in enumerate(self.pd_data_w_iniField.columns) if (('out_' in name) or ("inp_sfx_" in name))]
         col_out_indices = [i for i, name in enumerate(self.pd_data_w_iniField.columns) if ('out_' in name)]
-        sz = min(len(nms), 4)
+        # sz = min(len(nms), 4)
+        sz = len(nms)
         for ci in range(sz):
             self.PlotScatterAux(ci, clmns[ci], nms[ci], col_out_indices)
 

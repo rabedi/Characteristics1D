@@ -45,7 +45,9 @@ def Test_HD_Cor():
     dl = 1 / (sz - 1)
     xs = np.arange(0, 1 + dl, dl)
     seg_num, seg_ave, seg_mn, seg_mx, seg_sdiv = pwl_root_crossing_segmentStats(xs, vals)
-    print(f"seg_num = {seg_num:.5f}\n")
+    crossing_num = seg_num - 1
+    # print(f"seg_num = {seg_num:.5f}\n") | before 3/2/2024
+    print(f"crossing_num = {seg_num:.5f}\n")
     print(f"seg_ave = {seg_ave:.5f}\n")
     print(f"seg_mn = {seg_mn:.5f}\n")
     print(f"seg_mx = {seg_mx:.5f}\n")

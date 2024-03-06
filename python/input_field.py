@@ -98,6 +98,8 @@ class StatOfVec:
                         self.HVal, self.Hc, data = compute_Hc(valsIn, kind='change', simplified=True)
                     if (StatOfVec.sv_calculate_crossing != 0):
                         self.seg_num, self.seg_meanV, self.seg_mnV, self.seg_mxV, self.seg_std = pwl_root_crossing_segmentStats(xs, valsN)
+                        # added 03/02/2024, as "seg_num" really refers to the number of crossings for which theories exist
+                        self.seg_num = self.seg_num - 1
                     if (StatOfVec.sv_calculate_cor_fun != 0):
                         autocorr_ret = signal.fftconvolve(valsN, valsN[::-1], mode='full')
                         self.ac_ys = autocorr_ret[sz - 1:2 * sz]
