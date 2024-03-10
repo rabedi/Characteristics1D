@@ -60,6 +60,40 @@ class StatOfVec:
         self.ac_l2intRed = np.nan
         self.ac_xCorNeg = np.nan
 
+    def SetValuesFromVectorInShapeFiles(self, vecOfStats, total_count = 16384):
+        self.total_count = total_count
+        # map_mean	map_mn	map_mx	map_cov	map_std	map_span	
+        # map_hfD	map_HVal	map_Hc	
+        # map_ac_xCorNeg	map_ac_l1intAll	map_ac_l2intAll	map_ac_l1intRed	map_ac_l2intRed
+        # map_seg_num	map_seg_meanV	map_seg_mnV	map_seg_mxV	map_seg_std
+
+        self.meanV = vecOfStats[0]
+        self.mnV = vecOfStats[1]
+        self.mxV = vecOfStats[2]
+        self.cov =  vecOfStats[3]
+        self.std =  vecOfStats[4]
+        self.span = vecOfStats[5]
+        # H & D
+        self.hfD = vecOfStats[6]
+        self.HVal = vecOfStats[7]
+        self.Hc = vecOfStats[8]
+
+        self.ac_xCorNeg = vecOfStats[9]
+        self.ac_l1intAll = vecOfStats[10]
+        self.ac_l2intAll = vecOfStats[11]
+        self.ac_l1intRed = vecOfStats[12]
+        self.ac_l2intRed = vecOfStats[13]
+
+        # segment (crossing from 0) stats
+        self.seg_num = vecOfStats[14]
+        self.seg_meanV = vecOfStats[15]
+        self.seg_mnV = vecOfStats[16]
+        self.seg_mxV = vecOfStats[17]
+        self.seg_std = vecOfStats[18]
+
+        self.num_nan = 0
+        self.count = self.total_count
+
     def Compute_Vec_Stat(self, valsIn, compute_fieldStats):
         self.num_nan = np.count_nonzero(np.isnan(valsIn))
         self.total_count = len(valsIn)
@@ -98,8 +132,6 @@ class StatOfVec:
                         self.HVal, self.Hc, data = compute_Hc(valsIn, kind='change', simplified=True)
                     if (StatOfVec.sv_calculate_crossing != 0):
                         self.seg_num, self.seg_meanV, self.seg_mnV, self.seg_mxV, self.seg_std = pwl_root_crossing_segmentStats(xs, valsN)
-                        # added 03/02/2024, as "seg_num" really refers to the number of crossings for which theories exist
-                        self.seg_num = self.seg_num - 1
                     if (StatOfVec.sv_calculate_cor_fun != 0):
                         autocorr_ret = signal.fftconvolve(valsN, valsN[::-1], mode='full')
                         self.ac_ys = autocorr_ret[sz - 1:2 * sz]
@@ -227,10 +259,15 @@ class InpF:
     # dd2 is the "span" parameter of pointwise PDF
     # sso_valStart = 0, sso_valEnd = 1, sso_min = 3, sso_max = 5, sso_mean_arithmetic = 6, sso_mean_harmonic = 10
     def Initialize_InpF(self, valsAtVert = True, meshp2 = 14, serNo = 0, llc = -3, dd2 = 0.7, isPeriodic = True, reduction_sso = 3, meshp2_4Simulation = -1, meshp2_4Output = -1, shape = 2, useOriginalSN_Mesh4Raw = 0):
+        tryReadStatFile = True
+        serstr = str(int(serNo))
         self.valid = True
         nSeg = 2**meshp2
         if (meshp2_4Simulation == -1):
             meshp2_4Simulation = meshp2
+        else:
+            if (meshp2_4Simulation != meshp2):
+                tryReadStatFile = False
         if (meshp2_4Output == -1):
             meshp2_4Output = meshp2
         nVert = nSeg + 1
@@ -238,12 +275,14 @@ class InpF:
         if (valsAtVert):
             nVals += 1
         self.vals = np.ones(nVals)
+        str_llc_num = '-4.5'
         if ((dd2 > 1e-4) and (abs(llc) > 1e-3)):
             str_llc = "z"
             if (llc > -4.1):
                 str_llc = "{:.1f}".format(llc)
+                str_llc_num = str_llc
             if (meshp2 == 14):
-                fn = InpF.rootIFFOlder + "/cl" + str_llc + "_np16385/initial_values_" + str(int(serNo)) + ".txt"
+                fn = InpF.rootIFFOlder + "/cl" + str_llc + "_np16385/initial_values_" + serstr + ".txt"
 
             path = Path(fn)
             if not path.exists():
@@ -279,17 +318,42 @@ class InpF:
                 # this is the actual input mesh (with potentially reduced resolution)
                 # computing stats
                 self.vals4Simulation = valReduction(self.vals, meshp2, valsAtVert, meshp2_4Simulation, reduction_sso, isPeriodic)
-                self.stats4SimulationFld = StatOfVec()
-                self.stats4SimulationFld.Compute_Vec_Stat(self.vals4Simulation, True)
-                if (useOriginalSN_Mesh4Raw == 1):
-                    self.stats4RawInputFld = StatOfVec()
-                    self.stats4RawInputFld.Compute_Vec_Stat(self.valsBK, True)
-                else:
-                    if ((meshp2 == meshp2_4Simulation) or (useOriginalSN_Mesh4Raw == 2)):
-                        self.stats4RawInputFld = self.stats4SimulationFld
+
+                statsComputed = False
+                if (tryReadStatFile):
+                    strdd = "{:.1f}".format(dd2)
+                    if shape.is_integer():
+                        shapestr = str(int(shape))
                     else:
+                        shapestr = "{:.1f}".format(shape)
+                    fnStat = '../../shapeData/dd' + strdd + '/shape' + shapestr + '/' + serstr + '.txt'
+                    path2 = Path(fnStat)
+                    if path2.exists():
+                        statVals = np.loadtxt(fnStat, ndmin=2)
+                        my_array = list(statVals[:,0])
+                        positions = np.where(my_array == llc)
+                        if (len(positions) > 0):
+                            pos = positions[0][0]
+                            stat_mapped_vals = statVals[pos,1:20]
+                            stat_sn_vals = statVals[pos,20:39]
+                            self.stats4SimulationFld = StatOfVec()
+                            self.stats4SimulationFld.SetValuesFromVectorInShapeFiles(stat_mapped_vals, nVals)
+                            self.stats4RawInputFld = StatOfVec()
+                            self.stats4RawInputFld.SetValuesFromVectorInShapeFiles(stat_sn_vals, nVals)
+                            statsComputed = True
+
+                if (not statsComputed): # actually calculating the stat
+                    self.stats4SimulationFld = StatOfVec()
+                    self.stats4SimulationFld.Compute_Vec_Stat(self.vals4Simulation, True)
+                    if (useOriginalSN_Mesh4Raw == 1):
                         self.stats4RawInputFld = StatOfVec()
-                        self.stats4RawInputFld.Compute_Vec_Stat(self.vals, True)
+                        self.stats4RawInputFld.Compute_Vec_Stat(self.valsBK, True)
+                    else:
+                        if ((meshp2 == meshp2_4Simulation) or (useOriginalSN_Mesh4Raw == 2)):
+                            self.stats4RawInputFld = self.stats4SimulationFld
+                        else:
+                            self.stats4RawInputFld = StatOfVec()
+                            self.stats4RawInputFld.Compute_Vec_Stat(self.vals, True)
             else:
                 self.stats4SimulationFld = StatOfVec()
                 self.stats4SimulationFld.Compute_Vec_Stat(self.vals, True)
@@ -494,12 +558,13 @@ class InpFsOuput:
         self.Print(serNos, shapes, llcs, dd2s, fileNameBase, includeStatsOfSN, includeStatsOfMappedFld, printCOVFunction, step4Cov, printFieldVals, stepFieldVals, isPeriodic, valsAtVert)
 
     # llcs done: -1, -1.5, -2, -2.5, -3, -3.5, -4
-    def Print_AllSerials_AllPara(self, serNoMax = 5000, shapes = [1, 1.5, 2, 3, 4], llcs = [-0.5], dd2s = [0.5, 0.9, 0.1], includeStatsOfSN = True, includeStatsOfMappedFld = True, printCOVFunction = True, step4Cov = 1, printFieldVals = True, stepFieldVals = 1, isPeriodic = True, valsAtVert = True):
-
+    def Print_AllSerials_AllPara(self, serNoMax = 5000, shapes = [1, 1.5, 2, 3, 4], llcs = [-4.5], dd2s = [0.5, 0.9, 0.1], includeStatsOfSN = True, includeStatsOfMappedFld = True, printCOVFunction = True, step4Cov = 1, printFieldVals = True, stepFieldVals = 1, isPeriodic = True, valsAtVert = True):
         for shape in shapes:
             print(f"shape = {shape}\n")
             for llc in llcs:
                 print(f"llc = {llc}\n")
                 for dd2 in dd2s:
+                    print(f"shape = {shape}\n")
+                    print(f"llc = {llc}\n")
                     print(f"dd2 = {dd2}\n")
                     self.Print_AllSerials_OnePara(serNoMax, shape, llc, dd2, includeStatsOfSN, includeStatsOfMappedFld, printCOVFunction, step4Cov, printFieldVals, stepFieldVals, isPeriodic, valsAtVert)

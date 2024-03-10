@@ -44,6 +44,8 @@ from rstats import  Test_HD_Cor
 from fragmentation import Frag1D1la
 from fragmentation import Frag1Dlap_curves
 
+printPickle = True
+
 class plParameters:
     lineStyles = ["solid", "dashed", "dashdot", "dotted", (0, (1, 10)), (0, (1, 1)), \
                  (5, (10, 3)), (0, (5, 10)), (0, (5, 1)), (0, (3, 10, 1, 10)), \
@@ -724,8 +726,9 @@ class DataBaseSplits:
             plt.savefig(pltName, format='png')
             # pltName = plotFullNameWOExt + ".pdf"
             # plt.savefig(pltName, format='pdf')
-#            pltName = plotFullNameWOExt + ".fig.pickle"
-#            pickle.dump(fig, open(pltName, 'wb')) 
+            if (printPickle):
+                pltName = plotFullNameWOExt + ".pkl"#".fig.pickle"
+                pickle.dump(fig, open(pltName, 'wb')) 
             fig.clf()
             plt.close()
 
@@ -734,6 +737,8 @@ class DataBaseSplits:
             cpFWOExt = cpFolder + "/" + fnpart
             shutil.copy(plotFullNameWOExt + ".png", cpFWOExt + ".png")
             shutil.copy(plotFullNameWOExt + ".svg", cpFWOExt + ".svg")
+            if (printPickle):
+                shutil.copy(plotFullNameWOExt + ".pkl", cpFWOExt + ".pkl")
 
 def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
     if (readMainLineMode == -1): # all raw data
@@ -751,6 +756,13 @@ def read_csv(root = "data/Characteristics_data", readMainLineMode = 0):
     return pd_data
 
 def main_function():
+
+    if (False):
+        with open('p.pkl', 'rb') as file:
+            loaded_plot = pickle.load(file)
+            # Display the loaded plot
+            loaded_plot.show()
+            return
 
     # fd = Frag1D1la()
     # fd.ap = 1e-3
@@ -804,7 +816,7 @@ def main_function():
     mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
     mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-    mainOption = mo_frac_rate_f # mo_frac_rate_f_wShape # mo_frac_rate_f
+    mainOption = mo_frac_rate_f_wShape # mo_frac_rate_f_wShape # mo_frac_rate_f
     rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 
@@ -819,7 +831,8 @@ def main_function():
         folderSource = "../../data/axt_orig"
     if (mainOption == mo_frac_rate_f_wShape):    
         folderSource = "../../data/axt_shape"
-        folderSource = "../../data/axt_shape_PF"
+        folderSource = "../../data/axt_shapeTest"
+        # folderSource = "../../data/axt_shape_PF"
     if (mainOption == mo_frac_res_x):    
         folderSource = "../../data/resolution_x_fracture_scalars"
     if (mainOption == mo_frac_res_x_w_delc_fact):    
@@ -830,7 +843,7 @@ def main_function():
     cd = Characteristics_data()
 
     # scatter plots
-    if (True):
+    if (False):
         cd.Main_Plot_Scatter(folderSource, folderDest)
         return
  
@@ -842,7 +855,8 @@ def main_function():
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
     # option 10 # la axis, delc in plot lines
-    option = 10 #use 10 and 0; 3 #10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 3 #use 0 (la x, lc leg)  10 (la x, delc leg) and 1 (lc x, dd2 leg); 3 #10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    # for shape data potion = 3 -> shape in legend
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
