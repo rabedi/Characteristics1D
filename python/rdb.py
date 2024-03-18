@@ -777,7 +777,6 @@ def main_function():
     if False:
         ifo = InpFsOuput()
         # ifo.Print()
-        # For Ali 
         ifo.Print_AllSerials_AllPara()
         return
 
@@ -860,8 +859,8 @@ def main_function():
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
-    plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
-    plotFill = False
+    plotFillMode = 1 # 0 -> min, max, 1 -> mean -/+ std
+    plotFill = True
     if (plotFill):
         readMainLineMode = 0
 

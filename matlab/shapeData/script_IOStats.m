@@ -1,4 +1,4 @@
-dd2s = [0.9, 0.5, 0.1];
+dd2s = [0.7, 0.3, 0.9, 0.5, 0.1];
 shapes = [1, 1.5, 2, 3, 4];
 ndd2 = length(dd2s);
 nshape = length(shapes);

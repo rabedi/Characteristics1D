@@ -9,10 +9,10 @@ if (nargin < 3)
     dd2 = 0.5;
 end
 llcs = num2str(llc);
-add1 = (llc < -4.0);
+add1 = 0; % no longer needed, all are correct now(llc < -4.0);
 shapes = num2str(shape);
 dd2s = num2str(dd2);
-fn = ['D:\shapeData\llc_',llcs, '/fnb_shape_', shapes, '_llc_', llcs, '_dd2_', dd2s, '_stat.csv'];
+fn = ['D:/shapeData/llc_',llcs, '/fnb_shape_', shapes, '_llc_', llcs, '_dd2_', dd2s, '_stat.csv'];
 fid = fopen(fn, 'r');
 if (fid < 0)
     fprintf(1, 'Cannot open file %s\n', fn);
