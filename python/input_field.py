@@ -331,9 +331,15 @@ class InpF:
                     if path2.exists():
                         statVals = np.loadtxt(fnStat, ndmin=2)
                         my_array = list(statVals[:,0])
-                        positions = np.where(my_array == llc)
-                        if (len(positions) > 0):
-                            pos = positions[0][0]
+                        found_llc = False
+                        for pos, item in enumerate(my_array):
+                            if (np.abs(item - llc) < 1e-2):
+                                found_llc = True
+                                break
+                        if (found_llc == True):
+#                        positions = np.where(my_array == llc)
+#                        if (len(positions) > 0):
+#                            pos = positions[0][0]
                             stat_mapped_vals = statVals[pos,1:20]
                             stat_sn_vals = statVals[pos,20:39]
                             self.stats4SimulationFld = StatOfVec()

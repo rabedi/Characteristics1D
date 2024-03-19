@@ -523,10 +523,12 @@ class DataBaseSplits:
         isLog_phid = False
         isLog_spAve = False
         if (addExact): # (fiName == 'lap'):
-            isLog_phid = (self.db_colnames[fj] == 'log_phi_d_tFin')
-            isLog_spAve = (self.db_colnames[fj] == 'log_lbar_F')
-        use_exactSln = (isLog_phid or isLog_spAve)
-
+            coln = self.db_colnames[fj]
+            isLog_phid = (coln == 'log_phi_d_tFin')
+            isLog_spAve = ((coln == 'log_lbar_F') or (coln == 'log_lbar_tF') or (coln == 'log_lbar_DelU_tF'))
+            if (isLog_spAve == False):
+                isLog_spAve = ((coln == 'log_lbar_M') or (coln == 'log_lbar_DelU_M'))
+            use_exactSln = (isLog_phid or isLog_spAve)
         sz_fj = len(fjs)
         moreThan1F = (sz_fj > 1)
         if (moreThan1F and (len(fis) == 1)):
@@ -869,9 +871,10 @@ def main_function():
     #lasym = "lap" don't uncomment
     lasymXaxis = lasym
     # lasymXaxis = "lap"
+    distinguishFillNoFill = False
     if (rateStudy):
         # sortingFields = ["llc", "dd2", "ldelc", lasym]
-        if (not plotFill):
+        if (not distinguishFillNoFill or (not plotFill)):
             if (mainOption == mo_frac_rate_f_wShape):
                 inpColDict["shape"] = "none"
             if (option == 0):
@@ -973,7 +976,7 @@ def main_function():
 #    splitInstructions.out_col_nameBases.append("ssoFS")
     if (rateStudy):
         # sortingFields = ["llc", "dd2", "ldelc", lasym]
-        if (not plotFill):
+        if (not distinguishFillNoFill or (not plotFill)):
             # default option
             if ((mainOption == mo_frac_rate_f_wShape) and (option < 3)):
                 splitInstructions.out_col_nameBases.append("shape")

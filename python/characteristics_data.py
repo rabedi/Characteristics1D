@@ -70,10 +70,17 @@ dist_logs["psi_f"] = 10
 dist_logs["psi_f_norm_psiC"] = 10
 dist_logs["eps_f"] = 10
 dist_logs["eps_f_norm"] = 10
-dist_logs["lbar_M"] = 10
 dist_logs["lbar_F"] = 10
-dist_logs["lbar_M_orig"] = 10
+dist_logs["lbar_tF"] = 10
+dist_logs["lbar_DelU_tF"] = 10
+dist_logs["lbar_M"] = 10
+dist_logs["lbar_DelU_M"] = 10
+
 dist_logs["lbar_F_orig"] = 10
+dist_logs["lbar_tF_orig"] = 10
+dist_logs["lbar_DelU_tF_orig"] = 10
+dist_logs["lbar_M_orig"] = 10
+dist_logs["lbar_DelU_M_orig"] = 10
 
 
 def read_updata_csv(filename = "../StochasticPostprocessor/data/2023_03_20/pps3Out_ub1.csv"):
