@@ -89,8 +89,10 @@ sigma_p = [[0] sigma_p];
 D_vec = [[0] D_vec];
 omegaD_vec = [[1] omegaD_vec];
 Dp_vec = [[0] Dp_vec];
+Dp_vec = (1.0 / factor) * Dp_vec;
 if (length(Dpp_vec) > 0)
     Dpp_vec = [[0] Dpp_vec];
+    Dpp_vec = (1.0 / factor / factor) * Dpp_vec;
 end
 
 if (1)

@@ -522,6 +522,7 @@ class DataBaseSplits:
         fiName = splitInstructions.in_col_nameBase
         isLog_phid = False
         isLog_spAve = False
+        use_exactSln = False
         if (addExact): # (fiName == 'lap'):
             coln = self.db_colnames[fj]
             isLog_phid = (coln == 'log_phi_d_tFin')
@@ -832,8 +833,9 @@ def main_function():
         folderSource = "../../data/axt_orig"
     if (mainOption == mo_frac_rate_f_wShape):    
         folderSource = "../../data/axt_shape"
-        folderSource = "../../data/axt_shapeTest"
+        # folderSource = "../../data/axt_shapeTest"
         # folderSource = "../../data/axt_shape_PF"
+        folderSource = "../../data/axt_shape24"
     if (mainOption == mo_frac_res_x):    
         folderSource = "../../data/resolution_x_fracture_scalars"
     if (mainOption == mo_frac_res_x_w_delc_fact):    
@@ -862,7 +864,7 @@ def main_function():
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
     plotFillMode = 1 # 0 -> min, max, 1 -> mean -/+ std
-    plotFill = True
+    plotFill = False
     if (plotFill):
         readMainLineMode = 0
 

@@ -17,6 +17,9 @@ version_configMakerGenName
 #config/ConfigMakerVersion/configMaker_axt.inst
 #config/ConfigMakerVersion/configMaker_fine_axt_no_random.inst
 config/ConfigMakerVersion/configMaker_fine_axt_gen_Tri.inst
+#config/ConfigMakerVersion/configMaker_fine_axt_gen_Tri_lam2.inst
+#config/ConfigMakerVersion/configMaker_fine_axt_gen_Tri_lam2p5.inst
+#config/ConfigMakerVersion/configMaker_fine_axt_gen_Tri_lam3.inst
 
 # if true, the instruction file will be regenerated regardless of if it already exists or not
 version_configMaker_forceRewrite
@@ -29,6 +32,12 @@ versionOffset
 0
 #use this for no_random
 #10000
+# configMaker_fine_axt_gen_Tri_lam2
+#1620
+# configMaker_fine_axt_gen_Tri_lam2p5
+#1755
+# configMaker_fine_axt_gen_Tri_lam3
+#1890
 
 # loop_version_first_serial_second: see the function void Solve_all_serialNumbers
 lv1s2

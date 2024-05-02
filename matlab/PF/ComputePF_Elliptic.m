@@ -57,26 +57,40 @@ alphaFactor = 3.0 / 8.0; % sigma_f = 2, G = 1
 %alphaFactor = 0.75 -> sigma_f = 1 -> Gc = 0.5
 %alphaFactor < 0.75 -> sigmaF = 0.75 / alphaFactor > 1
 %alphaFactor = 3/8  -> sigmaF = 3/4/(3/8) = 2.0 -> Gc = 1.0
-if (bPrime < 0)
-    if (omegaCZM)
-        bPrime = alphaFactor * 8/3/pi; % for CZM
-    else
-        if (CZM_normalization4AT1_2 == 1) % length normalization = l_coh
-            if (xi == 0) % AT2
-                bPrime = 27.0/256.0;
-            elseif (xi == 1) % AT1
-                bPrime = 3.0/8.0;
-            end
+if (omegaCZM <= 0)
+    if (bPrime < 0)
+        if (omegaCZM > 0)
+            bPrime = alphaFactor * 8/3/pi; % for CZM
         else
-            bPrime = 1; % length normalization = b
+            if (CZM_normalization4AT1_2 == 1) % length normalization = l_coh
+                if (xi == 0) % AT2
+                    bPrime = 27.0/256.0;
+                elseif (xi == 1) % AT1
+                    bPrime = 3.0/8.0;
+                end
+            else
+                bPrime = 1; % length normalization = b
+            end
         end
+    end   
+end
+
+
+a1 = 4.0 / pi / bPrime;
+
+if ((xi == 1) && (omegaCZM == 1))
+    if (bPrime < 0)
+        bPrime = 0.25;
     end
-end   
-
-
+    a1 = 3.0 / 4.0 / bPrime;
+    xi = 1;
+    a2 = 1.0;
+    a3 = 0.0;
+end
 
 a23 = a2 * a3;
-a1 = 4.0 / pi / bPrime;
+
+
 Dmax = 1 - delD;
 
 eps_p_i = 1;
@@ -86,11 +100,12 @@ if (xi == 0) % AT2
 elseif (xi == 1) % AT1
     c_alpha = 8.0/3.0;
     if (CZM_normalization4AT1_2 == 1)
-        eps_p_i = sqrt(3.0/8.0);
+        eps_p_i = sqrt(3.0/8.0/bPrime);
     end
 elseif (xi == 2) % CZM
     c_alpha = pi;
 end
+
 
 fomxi = 4.0 * (1.0- xi); 
 D_vec = 0:Dmax/10000:Dmax;
@@ -100,7 +115,7 @@ for i = 1:sz
     omD = 1.0 - Dsn;
     omega = omD * omD;
     omegaPrime = -2.0 * omD;
-    if (omegaCZM)
+    if (omegaCZM > 0)
         Ap = power(omD, p - 1);
         A = omD * Ap;
         Ap = -p * Ap;
@@ -163,5 +178,4 @@ if (0)
     plot(epsilon_p_vec, sigma_p_vec);
     figure(2);
     plot(epsilon_p_vec, D_vec);
-    a = 12;
 end

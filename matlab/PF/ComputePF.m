@@ -68,8 +68,18 @@ alphaFactor = 3.0 / 8.0; % sigma_f = 2, G = 1
 %alphaFactor = 0.75 -> sigma_f = 1 -> Gc = 0.5
 %alphaFactor < 0.75 -> sigmaF = 0.75 / alphaFactor > 1
 %alphaFactor = 3/8  -> sigmaF = 3/4/(3/8) = 2.0 -> Gc = 1.0
+if (CZM_normalization4AT1_2 == 1)
+    if (omegaCZM <= 0)
+        if (xi == 0) % AT2
+            bPrime = 27.0/256.0;
+        elseif (xi == 1) % AT1
+            bPrime = 3.0/8.0;
+        end
+    end
+end
+
 if (bPrime < 0)
-    if (omegaCZM)
+    if (omegaCZM > 0)
         bPrime = alphaFactor * 8/3/pi; % for CZM
     else
         if (xi == 0) % AT2
@@ -77,26 +87,40 @@ if (bPrime < 0)
         elseif (xi == 1) % AT1
             bPrime = 3.0/8.0;
         end
+        if (~CZM_normalization4AT1_2)
+            bPrime = 1.0;
+        end
     end
 end   
 
 
-if (omegaCZM)
-    if (isHyper)
-        beta = power(1.0/3.0/bPrime^2, 1.0/3.0);
-    else
-        beta = power(1.0/3.0/bPrime, 1.0/3.0);
+% cAlpha / 4 * bPrime
+
+if (omegaCZM > 0)
+    cAlpha = pi;
+    if (omegaCZM > 1)
+        fprintf(1, 'option not implemented\n');
     end
+%    if (isHyper)
+%        beta = power(1.0/3.0/bPrime^2, 1.0/3.0);
+%    else
+%        beta = power(1.0/3.0/bPrime, 1.0/3.0);
+%    end
+%    tbeta3 = 3.0 * beta * beta * beta;
 else
     if (xi == 1) % AT1
-        beta = power(2.0/3.0, 2.0/3.0);
+        cAlpha = 8.0 / 3.0;
+%        beta = power(2.0/3.0, 2.0/3.0);
     elseif (xi == 0) % AT2
-        beta = power(1.0/3.0, 1.0/3.0);
+        cAlpha = 2.0;
+%        beta = power(1.0/3.0, 1.0/3.0);
     end
-    if (CZM_normalization4AT1_2)
-        beta = beta * power(bPrime, 1.0 / 3.0);
-    end
+%    if (CZM_normalization4AT1_2)
+%        beta = beta * power(bPrime, 1.0 / 3.0);
+%    end
+%    tbeta3 = 3.0 * beta * beta * beta;
 end
+factor = 0.25 * cAlpha * bPrime;
 
 if (isHyper)
     delD = 0;
@@ -106,9 +130,8 @@ a23 = a2 * a3;
 a1 = 4.0 / pi / bPrime;
 Dmax = 1 - delD;
 dely2 = dely * dely;
-tbeta3 = 3.0 * beta * beta * beta;
 
-if (omegaCZM)
+if (omegaCZM > 0)
     useAnalyticalSln = 0;
 end
 
@@ -126,20 +149,30 @@ if (isHyper)
         Dpp_vec(cntr) = Ddds;
         yNew = y + 0.5 * dely;
         Dsn = Ds + dely * Dds + 0.5 * dely2 * Ddds; 
+
+%        if (omegaCZM > 0)
+%            Dsn = 0.6;
+%        end
+
         omD = 1.0 - Dsn;
         omegaPrime = omD;
-        if (omegaCZM)
+        if (omegaCZM > 0)
             Ap = power(omD, p - 1);
             A = omD * Ap;
             Ap = -p * Ap;
             B = Dsn * (1.0 + a2 * Dsn + a23 * Dsn * Dsn);
             Bp = 1.0 + 2.0 * a2 * Dsn + 3.0 * a23 * Dsn * Dsn; 
             tmp = (A + a1 * B);
-            omegaPrime = (A * Bp - Ap * B) / tmp / tmp;
+%            omegaPrime = (A * Bp - Ap * B) / tmp / tmp;
+            omegaPrime = -a1 * (A * Bp - Ap * B) / tmp / tmp;
+        else
+            omegaPrime = -2.0 * omD;
         end
         % DddsNew = yNew; % * yNew; % * tbeta3 * omegaPrime;
         % DddsNew = omD; % * yNew; % * tbeta3 * omegaPrime;
-        DddsNew = yNew * yNew * tbeta3 * omegaPrime;
+%        DddsNew = yNew * yNew * tbeta3 * omegaPrime;
+        DddsNew = -yNew * yNew * factor * omegaPrime;
+        
         DdsNew = Dds + ((1 - delta) * Ddds + delta * DddsNew) * dely;
         Ds = Dsn;
         Dds = DdsNew;
@@ -162,19 +195,25 @@ else
         Dsn = Ds; % + dely * Dds + 0.5 * dely2 * Ddds; 
         omD = 1.0 - Dsn;
         omegaPrime = omD;
-        if (omegaCZM)
+        if (omegaCZM > 0)
             Ap = power(omD, p - 1);
             A = omD * Ap;
             Ap = -p * Ap;
             B = Dsn * (1.0 + a2 * Dsn + a23 * Dsn * Dsn);
             Bp = 1.0 + 2.0 * a2 * Dsn + 3.0 * a23 * Dsn * Dsn; 
             tmp = (A + a1 * B);
-            omegaPrime = (A * Bp - Ap * B) / tmp / tmp;
+%            omegaPrime = (A * Bp - Ap * B) / tmp / tmp;
+            omegaPrime = -a1 * (A * Bp - Ap * B) / tmp / tmp;
+        else
+            omegaPrime = -2.0 * omD;
         end
-        DsNew = Ds + omegaPrime * tbeta3 * yNew * yNew * dely;
+%        DsNew = Ds + omegaPrime * tbeta3 * yNew * yNew * dely;
+        DsNew = Ds - yNew * yNew * factor * omegaPrime  * dely;
+
         Ds = DsNew;
         yNew = y + dely;
-        DdsNew = omegaPrime * tbeta3 * yNew * yNew;
+%        DdsNew = omegaPrime * tbeta3 * yNew * yNew;
+        DdsNew = -omegaPrime * factor * yNew * yNew;
         Ddds = (DdsNew - Dds) / dely;
         Dds = DdsNew;
         y = yNew;
@@ -189,7 +228,7 @@ for i = 1:sz
     Dsn = D_vec(i);
     omD = 1.0 - Dsn;
     omega = omD * omD;
-    if (omegaCZM)
+    if (omegaCZM > 0)
         A = power(omD, p);
         B = Dsn * (1.0 + a2 * Dsn + a23 * Dsn * Dsn);
         tmp = (A + a1 * B);
