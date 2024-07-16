@@ -16,15 +16,15 @@ _Solver1D_pfragment_I14__SlnCntr_2_AddedPts0_pts_x_sorted.out	4
 
 fieldsToPlot_colNo_zmin_zmax_1e50_for_zmin->getZlimFromData_sz
 12
-17	1e50	1e50
+17	0.0		10.0
 50	1e50	1e50
 52	1e50	1e50
 55	1e50	1e50
 58	1e50	1e50
-78	1e50	1e50
-81	1e50	1e50
-82	1e50	1e50
-88	1e50	1e50
-89	1e50	1e50
-90	1e50	1e50
-91	1e50	1e50
+78	1		20
+81	1.0		10.0
+82	1.0		10.0
+88	1.0		10.0
+89	0.0		100.0
+90	1.0		10.0
+91	0.0		100.0

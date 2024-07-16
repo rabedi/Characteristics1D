@@ -1,7 +1,10 @@
 clear all
 close('all');
 fclose('all');
-fid = fopen('config_periodic_color_plots.txt', 'r');
+%fid = fopen('config_periodic_color_plots.txt', 'r');
+fid = fopen('config_periodic_color_plots_wLims.txt', 'r');
+buf = fscanf(fid, '%s', 1);
+ncol	= fscanf(fid, '%d', 1);
 buf = fscanf(fid, '%s', 1);
 pth	= fscanf(fid, '%s', 1);
 buf = fscanf(fid, '%s', 1);
@@ -34,7 +37,8 @@ end
 
 % old data
 %ncol = 108;
-ncol = 118;
+%ncol = 118;
+%ncol = 126;
 for fi = 1:nFiles
     fidr = fopen(fn{fi}, 'r');
     for j = 1:ncol

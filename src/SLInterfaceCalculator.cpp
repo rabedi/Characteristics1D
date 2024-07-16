@@ -3595,6 +3595,17 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 	out << "t_dilute_zeroStressCheck\t";
 
 	// added 07/15/2024
+	// zero_sigc_approx_: cohesive unloading stress is treated as zero (approximate model) to come up with an exact solution
+	out << "zero_sigc_approx_bsigmaMax_val" << '\t';
+	out << "zero_sigc_approx_bsigmaMax_time" << '\t';
+	out << "zero_sigc_approx_bsigmaMax_pw_val" << '\t';
+	out << "zero_sigc_approx_bsigmaMax_pw_time" << '\t';
+
+	out << "bsigmaMax_val_exact_2_approx" << '\t';
+	out << "bsigmaMax_time_exact_2_approx" << '\t';
+	out << "bsigmaMax_pw_val_exact_2_approx" << '\t';
+	out << "bsigmaMax_pw_time_exact_2_approx" << '\t';
+
 	out << "log10_failure_Ncylce" << '\t';
 	
 	// ratio of actual input energy to maximum it could have been at t_final
@@ -3824,12 +3835,30 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << K2phi << '\t';
 	out << stageSln->vals[pft_bEneN_PL] << '\t';
 
+	double bsigmaMax_val = std::numeric_limits<double>::quiet_NaN();
+	double bsigmaMax_time = std::numeric_limits<double>::quiet_NaN();
+	double bsigmaMax_pw_val = std::numeric_limits<double>::quiet_NaN();
+	double bsigmaMax_pw_time = std::numeric_limits<double>::quiet_NaN();
+
+	bool sigmaMaxAveSet = false;
 	if (stageSlns[pit_timeSigmaAveMax].b_set != 0)
-		out << stageSlns[pit_timeSigmaAveMax].vals[pft_bsigma] << '\t' << stageSlns[pit_timeSigmaAveMax].vals[pft_time] << '\t';
+	{
+		bsigmaMax_val = stageSlns[pit_timeSigmaAveMax].vals[pft_bsigma];
+		bsigmaMax_time = stageSlns[pit_timeSigmaAveMax].vals[pft_time];
+		out << bsigmaMax_val << '\t' << bsigmaMax_time << '\t';
+		sigmaMaxAveSet = true;
+	}
 	else
 		out << nan << '\t' << nan << '\t';
+
+	bool sigmaMaxPWSet = false;
 	if (stageSlns[pit_timeSigmaPWMax].b_set != 0)
-		out << stageSlns[pit_timeSigmaPWMax].vals[pft_bsigma_maxpw] << '\t' << stageSlns[pit_timeSigmaPWMax].vals[pft_time] << '\t';
+	{
+		bsigmaMax_pw_val = stageSlns[pit_timeSigmaPWMax].vals[pft_bsigma_maxpw];
+		bsigmaMax_pw_time = stageSlns[pit_timeSigmaPWMax].vals[pft_time];
+		out << bsigmaMax_pw_val << '\t' << bsigmaMax_pw_time << '\t';
+		sigmaMaxPWSet = true;
+	}
 	else
 		out << nan << '\t' << nan << '\t';
 
@@ -3864,7 +3893,45 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << suggested_final_time4ZeroSigmaC << '\t';
 	out << t_dilute_zeroStressCheck << '\t';
 
+	// 2024/07/15
+	double time_a = 1 / a, time_l = l; // l / c but c = 1
+	double zero_sigc_approx_bsigmaMax_pw_time = time_a + 0.5 * time_l;
+	double zero_sigc_approx_bsigmaMax_pw_val = 1.0 + 0.5 * time_l / time_a;
+	double zero_sigc_approx_bsigmaMax_time = time_a;
+	double zero_sigc_approx_bsigmaMax_val = 1.0;
+	double delt_4sigmax = 0.25 * (time_l - 2.0 * time_a);
+	if (delt_4sigmax > 0.0)
+	{
+		zero_sigc_approx_bsigmaMax_time += delt_4sigmax;
+		zero_sigc_approx_bsigmaMax_val += 2.0 * delt_4sigmax / time_a / time_l;
+	}
+	out << zero_sigc_approx_bsigmaMax_val << '\t';
+	out << zero_sigc_approx_bsigmaMax_time << '\t';
+	out << zero_sigc_approx_bsigmaMax_pw_val << '\t';
+	out << zero_sigc_approx_bsigmaMax_pw_time << '\t';
 
+	if (sigmaMaxAveSet)
+	{
+		double bsigmaMax_val_exact_2_approx = bsigmaMax_val / zero_sigc_approx_bsigmaMax_val;
+		double bsigmaMax_time_exact_2_approx = bsigmaMax_time / zero_sigc_approx_bsigmaMax_time;
+		out << bsigmaMax_val_exact_2_approx << '\t';
+		out << bsigmaMax_time_exact_2_approx << '\t';
+	}
+	else
+	{
+		out << nan << '\t' << nan << '\t';
+	}
+	if (sigmaMaxPWSet)
+	{
+		double bsigmaMax_pw_val_exact_2_approx = bsigmaMax_pw_val / zero_sigc_approx_bsigmaMax_pw_val;
+		double bsigmaMax_pw_time_exact_2_approx = bsigmaMax_pw_time / zero_sigc_approx_bsigmaMax_pw_time;
+		out << bsigmaMax_pw_val_exact_2_approx << '\t';
+		out << bsigmaMax_pw_time_exact_2_approx << '\t';
+	}
+	else
+	{
+		out << nan << '\t' << nan << '\t';
+	}
 	//log10_failure_Ncylce
 	out << rlog10(stageSln->vals[pft_numCyclesAfterCrackOpening]) << '\t';
 
