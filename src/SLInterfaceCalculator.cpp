@@ -3557,7 +3557,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 
 //	out << "tFailure" << '\t';
 
-	out << "failure_Ncylce" << '\t';
+	out << "failure_Ncycle" << '\t';
 	out << "failure_relus" << '\t';
 	out << "failure_vs" << '\t';
 	out << "failure_bsigma" << '\t';
@@ -3576,7 +3576,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 	// v solid zero
 	out << "vs0_time" << '\t';
 	out << "vs0_timex2" << '\t';
-	out << "vs0_Ncylce" << '\t';
+	out << "vs0_Ncycle" << '\t';
 	out << "vs0_relus" << '\t';
 	out << "vs0_vs" << '\t';
 	out << "vs0_energy_diss_per_length" << '\t';
@@ -3606,7 +3606,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 	out << "bsigmaMax_pw_val_exact_2_approx" << '\t';
 	out << "bsigmaMax_pw_time_exact_2_approx" << '\t';
 
-	out << "log10_failure_Ncylce" << '\t';
+	out << "log10_failure_Ncycle" << '\t';
 	
 	// ratio of actual input energy to maximum it could have been at t_final
 	out << "real_inp_E_2_max_inp_E_t_final" << '\t';
@@ -3705,7 +3705,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	GetZeroCrosserValue(t_SigmaZero_real, tOFC, vF, vtOFCbar, tF_minus_tOFC, crosserValue, OFC_v_decreasing);
 	delt_relus_m1 = tF_minus_tOFC, crosser_relus_m1 = crosserValue;
 	stageSln = stageSlnF;
-
+	out << setprecision(18);
 	out << terminateState << "\t";
 	out << (int)terminateState << "\t";
 	out << pit << '\t';
@@ -3822,7 +3822,8 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << sigma_t0 << '\t';
 	out << t0 << '\t';
 
-	out << stageSln->vals[pft_numCyclesAfterCrackOpening] << '\t';
+	double failure_Ncycle = stageSln->vals[pft_numCyclesAfterCrackOpening];
+	out << failure_Ncycle << '\t';
 	out << stageSln->vals[pft_irelusolid] << '\t';
 	out << stageSln->vals[pft_ivsolid] << '\t';
 	out << stageSln->vals[pft_bsigma] << '\t';
@@ -3833,7 +3834,8 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << U << '\t';
 	out << phi << '\t';
 	out << K2phi << '\t';
-	out << stageSln->vals[pft_bEneN_PL] << '\t';
+	double phiN = stageSln->vals[pft_bEneN_PL];
+	out << phiN << '\t';
 
 	double bsigmaMax_val = std::numeric_limits<double>::quiet_NaN();
 	double bsigmaMax_time = std::numeric_limits<double>::quiet_NaN();
@@ -3932,8 +3934,8 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	{
 		out << nan << '\t' << nan << '\t';
 	}
-	//log10_failure_Ncylce
-	out << rlog10(stageSln->vals[pft_numCyclesAfterCrackOpening]) << '\t';
+	//log10_failure_Ncycle
+	out << rlog10(failure_Ncycle) << '\t';
 
 	// ratio of actual input energy to maximum it could have been at t_final
 	double real_inp_E_2_max_inp_E_t_final = inputEnergyFromMeanStress_PL / inputEnergyFromMeanStress_MaxPossVal_PL;
@@ -3946,7 +3948,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << U_real_inp_E_t_final << '\t';
 	double phi_real_inp_E_t_final = phi / inputEnergyFromMeanStress_PL;
 	out << phi_real_inp_E_t_final << '\t';
-	double phiN_real_inp_E_t_final = stageSln->vals[pft_bEneN_PL] / inputEnergyFromMeanStress_PL;
+	double phiN_real_inp_E_t_final = phiN / inputEnergyFromMeanStress_PL;
 	out << phiN_real_inp_E_t_final << '\t';
 
 	// energy dissipation to input energy is printed above. These are K, U, phi (= K + U) and numerical error to max possible input energy
@@ -3956,7 +3958,7 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	out << U_max_inp_E_t_final << '\t';
 	double phi_max_inp_E_t_final = phi / inputEnergyFromMeanStress_MaxPossVal_PL;
 	out << phi_max_inp_E_t_final << '\t';
-	double phiN_max_inp_E_t_final = stageSln->vals[pft_bEneN_PL] / inputEnergyFromMeanStress_MaxPossVal_PL;
+	double phiN_max_inp_E_t_final = phiN / inputEnergyFromMeanStress_MaxPossVal_PL;
 	out << phiN_max_inp_E_t_final << '\n';
 }
 
