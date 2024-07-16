@@ -138,7 +138,9 @@ void gFx2yPDF::InitializeValues(Solver1D* conf, const map<string, string>& str_m
 	xMin = xm - 0.5;
 	xMax = xM + 0.5;
 
-	num_y = 118;
+	//num_y = 118;
+	// 2024/07/15
+	num_y = 128;
 }
 
 bool gFx2yPDF::ComputeValue(genIndexVal& giv)

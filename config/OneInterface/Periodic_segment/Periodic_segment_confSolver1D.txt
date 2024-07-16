@@ -31,8 +31,8 @@ b_recalculate_solutions
 str_map
 {
 #	tsr_Xu_Needleman		tsr_Ortiz
-#(	tsrModel	,	tsr_Ortiz	)
-(	tsrModel	,	tsr_Xu_Needleman	)
+(	tsrModel	,	tsr_Ortiz	)
+#(	tsrModel	,	tsr_Xu_Needleman	)
 
 # normalization_no: actual values of log(a)		is read
 # normalization_2:  tauC = 0.5 is used log(a'), a' = a * 0.5,		is read
@@ -58,7 +58,7 @@ equality_by_x
 # log10(a)
 paras1D
 {
-1.0
+-4.0
 #0.0
 #-2.5
 #-2.9
@@ -74,7 +74,8 @@ paras1D
 # sample 
 indices4paras1D
 {
-1100
+160
+#1100
 #86
 #8
 #9

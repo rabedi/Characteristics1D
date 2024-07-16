@@ -1,11 +1,15 @@
 function plot_print_PFs(option, isHyper, isApproximate, model_s, la_s, l_cD2c_s, df_s, CZM_normalization4AT, bTimesPiCZM_s, CZM_modelName, tauModel, drawPlots)
 labsz = 25; % x, y label font size
+% does not add HRA, PPR, except EPF
+additionalLines4_50 = 0;
+
 %option 0 to 10 are for comparing various PF formulations
 %option 0: AT1
 %option 1: AT1, AT2
 %option 2: CZM-Wu, CZM-Lorentz
 %option 5: AT1, AT2, CZM-Wu, CZM-Lorentz
-%option 6: AT1, CZM-Wu, CZM-Lorentz
+%option 6: AT1, AT2, CZM-Wu, CZM-Lorentz - no CZM normalization
+%option 7: AT1, CZM-Wu, CZM-Lorentz
 
 
 %option 10: CZM-Wu: for all TSR models (linear, ...)
@@ -49,37 +53,46 @@ labsz = 25; % x, y label font size
 if nargin < 1
     option = 20; %5, 2, 10, 20
 %    option = 21;
-    option = 5;
-%    option = 30;
+%    option = 5; % model comparison - CZM normalization
+    option = 6; % model comparison - CZM normalization
+    option = 30;
 %    option = 40;
-%    option = 50;
+    option = 40;
+    option = 50;
+    option = 5;
+    option = 6;
 end
 
 
 if nargin < 2
     isHyper = -1;
-    isHyper = 0;
-    isHyper = 1;
+%    isHyper = 0;
+%    isHyper = 1;
 end
 
 if nargin < 3
     % for dynamic solutions approximate = 0 -> plots the exact 0D solution,
     % if 1 it plots the High Loading rate limit
-    isApproximate = 1;
-    % if isApproximate = 2 both approximate and non approximate are printed
+    isApproximate = 2;          % use to plot HRA plots
+    % isApproximate = 1;        % HRA approximate part is added to initial
+    % part (that is, it's not the HRA only solution)
 end
 
 if nargin < 4
     % AT1, AT2, CZM-W, CZM-L are the options
     model_s = 'AT1';
-    model_s = 'CZM-W';
+%    model_s = 'AT2';
+%    model_s = 'CZM-W';
 end
 
 
 if nargin < 5
     la_s = 'none';
-%    la_s = '1';
+    la_s = '0';
+    la_s = '2';
+    la_s = '1';
 %    la_s = '-2';
+    la_s = 'none';
 end
 
 if nargin < 6
@@ -95,7 +108,8 @@ if nargin < 8
     % 1 -> ATs have the same sigma max as CZMs
     % -1 -> does not change the value in the class
     CZM_normalization4AT = -1;
-%    CZM_normalization4AT = 1;
+    CZM_normalization4AT = 0;
+    CZM_normalization4AT = 1;
 end
 
 if nargin < 9
@@ -129,7 +143,7 @@ name_vals = {'isHyper', 'Approx', 'model', 'la', 'cD2c', 'df', 'normalize2CZM', 
 nameHP = {'PPF', 'HPF'};
 HR_name = 'HR';
 for i = 1:2
-    nameHP_HR{i} = [nameHP{i}, '-HRA'];
+    nameHP_HR{i} = ['HRA-', nameHP{i}];
 end
 
 vals_out = cell(0);
@@ -151,14 +165,18 @@ if (strcmp(la_s, 'none') == 0)
 end
 
 
-
+header = 'header';
 
 % each curve is distniguished by a color
 useColor4Lines = 1;
 names = cell(0);
 PFs = cell(0);
 if (option < 10)
-    CZM_normalization4AT1_2 = 1;
+    header = 'model';
+    CZM_normalization4AT1_2 = CZM_normalization4AT;
+    if (CZM_normalization4AT1_2 == -1)
+        CZM_normalization4AT1_2 = 1;
+    end
     xis = [];
     omegaCZMs = [];
     if (option == 0) % AT1
@@ -178,12 +196,17 @@ if (option < 10)
         omegaCZMs = [1, 1];
         names = {'CZM-W', 'CZM-L'};
         model_ss = {'CZM-W', 'CZM-L'};
-    elseif (option == 5) % AT1, AT2, CZM-Wu, CZM-Lorentz
+    elseif ((option == 5) || (option == 6)) % AT1, AT2, CZM-Wu, CZM-Lorentz
         xis = [1, 0, 2, 1];
         omegaCZMs = [0, 0, 1, 1];
         names = {'AT2', 'AT1', 'CZM-W', 'CZM-L'};
         model_ss = {'AT2', 'AT1', 'CZM-W', 'CZM-L'};
-    elseif (option == 6) % AT1, CZM-Wu, CZM-Lorentz
+        if (option == 5)
+            CZM_normalization4AT1_2 = 1;
+        else
+            CZM_normalization4AT1_2 = 0;
+        end
+    elseif (option == 7) % AT1, CZM-Wu, CZM-Lorentz
         xis = [1, 2, 1];
         omegaCZMs = [0, 1, 1];
         names = {'AT1', 'CZM-W', 'CZM-L'};
@@ -282,6 +305,11 @@ else
         if (isHyper == -1)
             isHyper = 1;
         end
+        if (isHyper == 1)
+            header = '$$ \mathrm{log}_{10}({\bar{\dot{\epsilon}}}_{{\circ}H})  $$';
+        else
+            header = '$$ \mathrm{log}_{10}({\bar{\dot{\epsilon}}}_{{\circ}P})  $$';
+        end
         % start of adding approximate ones
         vec_la = [];
         vec_lapprox = [];
@@ -375,13 +403,15 @@ else
             lnums{cntr} = 1;
             lstys{cntr} = '-';
         end
-        if (option == 30)
-            lnum_extras{1} = 101;
+        if ((option == 30) || (option == 35))
+            lnum_extras{1} = 1;
             lstys_extras{1} = '--';
             names_extras{1} = nameHP_HR{isHyper + 1};
         end
     % damping factor
     elseif ((option >= 40) && (option <= 42))
+        header = '$$ f_d $$';
+        optionBK = option;
         if (isHyper == -1)
             isHyper = 1;
         end
@@ -404,15 +434,15 @@ else
         addParabolic = 0;
         
 
-        if (option > 40)
+        if (optionBK > 40)
             drawPlots = 0;
             ldf = -3:0.25:2;
 %            ldf = -3:1:2;
 %            drawPlots = 1;
             df = power(10, ldf);
-            if (option == 41)
+            if (optionBK == 41)
                 isApproximate = 0;
-            elseif (option == 42)
+            elseif (optionBK == 42)
                 isApproximate = 1;
                 if ((la < 0.5) || (isHyper == 1))
                     return;
@@ -531,7 +561,7 @@ else
                 lstys{cntr} = ':';
             end
         end
-        if (option == 40)
+        if (optionBK == 40)
             if (isHyper == 0) % PPF
                 lnum_extras{1} = 101;
                 lstys_extras{1} = '--';
@@ -545,6 +575,8 @@ else
         
     % wave speed ratio
     elseif ((option >= 50) && (option <= 52))
+        header = '$$ k  $$';
+        optionBK = option;
         if (isHyper == -1)
             isHyper = 1;
         end
@@ -566,13 +598,13 @@ else
         addElliptic = 0;
         addParabolic = 0;
 
-        if (option > 50)
+        if (optionBK > 50)
             drawPlots = 0;
             lcRat = -3:0.25:2;
             cRat = power(10, lcRat);
-            if (option == 51)
+            if (optionBK == 51)
                 isApproximate = 0;
-            elseif (option == 52)
+            elseif (optionBK == 52)
                 isApproximate = 1;
                 if (la < 0.5)
                     return;
@@ -584,9 +616,15 @@ else
             if (la <= 0)
                 addApprox = 0;
             end
+            if (additionalLines4_50 == 0)
+                addApprox = 0;
+            end
             if (isHyper == 1)
                 addElliptic = 1;
                 addParabolic = 1;
+                if (additionalLines4_50 == 0)
+                    addParabolic = 0;
+                end
             elseif (isHyper == 0)
                 addElliptic = 1;
             end
@@ -609,7 +647,7 @@ else
                     vec_cRatNum = -1;
                 end
             end
-            if (option == 50)
+            if ((optionBK == 50) && (addParabolic == 1))
                 if (isHyper == 0) % PPF
                     lnum_extras{1} = 101;
                     lstys_extras{1} = '--';
@@ -707,7 +745,7 @@ else
                 lstys{cntr} = ':';
             end
         end
-        if (option == 50)
+        if ((optionBK == 50) && (addParabolic == 1))
             if (isHyper == 0) % PPF
                 lnum_extras{1} = 101;
                 lstys_extras{1} = '--';
@@ -715,7 +753,7 @@ else
             else
                 lnum_extras{1} = 101;
                 lstys_extras{1} = '--';
-                names_extras{1} = nameHP{2};
+                names_extras{1} = nameHP_HR{2}; %nameHP{2};
                 lnum_extras{2} = 101;
                 lstys_extras{2} = ':';
                 names_extras{2} = nameHP{1};
@@ -751,6 +789,9 @@ linePropSpecified = (length(lnums) > 0);
 colorNum = 1;
 isModel = 0;
 includeBlack = 0;
+if (option >= 30)
+    includeBlack = 1;
+end
 lc = getColors(colorNum, isModel, includeBlack);
 
 
@@ -802,7 +843,7 @@ if (drawPlots)
     actual_th = cell(0);
     actual_sty = cell(0);
     % leg are those that appear in the legend
-    leg_names{1} = 'header';
+    leg_names{1} = header;
     leg_clrs{1} = 'none';
     leg_th{1} = 1;
     leg_sty{1} = 'none';
@@ -862,7 +903,7 @@ if (drawPlots)
         leg_sty{leg_cntr} = lsv;
     end
     
-    lfs = 12;
+    lfs = 13;
     if (leg_cntr > 30)
         lfs = 6;
     elseif (leg_cntr > 20)
@@ -871,6 +912,8 @@ if (drawPlots)
         lfs = 10;
     end        
 
+    PFtm = PF;
+    vecs_names_latex = PFtm.vecs_names_latex;
 
     for vi = 1:num_vec - 1
         vec_name = vecs_names{vi};
@@ -882,7 +925,7 @@ if (drawPlots)
             plot([nan], [nan], 'Color', leg_clrs{lri}, 'LineStyle', leg_sty{lri}, 'LineWidth', leg_th{lri});
             hold on;
         end
-        lg = legend(leg_names, 'FontSize', lfs);
+        lg = legend(leg_names, 'FontSize', lfs, 'Interpreter', 'latex');
         legend('boxoff');
 
 
@@ -898,9 +941,9 @@ if (drawPlots)
         end
     
         xh = get(gca, 'XLabel');
-        set(xh, 'String', 'xlabel', 'FontSize', labsz, 'VerticalAlignment','Top', 'Interpreter', 'latex');
+        set(xh, 'String', '$$ \bar{\epsilon} $$', 'FontSize', labsz, 'VerticalAlignment','Top', 'Interpreter', 'latex');
         yh = get(gca, 'YLabel');
-        set(yh, 'String', 'ylabel', 'FontSize', labsz, 'VerticalAlignment','Bottom', 'Interpreter', 'latex');
+        set(yh, 'String', vecs_names_latex{vi}, 'FontSize', labsz, 'VerticalAlignment','Bottom', 'Interpreter', 'latex');
     
         print('-dpng', [fnbase, '.png']);
         if (printfig)
@@ -922,7 +965,7 @@ if (drawPlots)
                 plot([nan], [nan], 'Color', leg_clrs{lri}, 'LineStyle', leg_sty{lri}, 'LineWidth', leg_th{lri});
                 hold on;
             end
-            lg = legend(leg_names, 'FontSize', lfs);
+            lg = legend(leg_names, 'FontSize', lfs, 'Interpreter', 'latex');
             legend('boxoff');
     
     
@@ -938,7 +981,7 @@ if (drawPlots)
             end
         
             xh = get(gca, 'XLabel');
-            set(xh, 'String', 'xlabel', 'FontSize', labsz, 'VerticalAlignment','Top', 'Interpreter', 'latex');
+            set(xh, 'String', '$$ D $$', 'FontSize', labsz, 'VerticalAlignment','Top', 'Interpreter', 'latex');
             yh = get(gca, 'YLabel');
             set(yh, 'String', 'ylabel', 'FontSize', labsz, 'VerticalAlignment','Bottom', 'Interpreter', 'latex');
         

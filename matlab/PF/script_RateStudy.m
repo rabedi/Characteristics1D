@@ -8,7 +8,7 @@ l_valsIn_s = {'-3', '-2', '-1'};
 studyModes = {'1'};
 isHypers = {'P'};
 
-model_ss = {'AT1', 'AT2', 'CZM-W'}; % 'CZM-L
+model_ss = {'AT1', 'AT2', 'CZM-W', 'CZM-L'}; % 'CZM-L
 model_ss = {'AT1', 'CZM-W'}; % 'CZM-L
 
 la_default_ss = {'0'};

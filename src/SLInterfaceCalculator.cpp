@@ -2849,6 +2849,11 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 
 	la = l * a;
 	aInv = 1.0 / a;
+	if (!isExtrinsic)
+		t0 = 0.0;
+	else
+		t0 = 1.0 / a;
+
 	string aIndex_s, lIndex_s;
 	toString(aIndex, aIndex_s);
 	toString(lIndex, lIndex_s);
@@ -2940,7 +2945,7 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		t_dilute_approx_p += aInv / energyScale;
 
 		// f(delta) + 0.5 deltaDot = at
-		// vsolid = 0 -> al/2 - deltaDot/2 = 0
+		// vsolid = v(x = L/2) - v(x = 0) = al/2 - deltaDot/2 = 0
 		// -> l = 2t - 2 f(delta) / a, where t, delta are taken for a reference point, and t is total time from time zero
 		// A) initial stage of unloading:
 		// t = 1/a, f(delta) = 1 -> l = 2/a - 2/a = 0 ! Not appropriate! This is similar to what Drugan does for XuNeedleman at max load but it does not apply here
@@ -3080,6 +3085,8 @@ void Periodic1IntrFrag::Initialize_Periodic1IntrFrag(bool prematureExit)
 		currentStepVals[pft_bsigma] = 1.0;
 		currentStepVals[pft_bsigma_maxpw] = 1.0;
 		currentStepVals[pft_bU_PL] = 0.5;
+		double Ut0 = 0.5 * sigma_t0 * sigma_t0;
+		currentStepVals[pft_bEneSource_PL] = Ut0;
 	}
 	currentStepVals[pft_ilog10Ened] = rlog10(currentStepVals[pft_iEned]);
 	currentStepVals[pft_ilog10Ened_PL] = rlog10(currentStepVals[pft_iEned_PL]);
@@ -3288,7 +3295,7 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 	currentStepVals[pft_iEned_PL] = currentStepVals[pft_iEned] / l;
 	currentStepVals[pft_ilog10Ened_PL] = rlog10(currentStepVals[pft_iEned_PL]);
 	// initial K = 0.0
-	double U0 = 0.5 * sigma_t0 * sigma_t0;
+	double U0 = 0;
 	currentStepVals[pft_bEneN_PL] = U0 + currentStepVals[pft_bEneSource_PL]  - (K + U + currentStepVals[pft_iEned_PL]);
 	// currentStepVals[pft_iEned]  = EneD = total energy dissipation
 	// currentStepVals[pft_bEneSource] = is total energy from stress source (from vR term)
@@ -3585,7 +3592,24 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag_Header(ostream& out)
 
 	out << "suggeste_delt" << '\t';
 	out << "suggested_final_time4ZeroSigmaC" << '\t';
-	out << "t_dilute_zeroStressCheck";
+	out << "t_dilute_zeroStressCheck\t";
+
+	// added 07/15/2024
+	out << "log10_failure_Ncylce" << '\t';
+	
+	// ratio of actual input energy to maximum it could have been at t_final
+	out << "real_inp_E_2_max_inp_E_t_final" << '\t';
+	// energy dissipation to input energy is printed above. These are K, U, phi (= K + U) and numerical error to real input energy
+	out << "K_real_inp_E_t_final" << '\t';
+	out << "U_real_inp_E_t_final" << '\t';
+	out << "phi_real_inp_E_t_final" << '\t';
+	out << "phiN_real_inp_E_t_final" << '\t';
+
+	// energy dissipation to input energy is printed above. These are K, U, phi (= K + U) and numerical error to max possible input energy
+	out << "K_max_inp_E_t_final" << '\t';
+	out << "U_max_inp_E_t_final" << '\t';
+	out << "phi_max_inp_E_t_final" << '\t';
+	out << "phiN_max_inp_E_t_final" << '\t';
 }
 
 void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
@@ -3838,7 +3862,35 @@ void Periodic1IntrFrag::Output_Periodic1IntrFrag(ostream& out)
 	}
 	out << suggeste_delt << '\t';
 	out << suggested_final_time4ZeroSigmaC << '\t';
-	out << t_dilute_zeroStressCheck << '\n';
+	out << t_dilute_zeroStressCheck << '\t';
+
+
+	//log10_failure_Ncylce
+	out << rlog10(stageSln->vals[pft_numCyclesAfterCrackOpening]) << '\t';
+
+	// ratio of actual input energy to maximum it could have been at t_final
+	double real_inp_E_2_max_inp_E_t_final = inputEnergyFromMeanStress_PL / inputEnergyFromMeanStress_MaxPossVal_PL;
+	out << real_inp_E_2_max_inp_E_t_final << '\t';
+
+	// energy dissipation to input energy is printed above. These are K, U, phi (= K + U) and numerical error to real input energy
+	double K_real_inp_E_t_final = K / inputEnergyFromMeanStress_PL;
+	out << K_real_inp_E_t_final << '\t';
+	double U_real_inp_E_t_final = U / inputEnergyFromMeanStress_PL;
+	out << U_real_inp_E_t_final << '\t';
+	double phi_real_inp_E_t_final = phi / inputEnergyFromMeanStress_PL;
+	out << phi_real_inp_E_t_final << '\t';
+	double phiN_real_inp_E_t_final = stageSln->vals[pft_bEneN_PL] / inputEnergyFromMeanStress_PL;
+	out << phiN_real_inp_E_t_final << '\t';
+
+	// energy dissipation to input energy is printed above. These are K, U, phi (= K + U) and numerical error to max possible input energy
+	double K_max_inp_E_t_final = K / inputEnergyFromMeanStress_MaxPossVal_PL;
+	out << K_max_inp_E_t_final << '\t';
+	double U_max_inp_E_t_final = U / inputEnergyFromMeanStress_MaxPossVal_PL;
+	out << U_max_inp_E_t_final << '\t';
+	double phi_max_inp_E_t_final = phi / inputEnergyFromMeanStress_MaxPossVal_PL;
+	out << phi_max_inp_E_t_final << '\t';
+	double phiN_max_inp_E_t_final = stageSln->vals[pft_bEneN_PL] / inputEnergyFromMeanStress_MaxPossVal_PL;
+	out << phiN_max_inp_E_t_final << '\n';
 }
 
 

@@ -3,8 +3,10 @@ plotProblemAtLow_df_HPF = 1; % generates Hlod_dfProb_all ... show cases the prob
 %isHyper = -1;
 isHyper = 0;
 isApproximate = 0;
+tauModelIn = 'b2cd';
 % AT1, AT2, CZM-W, CZM-L are the options
 model_s = 'AT1';
+model_s = 'CZM-L';
 la_s = 'none';
 l_cD2c_s = 'none';
 df_s = 'none';
@@ -27,7 +29,7 @@ df_s = '0.01';
 
 
 close('all');
-vals_default = {isHyper, isApproximate, model_s, la_s, l_cD2c_s, df_s, CZM_normalization4AT, bTimesPiCZM_s, CZM_modelName};
+vals_default = {isHyper, isApproximate, model_s, la_s, l_cD2c_s, df_s, CZM_normalization4AT, bTimesPiCZM_s, CZM_modelName, tauModelIn};
 PFtmp = PF;
 [PFtmp, vals_out] = PFtmp.Initialize_Stage1(vals_default);
 PFtmp = PFtmp.Compute();
@@ -44,7 +46,7 @@ yH{2} = PFtmp.D_vec;
 
 if plotProblemAtLow_df_HPF
 isHyper = -1;
-vals_default = {isHyper, isApproximate, model_s, la_s, l_cD2c_s, df_s, CZM_normalization4AT, bTimesPiCZM_s, CZM_modelName};
+vals_default = {isHyper, isApproximate, model_s, la_s, l_cD2c_s, df_s, CZM_normalization4AT, bTimesPiCZM_s, CZM_modelName, tauModelIn};
 
 PFtmp2 = PF;
 [PFtmp2, vals_out] = PFtmp2.Initialize_Stage1(vals_default);

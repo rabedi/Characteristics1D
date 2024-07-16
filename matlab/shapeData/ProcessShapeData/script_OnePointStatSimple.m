@@ -1,0 +1,11 @@
+vals = wblrnd(2, 1, 1000, 1);
+opss = OnePointStatSimple;
+min4Weibull = 0;
+doWeibull = 1;
+doGauss = 1;
+opss = opss.ComputeVals(vals, min4Weibull, doWeibull, doGauss);
+plot(opss.pdf_xAxis, opss.pdf_yAxis);
+fid = fopen('test.txt', 'w');
+printHeader = 1;
+opss.printVals(fid, printHeader);
+fclose(fid);

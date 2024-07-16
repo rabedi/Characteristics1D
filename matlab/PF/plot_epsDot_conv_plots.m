@@ -5,9 +5,9 @@ CZM_normalization4AT = 1;
 CZM_normalization4AT = 0;
 
 
-plot3 = 0; % plot all combinations [AT1, EPH, exHR] in one plot
-plot2 = 0; % only two things in one plot
-plot1 = 0; % only one thing changes in each plot
+plot3 = 0; %1; % plot all combinations [AT1, EPH, exHR] in one plot
+plot2 = 0; %1; % only two things in one plot
+plot1 = 0; %1; % only one thing changes in each plot
 plot_df_comp = 1;
 
 gvid = genVisIndexDat;
@@ -35,7 +35,8 @@ gvid.groupNames{3} = eHR;
 EPH = {'EPF', 'PPF', 'HPF'};
 gvid.groupNames{4} = EPH;
 % group 5: model name
-model_ss = {'AT1', 'AT2', 'CZM-W'};
+model_ss = {'AT1', 'AT2', 'CZM-W', 'CZM-L'};
+%model_ss = {'AT1', 'CZM-W'};
 num_model = length(model_ss);
 gvid.groupNames{5} =  model_ss;
 
@@ -66,7 +67,7 @@ for i2 = 1:n_df_ss
 %                forlderName = [forlderName, '_', PHnames{hi}, '_', model_s, '_lcRat_none_df_none'];
                 forlderName = [forlderName, '_', PHnames{hi}, '_', model_s, '_lcRat_none_df_', df_s];
                 fileName = [forlderName, '/scalars.csv'];
-                [gvid.data{i1}{i2}{option_i}{hi + 1}{mi}, gvid.xVals{i1}{i2}{option_i}{hi + 1}{mi}] = Read_PF_cvs(fileName);
+                [gvid.data{i1}{i2}{option_i}{hi + 1}{mi}, gvid.xVals{i1}{i2}{option_i}{hi + 1}{mi}] = Read_PF_cvs(fileName, CZM_normalization4AT);
             end
         end
     end
@@ -78,7 +79,7 @@ hi = 1; % EPF
 for mi = 1:num_model
     model_s = model_ss{mi};
     fileName = ['model-', model_s];
-    [gvid.data{1}{ind_df1}{1}{hi}{mi}, gvid.xVals{1}{ind_df1}{1}{hi}{mi}] = Read_PF_cvs(fileName);
+    [gvid.data{1}{ind_df1}{1}{hi}{mi}, gvid.xVals{1}{ind_df1}{1}{hi}{mi}] = Read_PF_cvs(fileName, CZM_normalization4AT);
     indv = [1, ind_df1, 1, hi, mi];
     added_indices{mi} = indv;
     added_indices_mi{mi}{1} = indv;

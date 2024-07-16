@@ -1,0 +1,2 @@
+minV	minLoc	maxV	maxLoc	meanV	sdivV	covV	spanV	nspanV	Weibull_shape	Weibull_scale	Weibull_shape	Weibull_N	Weibull_h	Weibull_p	Gauss_mu	Gauss_sigma	Gauss_h	Gauss_p
+0.0031489	197	16.7456	113	2.04389	2.14044	4.58148	16.7425	8.19148	2.03154	0.986397	2.03154	1.02822	0	0.894973	2.04389	2.14044	1	9.83722e-26

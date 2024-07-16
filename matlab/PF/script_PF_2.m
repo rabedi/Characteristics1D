@@ -8,16 +8,17 @@ la_s = 'none';
 l_cD2c_s = 'none';
 df_s = 'none';
 CZM_normalization4AT = -1;
+CZM_normalization4AT = 0;
 bTimesPiCZM_s = '1.0';
 CZM_modelName = 'Linear';
 
 % change to 0 for bPrime = 1 for AT1 and AT2
-CZM_normalization4AT = 0;
+% CZM_normalization4AT = 0;
 
 
-model_ss = {'AT1', 'AT2', 'CZM-W'};
+model_ss = {'AT1', 'AT2', 'CZM-W', 'CZM-L'};
 
-if 0
+if 1
     df_ss = {'0.01', '0.1', '1', '10', '100'};
     sz_df = length(df_ss);
     for dfi = 1:sz_df
@@ -48,7 +49,7 @@ if 0
     end
 end
 
-if 1
+if 0
     options = [40, 50];
     n_options = length(options);
     la_ss = {'2', '1', '0', '-1'};

@@ -171,3 +171,10 @@ Windows a single run:
 -i -c config/OneInterface/SampleConfig_Periodic_Segment.txt
 
 -sp -c config/Domain/Inhomogeneous_axt_fracture_Coh_Ring_openedp.txt -cp config/Domain/PPS3Config_Coh.txt
+
+
+
+haven, Tri gen
+./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 90 -en 95 -vst 0 -ven 1619 -np 24
+
+-sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 0 -en 0 -vst 0 -ven 0

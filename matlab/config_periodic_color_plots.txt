@@ -1,0 +1,29 @@
+path ../../dataPeriodic/
+col_ys	14
+col_xlabel	$$\log_{10}(\bar{\dot{\epsilon}})$$
+col_ylabel	$$\log_{10}(\bar{l})$$
+9
+_Solver1D_pfragment_I6__SlnCntr_2_AddedPts0_pts_x_sorted.out	-4
+_Solver1D_pfragment_I7__SlnCntr_2_AddedPts0_pts_x_sorted.out	-3
+_Solver1D_pfragment_I8__SlnCntr_2_AddedPts0_pts_x_sorted.out	-2
+_Solver1D_pfragment_I9__SlnCntr_2_AddedPts0_pts_x_sorted.out	-1
+_Solver1D_pfragment_I10__SlnCntr_2_AddedPts0_pts_x_sorted.out	0
+_Solver1D_pfragment_I11__SlnCntr_2_AddedPts0_pts_x_sorted.out	1
+_Solver1D_pfragment_I12__SlnCntr_2_AddedPts0_pts_x_sorted.out	2
+_Solver1D_pfragment_I13__SlnCntr_2_AddedPts0_pts_x_sorted.out	3
+_Solver1D_pfragment_I14__SlnCntr_2_AddedPts0_pts_x_sorted.out	4
+
+fieldsToPlot_colNo_zmin_zmax_1e50_for_zmin->getZlimFromData_sz
+12
+17	1e50	1e50
+50	1e50	1e50
+52	1e50	1e50
+55	1e50	1e50
+58	1e50	1e50
+78	1e50	1e50
+81	1e50	1e50
+82	1e50	1e50
+88	1e50	1e50
+89	1e50	1e50
+90	1e50	1e50
+91	1e50	1e50

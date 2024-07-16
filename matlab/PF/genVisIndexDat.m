@@ -33,6 +33,7 @@ classdef genVisIndexDat
             if (nargin < 9)
                 added_indices = cell(0);
             end
+            option121_hack = ((optionNo == 121) || (optionNo == 621));
             option200_df_hack = ((optionNo == 200) || (optionNo == 700));
             optioNo_str = num2str(optionNo);
             xLabel = obj.xLabelLatex;
@@ -75,53 +76,58 @@ classdef genVisIndexDat
             nolc = [0.5	0.5	0.5]; %'dark_gray2'
             clrwh = [1, 1, 1];
             
-            lc = cell(0);
-            cntr = 0;
-            if (~option200_df_hack)
+            colorNum = 0;
+            isModel = 0;
+            includeBlack = ~option200_df_hack;
+            lc = getColors(colorNum, isModel, includeBlack);
+            if 0
+                lc = cell(0);
+                cntr = 0;
+                if (~option200_df_hack)
+                    cntr = cntr + 1;
+                    lc{cntr} = [0 0 0]; % black
+                end
                 cntr = cntr + 1;
-                lc{cntr} = [0 0 0]; % black
-            end
-            cntr = cntr + 1;
-            lc{cntr} = [1	0	0]; %red'
-            cntr = cntr + 1;
-            lc{cntr} = [0	0	1]; % blue 'b';
-            cntr = cntr + 1;
-            lc{cntr} = [0 135/255 0]; %green
-            cntr = cntr + 1;
-            lc{cntr} = [1	102/255	0]; %orange'
-            cntr = cntr + 1;
-            lc{cntr} = [0	1	1]; % teal [0	0	0.5]; % dark blue
-            cntr = cntr + 1;
-            lc{cntr} = [0.5	0.25	0]; % brown
-            cntr = cntr + 1;
-            lc{cntr} = 1/255*[255	0	255]; % magenta
-            cntr = cntr + 1;
-            lc{cntr} = 1/255*[255	128	192]; % 'rosy_pink'
-            cntr = cntr + 1;
-            lc{cntr} = [0.5	0.5	0.5]; %'dark_gray2'
-            cntr = cntr + 1;
-            lc{cntr} = [0	0.5	0.25]; %green blue
-            cntr = cntr + 1;
-            lc{cntr} = [0.75	0.75	0.75]; %'gray2'
-            cntr = cntr + 1;
-            lc{cntr} = [1	1	0]; %yellow , [0	0.5	0.25]; %green blue
-            cntr = cntr + 1;
-            lc{cntr} = [0.5	0	1]; % purple 
-            cntr = cntr + 1;
-            lc{cntr} = 1/255 * [203 0   51]; % red2
-            cntr = cntr + 1;
-            lc{cntr} = [0.5	0.5	0]; % olive 
-            cntr = cntr + 1;
-            lc{cntr} = 1/255 * [64	128	128]; % blue2
-            cntr = cntr + 1;
-            lc{cntr} = 1/255 * [255	128	192]; % rosy_pink
-            cntr = cntr + 1;
-            lc{cntr} = 1/255 * [255	128	128]; % peach
-            cntr = cntr + 1;
-            lc{cntr} = 1/255 * [128	0	64]; % arghavani
-            cntr = cntr + 1;
-            lc{cntr} = 1/255 * [128	0	128]; % purple2
-    
+                lc{cntr} = [1	0	0]; %red'
+                cntr = cntr + 1;
+                lc{cntr} = [0	0	1]; % blue 'b';
+                cntr = cntr + 1;
+                lc{cntr} = [0 135/255 0]; %green
+                cntr = cntr + 1;
+                lc{cntr} = [1	102/255	0]; %orange'
+                cntr = cntr + 1;
+                lc{cntr} = [0	1	1]; % teal [0	0	0.5]; % dark blue
+                cntr = cntr + 1;
+                lc{cntr} = [0.5	0.25	0]; % brown
+                cntr = cntr + 1;
+                lc{cntr} = 1/255*[255	0	255]; % magenta
+                cntr = cntr + 1;
+                lc{cntr} = 1/255*[255	128	192]; % 'rosy_pink'
+                cntr = cntr + 1;
+                lc{cntr} = [0.5	0.5	0.5]; %'dark_gray2'
+                cntr = cntr + 1;
+                lc{cntr} = [0	0.5	0.25]; %green blue
+                cntr = cntr + 1;
+                lc{cntr} = [0.75	0.75	0.75]; %'gray2'
+                cntr = cntr + 1;
+                lc{cntr} = [1	1	0]; %yellow , [0	0.5	0.25]; %green blue
+                cntr = cntr + 1;
+                lc{cntr} = [0.5	0	1]; % purple 
+                cntr = cntr + 1;
+                lc{cntr} = 1/255 * [203 0   51]; % red2
+                cntr = cntr + 1;
+                lc{cntr} = [0.5	0.5	0]; % olive 
+                cntr = cntr + 1;
+                lc{cntr} = 1/255 * [64	128	128]; % blue2
+                cntr = cntr + 1;
+                lc{cntr} = 1/255 * [255	128	192]; % rosy_pink
+                cntr = cntr + 1;
+                lc{cntr} = 1/255 * [255	128	128]; % peach
+                cntr = cntr + 1;
+                lc{cntr} = 1/255 * [128	0	64]; % arghavani
+                cntr = cntr + 1;
+                lc{cntr} = 1/255 * [128	0	128]; % purple2
+            end    
     
             optionNo_str = num2str(optionNo);
     
@@ -163,6 +169,7 @@ classdef genVisIndexDat
                         leg{cntr} = nm;
                     end        
                 end
+
                 if (lineStylePos > 0)
                     nms = obj.groupNames{lineStylePos};
                     sz = length(nms);
@@ -190,6 +197,12 @@ classdef genVisIndexDat
                         plot(x, y, 'Color', 'k', 'LineStyle', '-', 'LineWidth', 2);
                         hold on;
                         leg{cntr} = 'EPF';
+                end
+                if (option121_hack)
+                   i = sz;
+                   plot(x, y, 'Color', nolc, 'LineStyle', '-.', 'LineWidth', lthg);
+                   cntr = cntr + 1;
+                   leg{cntr} = '0D (EPF)';
                 end
                 lg = legend(leg, 'FontSize', obj.lfs, 'Interpreter','latex');
                 legend('boxoff');
@@ -227,6 +240,9 @@ classdef genVisIndexDat
                    x = obj.xVals{i1}{i2}{i3}{i4}{i5};
                    dat = obj.data{i1}{i2}{i3}{i4}{i5};
                    y = dat(:, col);
+                   if ((option121_hack) && (numPts - i < 3))
+                       lsv = '-.';
+                   end
                     plot(x, y, 'Color', clr, 'LineStyle', lsv, 'LineWidth', lwv, 'Marker', mrkr);
                     hold on;
                 end

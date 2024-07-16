@@ -818,7 +818,7 @@ def main_function():
     mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
     mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-    mainOption = mo_frac_rate_f_wShape # mo_frac_rate_f_wShape # mo_frac_rate_f
+    mainOption = mo_frac_rate_f # mo_frac_rate_f_wShape # mo_frac_rate_f
     rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 
@@ -858,19 +858,19 @@ def main_function():
     # root = "data/2023_03_20/_PPS3/"
     # option 0 # -> default
     # option 10 # la axis, delc in plot lines
-    option = 3 #use 0 (la x, lc leg)  10 (la x, delc leg) and 1 (lc x, dd2 leg); 3 #10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
+    option = 10 #use 0 (la x, lc leg)  10 (la x, delc leg) and 1 (lc x, dd2 leg); 3 #10 #10 #0 #100 # -> la, ldelc out, dd2 mid, 1 lc axis, dd2 middle, 2 lc axis, la midle
     # for shape data potion = 3 -> shape in legend
     # options >= 100 are going to be used for plotting rawData (runNo is used)
 
     readMainLineMode = 0  # 0 -> mean, 1 -> cov 2 -> std        | -1 -> rawData rather than stats
-    plotFillMode = 1 # 0 -> min, max, 1 -> mean -/+ std
+    plotFillMode = 0 # 0 -> min, max, 1 -> mean -/+ std
     plotFill = False
     if (plotFill):
         readMainLineMode = 0
 
     inpColDict = {}
     lasym = "la"
-    #lasym = "lap" don't uncomment
+    ##########lasym = "lap" don't uncomment
     lasymXaxis = lasym
     # lasymXaxis = "lap"
     distinguishFillNoFill = False

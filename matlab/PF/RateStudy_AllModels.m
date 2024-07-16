@@ -22,7 +22,7 @@ if (nargin < 3)
 end
 
 if (nargin < 4)
-    model_ss = {'AT1', 'AT2', 'CZM-W'}; % 'CZM-L
+    model_ss = {'AT1', 'AT2', 'CZM-W', 'CZM-L'}; % 'CZM-L
 end
 
 if (nargin < 5)

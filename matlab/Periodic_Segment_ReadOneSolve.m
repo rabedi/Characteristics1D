@@ -9,6 +9,8 @@ if (fid < 0)
 end
 
 num_c = 130; %117;
+% 2024/07/15
+num_c = 140;
 offset = 20;
 len = num_c - offset;
 for i = 1:num_c

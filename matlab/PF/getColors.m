@@ -15,11 +15,11 @@ if (includeBlack)
 end
 lc{cntr} = [1	0	0]; %red'
 cntr = cntr + 1;
-lc{cntr} = [1	102/255	0]; %orange'
+lc{cntr} = [1	102/255	0]; %orange' % 1.0000    0.4000         0
 cntr = cntr + 1;
 lc{cntr} = [0	0	1]; % blue 'b';
 cntr = cntr + 1;
-lc{cntr} = [0 135/255 0]; %green
+lc{cntr} = [0 135/255 0]; %green % 0.00,0.53,0.00
 cntr = cntr + 1;
 lc{cntr} = [0	1	1]; % teal [0	0	0.5]; % dark blue
 cntr = cntr + 1;
@@ -54,8 +54,10 @@ lc{cntr} = 1/255 * [128	0	64]; % arghavani
 cntr = cntr + 1;
 lc{cntr} = 1/255 * [128	0	128]; % purple2
 szc = length(lc);
-for i = szc + 1:99
+for i = szc + 1:299
     ii = mod(i - 1, szc) + 1;
     lc{i} = lc{ii};
 end
 
+lc{100} = [0 0 0]; %'dark_gray2';
+lc{101} = [0.5	0.5	0.5]; %'dark_gray2';
