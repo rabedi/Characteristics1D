@@ -246,6 +246,11 @@ void gFx2yPDF::Writel10_al_TSR_file(double l10l, int index_primary_l, int index_
 
 void MAIN_SolvePeriodicFragmentSize(string confSolve)
 {
+#ifdef VCPP
+	g_low_disk_space = 1;
+	g_1_interface_low_disk_space = 1;
+#endif
+
 	gFx2yPDF* functionIn = new gFx2yPDF();
 	MAIN_Solver1D(confSolve, (gFx2y*)functionIn);
 	delete functionIn;

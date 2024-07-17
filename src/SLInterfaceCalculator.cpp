@@ -3154,6 +3154,8 @@ PITSS  Periodic1IntrFrag::UpdateStats(double timeNew, double delu, double delv, 
 		timeRelSigmaMax -= aInv;
 	vector<PITSS> pits;
 	bool printSegmentvsigma = (timeIndexNew % step4_segment_vsigma_output == 0);
+	if (g_1_interface_low_disk_space == 1)
+		printSegmentvsigma = false;
 	double halfla = 0.5 * la;
 	double prevTime = currentStepVals[pft_time];
 	double delT = timeNewAbsolute - prevTime;

@@ -24,7 +24,7 @@ void Print_slscript(unsigned int numParallelRuns);
 
 int main(int argc, char *argv[])
 {
-#if 0
+#if 1
 //	Test_InhomogeneousSimple();
 //	Test_SolveYCrossing();
 	MAIN_SolvePeriodicFragmentSize();
