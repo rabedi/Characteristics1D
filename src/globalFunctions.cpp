@@ -2,6 +2,9 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <limits>
+#include <cmath>
+using namespace std;
 
 int SetNewtonCotes_Points_AndWeights(int numSpatialSubsegments_BulkInterfacePoints_Print, bool useRepeatedSimpsonRuleForHigherOrders, vector<double>& spatialIntegrationWeights, vector<double>& spatialIntegrationPoints)
 {

@@ -1,6 +1,9 @@
 #include "MinCrossingSolver1D.h"
 #include "commonMacros.h"
 #include "commonFunctions.h"
+#include <limits>
+#include <cmath>
+using namespace std;
 
 bool genIndexVal_DB::g_genIndexVal_DB_equality_by_x = true;
 double genIndexVal_DB::g_genIndexVal_DB_tol_x = 1e-6;

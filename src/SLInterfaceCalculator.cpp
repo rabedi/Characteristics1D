@@ -3,6 +3,10 @@
 #include "SL_OneInterfaceAllTimes.h"
 #include "Domain_AllInterfacesAllTimes.h"
 #include "globalFunctions.h"
+#include <limits>
+#include <cmath>
+using namespace std;
+
 Periodic1IntrFrag* per_if = NULL;
 
 SLInterfaceCalculator::SLInterfaceCalculator()

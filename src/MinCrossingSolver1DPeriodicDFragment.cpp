@@ -1,5 +1,8 @@
 #include "MinCrossingSolver1DPeriodicDFragment.h"
 #include "SL_OneInterfaceAllTimes.h"
+#include <limits>
+#include <cmath>
+using namespace std;
 
 string getName(la_NormalizationType dat)
 {
