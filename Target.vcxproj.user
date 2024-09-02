@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-i -c config/OneInterface/SampleConfig_TSR_Ortiz.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst 297 -ven 297</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-i -c config/OneInterface/SampleConfig_TSR_Ortiz.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst 297 -ven 297</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

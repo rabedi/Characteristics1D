@@ -4,9 +4,12 @@ if nargin < 1
 end
 if nargin < 2
     serialNums = [0, 1];
+    serialNums = [0];
 end
 if nargin < 3
-    versionNums = [11, 12, 13];
+%    versionNums = [11, 12, 13];
+    versionNums = [0];
+    versionNums = [297];
 end
 if nargin < 4
     timeSerialNumbers = [];
@@ -64,15 +67,17 @@ for sii = 1:sz_serialNums
             vis = '';
         end
         cntr = cntr + 1;
-        rt = ['../run', vis, '_', sis, '/'];
+        rt0 = ['run', vis, '_', sis];
+        rt = ['../', rt0, '/'];
         if (isSummary)
             prename = [sd, '_Summary'];
+            fn = ['../../_z_sd_0__Summary/', rt0, '.txt'];
             startCol = 2;
         else
             prename = [sd, 'BulkInterface_tPos_', num2str(timeSerialNumbers(sii, vii))];
+            fn = [rt , prename, '.txt'];
             startCol = 3;
         end
-        fn = [rt , prename, '.txt'];
         fid = fopen(fn, 'r');
         if (fid > 0)
             dwh = datawheader;

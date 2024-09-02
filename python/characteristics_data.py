@@ -27,7 +27,7 @@ mo_frac_rate_f_wShape = 2
 mo_frac_res_x = 3 # coarsening data for which the energies don't match for high loading rate - see 3 below
 mo_frac_res_x_w_delc_fact = 4 # new data 7/23 that includes factoring deltaC to get the correct energy
 
-mainOption = mo_frac_rate_f # mo_frac_rate_f_wShape #mo_frac_rate_f
+mainOption = mo_frac_rate_f_wShape # mo_frac_rate_f_wShape #mo_frac_rate_f
 rateStudy = ((mainOption == mo_frac_rate_cf) or (mainOption == mo_frac_rate_f) or (mainOption == mo_frac_rate_f_wShape))
 
 

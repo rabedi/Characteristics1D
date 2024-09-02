@@ -1,6 +1,7 @@
 function plot_fragmentation_results(runName, fragmentationType, subdomainNum)
 if nargin < 1
     runName = 'run_0';
+    runName = 'run_V_0_0';
 end
 if nargin < 2
     fragmentationType = 1; % 0-> 'D'; 1 -> Max_DelU ; 2 -> DelU 
@@ -18,7 +19,7 @@ elseif (fragmentationType == 1)
 elseif (fragmentationType == 2)
     ft = '2_DelU';
 end
-rootFolder = ['../_PPS2_', runName];
+rootFolder = ['../../_PPS2/_PPS2_', runName];
 rt = '';
 if (strcmp(rootFolder, '') == 0)
     rt = [rootFolder, '/'];

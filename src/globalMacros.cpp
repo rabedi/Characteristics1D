@@ -16,7 +16,7 @@ int g_serialNumber = 0;
 double g_time = 0.0;
 int g_low_disk_space = 0;
 int g_1_interface_low_disk_space = 0;
-double gt0 = 0.1;
+double gt0 = 0.0;
 
 bool b_db_p = false;
 fstream g_logout;

@@ -178,3 +178,10 @@ haven, Tri gen
 ./solver -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 90 -en 95 -vst 0 -ven 1619 -np 24
 
 -sp -mc config/MainConfig/mainConfig_axt_coh_gen_Tri.txt -st 0 -en 0 -vst 0 -ven 0
+
+-i -c config/OneInterface/SampleConfig_TSR_Ortiz.txt
+
+
+
+
+-sp -mc config/MainConfig/mainConfig_axt_coh.txt -st 0 -en 0 -vst 0 -ven 0

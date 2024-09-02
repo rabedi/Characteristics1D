@@ -3,6 +3,7 @@ if nargin < 1
     serialNums = [0, 1];
 %    serialNums = 0:5;
 %    serialNums = [0, 1, 2];
+    serialNums = 0;
 end
 if nargin < 2
 %    versionNums = [11, 12, 13];
@@ -10,6 +11,7 @@ if nargin < 2
 %    versionNums = 0;
 %    versionNums = 30000:30003;
     versionNums = 40433;
+    versionNums = 0;
 end
 if nargin < 3
     subdomainNo = 0;
